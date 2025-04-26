@@ -9,8 +9,10 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^9.2.1",
     "astro": "^5.7.5",
     "autoprefixer": "^10.4.21",
+    "firebase": "^11.6.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17"
   }
