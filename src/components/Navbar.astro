@@ -1,0 +1,24 @@
+---
+// src/components/Navbar.astro
+---
+
+<nav class="bg-purple-900 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold flex items-center gap-2 hover:text-purple-200 transition-colors">
+        <span>✨</span>
+        <span>Marsella</span>
+      </a>
+      
+      <div class="hidden md:flex space-x-6">
+        <a href="/cards" class="hover:text-purple-200 transition-colors">Mazo Completo</a>
+        <a href="/about" class="hover:text-purple-200 transition-colors">Acerca del Tarot</a>
+        <a href="/readings" class="hover:text-purple-200 transition-colors">Tiradas</a>
+      </div>
+      
+      <button class="md:hidden focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </nav>

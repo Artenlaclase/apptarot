@@ -1,13 +1,29 @@
 ---
 // src/pages/cards/[id].astro
-import { db } from '../../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import Layout from '../../../layouts/Layout.astro';
+import Layout from '../../layouts/Layout.astro';
 
-const { id } = Astro.params;
+const { id } = Astro.params as { id: string };
 const docRef = doc(db, 'cards', id);
 const docSnap = await getDoc(docRef);
-const card = docSnap.data();
+interface Card {
+  nombre: string;
+  numero: number;
+  arcano: 'mayor' | 'menor';
+  imagem: string;
+  significado: {
+    directo: string;
+    invertido: string;
+  };
+  simbolos: {
+    principales: string[];
+    interpretacion: string;
+  };
+  keywords?: string[];
+}
+
+const card = docSnap.data() as Card;
 
 if (!card) {
   return Response.redirect('/404', 404);
@@ -58,13 +74,14 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
             </h3>
             <p class="mt-2 text-gray-700">{card.significado.directo}</p>
           </div>
-          
-          <div class="bg-gray-50 p-5 rounded-lg">
-            <h3 class="text-xl font-medium text-gray-700 flex items-center gap-2">
-              <span>🔁</span> Invertido:
-            </h3>
-            <p class="mt-2 text-gray-700">{card.significado.invertido}</p>
-          </div>
+          {card.simbolos.principales.map((symbol: string) => (
+            <div class="bg-gray-50 p-5 rounded-lg">
+              <h3 class="text-xl font-medium text-gray-700 flex items-center gap-2">
+                <span>🔁</span> Invertido:
+              </h3>
+              <p class="mt-2 text-gray-700">{card.significado.invertido}</p>
+            </div>
+          ))}
         </section>
 
         {/* Símbolos */}
