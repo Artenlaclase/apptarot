@@ -3,16 +3,37 @@
 import Head from '../components/Head.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import '../styles/global.css';
 
-const { title = 'Tarot de Marsella', description = 'Explora el conocimiento ancestral del Tarot de Marsella' } = Astro.props;
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+}
+
+const { 
+  title = 'Tarot de Marsella', 
+  description = 'Explora el conocimiento ancestral del Tarot de Marsella',
+  canonicalUrl 
+} = Astro.props;
 ---
 
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
-  <Head title={title} description={description} />
+  <Head 
+    title={title} 
+    description={description} 
+  />
+  {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+  <style>
+    :root {
+      --font-heading: 'Cardo', serif;
+      --font-body: 'Montserrat', sans-serif;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col bg-gray-50">
+<body class="min-h-screen flex flex-col bg-gray-50 font-body">
   <Navbar />
   
   <main class="flex-grow">
@@ -20,5 +41,8 @@ const { title = 'Tarot de Marsella', description = 'Explora el conocimiento ance
   </main>
   
   <Footer />
+  
+  <!-- Scripts -->
+  <script src="/scripts/mobile-menu.js" defer></script>
 </body>
 </html>
