@@ -3,7 +3,7 @@
 import { db } from '../../lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
-import '../../styles/global.css';
+
 
 // Obtener cartas ordenadas
 const q = query(collection(db, 'cards'), orderBy('numero'));
