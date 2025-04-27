@@ -1,0 +1,51 @@
+---
+// src/pages/cards/index.astro
+import { db } from '../../lib/firebase';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import Layout from '../../layouts/Layout.astro';
+
+// Obtener cartas ordenadas
+const q = query(collection(db, 'cards'), orderBy('numero'));
+const querySnapshot = await getDocs(q);
+const cards = querySnapshot.docs.map(doc => ({
+  id: doc.id,
+  ...doc.data(),
+  imagem: doc.data().imagem.replace('upload/', 'upload/w_300,f_auto,q_auto/')
+}));
+
+const pageTitle = "Mazo Completo de Tarot de Marsella";
+const pageDescription = "Explora todas las cartas del Tarot de Marsella y sus significados";
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <main class="container mx-auto px-4 py-8 max-w-7xl">
+    <header class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-purple-900 mb-2">{pageTitle}</h1>
+      <p class="text-xl text-purple-700">Descubre los arcanos mayores y menores</p>
+    </header>
+
+    <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 px-4">
+      {cards.map(card => (
+        <a 
+          href={`/cards/${card.id}`} 
+          class="block transition-transform duration-300 hover:-translate-y-2 hover:shadow-lg"
+        >
+          <figure class="flex flex-col h-full">
+            <img
+              src={card.imagem}
+              alt={card.nombre}
+              width="200"
+              height="300"
+              loading="lazy"
+              decoding="async"
+              class="rounded-lg shadow-md w-full aspect-[2/3] object-cover"
+            />
+            <figcaption class="mt-3 text-center font-medium text-gray-800">
+              {card.nombre} <span class="text-gray-500">({card.numero})</span>
+            </figcaption>
+          </figure>
+        </a>
+      ))}
+    </section>
+  </main>
+</Layout>

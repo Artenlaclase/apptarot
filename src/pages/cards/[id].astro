@@ -1,0 +1,120 @@
+---
+// src/pages/cards/[id].astro
+import { db } from '../../../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import Layout from '../../../layouts/Layout.astro';
+
+const { id } = Astro.params;
+const docRef = doc(db, 'cards', id);
+const docSnap = await getDoc(docRef);
+const card = docSnap.data();
+
+if (!card) {
+  return Response.redirect('/404', 404);
+}
+
+const pageTitle = `${card.nombre} - Tarot de Marsella`;
+const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 100)}...`;
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <article class="max-w-7xl mx-auto px-4 py-8">
+    <header class="text-center border-b border-gray-200 pb-6 mb-8">
+      <h1 class="text-4xl font-bold text-purple-900">
+        {card.nombre} <span class="text-gray-500 text-2xl">#{card.numero}</span>
+      </h1>
+      <p class="italic text-purple-600 mt-2">
+        {card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor'}
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Columna de la imagen */}
+      <figure class="lg:sticky lg:top-4">
+        <img
+          src={card.imagem.replace('upload/', 'upload/w_600,f_auto,q_auto/')}
+          alt={`Carta ${card.nombre}`}
+          width="400"
+          height="600"
+          loading="eager"
+          class="rounded-xl shadow-lg w-full aspect-[2/3] object-cover"
+        />
+        <figcaption class="text-center text-sm text-gray-500 mt-2">
+          Ilustración tradicional de Marsella
+        </figcaption>
+      </figure>
+
+      {/* Columna de contenido */}
+      <div class="lg:col-span-2 space-y-8">
+        {/* Significados */}
+        <section class="space-y-6">
+          <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
+            Interpretación
+          </h2>
+          
+          <div class="bg-purple-50 p-5 rounded-lg">
+            <h3 class="text-xl font-medium text-purple-700 flex items-center gap-2">
+              <span>📌</span> Directo:
+            </h3>
+            <p class="mt-2 text-gray-700">{card.significado.directo}</p>
+          </div>
+          
+          <div class="bg-gray-50 p-5 rounded-lg">
+            <h3 class="text-xl font-medium text-gray-700 flex items-center gap-2">
+              <span>🔁</span> Invertido:
+            </h3>
+            <p class="mt-2 text-gray-700">{card.significado.invertido}</p>
+          </div>
+        </section>
+
+        {/* Símbolos */}
+        <section class="space-y-4">
+          <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
+            🔍 Símbolos Clave
+          </h2>
+          
+          <ul class="columns-2 gap-4">
+            {card.simbolos.principales.map(symbol => (
+              <li class="mb-2 flex items-center">
+                <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                {symbol}
+              </li>
+            ))}
+          </ul>
+          
+          <div class="mt-4">
+            <h3 class="text-lg font-medium text-purple-700">
+              Interpretación simbólica:
+            </h3>
+            <p class="mt-2 text-gray-700">{card.simbolos.interpretacion}</p>
+          </div>
+        </section>
+
+        {/* Keywords */}
+        {card.keywords && (
+          <section>
+            <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
+              📌 Keywords
+            </h2>
+            <div class="flex flex-wrap gap-2 mt-4">
+              {card.keywords.map(keyword => (
+                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+
+    <footer class="mt-12 text-center">
+      <a 
+        href="/cards" 
+        class="inline-block bg-purple-100 hover:bg-purple-200 text-purple-800 px-6 py-2 rounded-lg transition-colors"
+      >
+        ← Volver al mazo completo
+      </a>
+    </footer>
+  </article>
+</Layout>
