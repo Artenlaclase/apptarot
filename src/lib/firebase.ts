@@ -1,5 +1,6 @@
-// src/lib/firebase.js
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+// src/lib/firebase.ts
+import { initializeApp, getApps, getApp } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
   connectFirestoreEmulator,
@@ -12,14 +13,24 @@ import {
   persistentMultipleTabManager 
 } from "firebase/firestore";
 
+// Define la interfaz para la configuración de Firebase
+interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+}
+
 // Firebase configuration using environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
-  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID
+const firebaseConfig: FirebaseConfig = {
+  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY as string,
+  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN as string,
+  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID as string,
+  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET as string,
+  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID as string,
+  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID as string
 };
 
 // ✅ Prevent duplicate initialization error
@@ -74,3 +85,6 @@ export function handleFirebaseError(error: FirestoreError): string {
       return 'Error al conectar con la base de datos. Inténtalo más tarde.';
   }
 }
+
+// Export types for better TypeScript support
+export type { FirebaseApp, Firestore, FirestoreError };
