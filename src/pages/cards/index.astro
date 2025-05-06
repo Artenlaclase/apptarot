@@ -4,17 +4,22 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 
-
 // Obtener cartas ordenadas
 const q = query(collection(db, 'cards'), orderBy('numero'));
 const querySnapshot = await getDocs(q);
-const cards = querySnapshot.docs.map(doc => ({
-  id: doc.id,
-  ...doc.data(),
-  nombre: doc.data().nombre, // Ensure 'nombre' is explicitly included
-  numero: doc.data().numero, // Explicitly include 'numero'
-  imagem: doc.data().imagem.replace('upload/', 'upload/w_300,f_auto,q_auto/')
-}));
+const cards = querySnapshot.docs.map(doc => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    ...data,
+    nombre: data.nombre || 'Sin nombre', // Provide default values
+    numero: data.numero || 'N/A',
+    // Check if imagem exists before using replace
+    imagem: data.imagem 
+      ? data.imagem.replace('upload/', 'upload/w_300,f_auto,q_auto/')
+      : '/placeholder-card.jpg' // Use a placeholder image if none exists
+  };
+});
 
 const pageTitle = "Mazo Completo de Tarot de Marsella";
 const pageDescription = "Explora todas las cartas del Tarot de Marsella y sus significados";

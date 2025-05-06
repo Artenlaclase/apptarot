@@ -23,14 +23,35 @@ interface Card {
   keywords?: string[];
 }
 
-const card = docSnap.data() as Card;
-
-if (!card) {
+const docData = docSnap.data();
+if (!docData) {
   return Response.redirect('/404', 404);
 }
 
+// Ensure all required properties exist with defaults if needed
+const card: Card = {
+  nombre: docData.nombre || 'Sin nombre',
+  numero: docData.numero || 0,
+  arcano: docData.arcano || 'mayor',
+  imagem: docData.imagem || '/default-card.svg', // Using SVG placeholder
+  significado: {
+    directo: docData.significado?.directo || 'No disponible',
+    invertido: docData.significado?.invertido || 'No disponible'
+  },
+  simbolos: {
+    principales: docData.simbolos?.principales || [],
+    interpretacion: docData.simbolos?.interpretacion || 'No disponible'
+  },
+  keywords: docData.keywords || []
+};
+
 const pageTitle = `${card.nombre} - Tarot de Marsella`;
 const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 100)}...`;
+
+// Process image URL safely
+const imageUrl = card.imagem 
+  ? card.imagem.replace('upload/', 'upload/w_600,f_auto,q_auto/')
+  : '/default-card.svg'; // Using SVG placeholder
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -48,7 +69,7 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
       {/* Columna de la imagen */}
       <figure class="lg:sticky lg:top-4">
         <img
-          src={card.imagem.replace('upload/', 'upload/w_600,f_auto,q_auto/')}
+          src={imageUrl}
           alt={`Carta ${card.nombre}`}
           width="400"
           height="600"
@@ -74,14 +95,13 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
             </h3>
             <p class="mt-2 text-gray-700">{card.significado.directo}</p>
           </div>
-          {card.simbolos.principales.map((symbol: string) => (
-            <div class="bg-gray-50 p-5 rounded-lg">
-              <h3 class="text-xl font-medium text-gray-700 flex items-center gap-2">
-                <span>🔁</span> Invertido:
-              </h3>
-              <p class="mt-2 text-gray-700">{card.significado.invertido}</p>
-            </div>
-          ))}
+
+          <div class="bg-gray-50 p-5 rounded-lg">
+            <h3 class="text-xl font-medium text-gray-700 flex items-center gap-2">
+              <span>🔁</span> Invertido:
+            </h3>
+            <p class="mt-2 text-gray-700">{card.significado.invertido}</p>
+          </div>
         </section>
 
         {/* Símbolos */}
@@ -90,14 +110,18 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
             🔍 Símbolos Clave
           </h2>
           
-          <ul class="columns-2 gap-4">
-            {card.simbolos.principales.map(symbol => (
-              <li class="mb-2 flex items-center">
-                <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                {symbol}
-              </li>
-            ))}
-          </ul>
+          {card.simbolos.principales.length > 0 ? (
+            <ul class="columns-2 gap-4">
+              {card.simbolos.principales.map(symbol => (
+                <li class="mb-2 flex items-center">
+                  <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                  {symbol}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="text-gray-500 italic">No hay símbolos principales registrados</p>
+          )}
           
           <div class="mt-4">
             <h3 class="text-lg font-medium text-purple-700">
@@ -108,7 +132,7 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
         </section>
 
         {/* Keywords */}
-        {card.keywords && (
+        {card.keywords && card.keywords.length > 0 && (
           <section>
             <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
               📌 Keywords
