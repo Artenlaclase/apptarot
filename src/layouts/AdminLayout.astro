@@ -1,0 +1,28 @@
+---
+// src/layouts/AdminLayout.astro
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} | Admin</title>
+  <link rel="stylesheet" href="/styles/admin.css">
+</head>
+<body class="bg-gray-50">
+  <header class="bg-purple-900 text-white shadow">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <a href="/admin" class="text-xl font-bold">Panel de Administración</a>
+      <nav>
+        <a href="/admin/cards" class="hover:text-purple-200">Cartas</a>
+      </nav>
+    </div>
+  </header>
+  
+  <slot />
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+</body>
+</html>

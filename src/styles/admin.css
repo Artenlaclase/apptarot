@@ -1,0 +1,100 @@
+/* src/styles/admin.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados para el admin */
+.admin-container {
+  max-width: 1400px;
+}
+
+/* Estilos para formularios */
+.admin-form {
+  @apply bg-white p-6 rounded-lg shadow-md;
+}
+
+.admin-form label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.admin-form input[type="text"],
+.admin-form input[type="number"],
+.admin-form input[type="url"],
+.admin-form input[type="email"],
+.admin-form input[type="password"],
+.admin-form select,
+.admin-form textarea {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500;
+}
+
+.admin-form textarea {
+  @apply min-h-[100px];
+}
+
+/* Botones */
+.admin-btn {
+  @apply px-4 py-2 rounded-md font-medium transition-colors;
+}
+
+.admin-btn-primary {
+  @apply bg-purple-600 text-white hover:bg-purple-700;
+}
+
+.admin-btn-secondary {
+  @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+}
+
+.admin-btn-danger {
+  @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+/* Tablas */
+.admin-table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.admin-table th {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.admin-table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+
+.admin-table tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+/* Alertas */
+.admin-alert {
+  @apply p-4 mb-6 rounded-md;
+}
+
+.admin-alert-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.admin-alert-error {
+  @apply bg-red-100 text-red-800;
+}
+
+.admin-alert-info {
+  @apply bg-blue-100 text-blue-800;
+}
+
+/* Nav admin */
+.admin-nav {
+  @apply flex space-x-4;
+}
+
+.admin-nav a {
+  @apply px-3 py-2 rounded-md text-sm font-medium;
+}
+
+.admin-nav a:hover {
+  @apply bg-purple-800 text-white;
+}
+
+.admin-nav a.active {
+  @apply bg-purple-900 text-white;
+}
