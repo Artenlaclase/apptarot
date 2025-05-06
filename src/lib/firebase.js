@@ -1,4 +1,5 @@
-import { initializeApp } from "firebase/app";
+// src/lib/firebase.js
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -10,5 +11,7 @@ const firebaseConfig = {
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
+// ✅ Prevenir el error de inicialización duplicada
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
 export const db = getFirestore(app);
