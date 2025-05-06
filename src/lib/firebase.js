@@ -1,9 +1,11 @@
 // src/lib/firebase.js
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
   connectFirestoreEmulator,
-  initializeFirestore
+  initializeFirestore,
+  Firestore,
+  FirestoreError
 } from "firebase/firestore";
 import { 
   persistentLocalCache, 
@@ -21,10 +23,10 @@ const firebaseConfig = {
 };
 
 // ✅ Prevent duplicate initialization error
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with persistent local cache
-let db;
+let db: Firestore;
 try {
   if (typeof window !== 'undefined') { // Only use persistence in browser environment
     // Initialize with persistence enabled
@@ -53,11 +55,10 @@ if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
 */
 
 // Export the Firestore instance
-
 export { db };
 
 // Error handling for FirebaseError
-export function handleFirebaseError(error) {
+export function handleFirebaseError(error: FirestoreError): string {
   console.error('Firebase error:', error.code, error.message);
   
   switch (error.code) {
