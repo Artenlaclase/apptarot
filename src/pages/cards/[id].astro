@@ -7,11 +7,14 @@ import Layout from '../../layouts/Layout.astro';
 const { id } = Astro.params as { id: string };
 const docRef = doc(db, 'cards', id);
 const docSnap = await getDoc(docRef);
+
 interface Card {
+  id: string;
   nombre: string;
   numero: number;
   arcano: 'mayor' | 'menor';
   imagem: string;
+  imagen?: string;
   significado: {
     directo: string;
     invertido: string;
@@ -28,12 +31,30 @@ if (!docData) {
   return Response.redirect('/404', 404);
 }
 
-// Ensure all required properties exist with defaults if needed
+const processImageUrl = (url: string | undefined | null): string => {
+  if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
+  
+  const cleanedUrl = url.trim();
+  
+  if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
+    return cleanedUrl.includes('alt=media') 
+      ? cleanedUrl 
+      : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
+  }
+  
+  if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
+    return cleanedUrl.replace('upload/', 'upload/w_600,f_auto,q_auto/');
+  }
+  
+  return cleanedUrl;
+};
+
 const card: Card = {
+  id: docSnap.id,
   nombre: docData.nombre || 'Sin nombre',
   numero: docData.numero || 0,
   arcano: docData.arcano || 'mayor',
-  imagem: docData.imagem || '/default-card.svg', // Using SVG placeholder
+  imagem: processImageUrl(docData.imagem || docData.imagen),
   significado: {
     directo: docData.significado?.directo || 'No disponible',
     invertido: docData.significado?.invertido || 'No disponible'
@@ -47,11 +68,6 @@ const card: Card = {
 
 const pageTitle = `${card.nombre} - Tarot de Marsella`;
 const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 100)}...`;
-
-// Process image URL safely
-const imageUrl = card.imagem 
-  ? card.imagem.replace('upload/', 'upload/w_600,f_auto,q_auto/')
-  : '/default-card.svg'; // Using SVG placeholder
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -66,24 +82,22 @@ const imageUrl = card.imagem
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Columna de la imagen */}
       <figure class="lg:sticky lg:top-4">
         <img
-          src={imageUrl}
+          src={card.imagem}
           alt={`Carta ${card.nombre}`}
           width="400"
           height="600"
           loading="eager"
-          class="rounded-xl shadow-lg w-full aspect-[2/3] object-cover"
+          class="rounded-xl shadow-lg w-full aspect-[2/3] object-cover bg-gray-100"
+          onerror="this.src='/placeholder-card.jpg';this.classList.add('bg-gray-100')"
         />
         <figcaption class="text-center text-sm text-gray-500 mt-2">
           Ilustración tradicional de Marsella
         </figcaption>
       </figure>
 
-      {/* Columna de contenido */}
       <div class="lg:col-span-2 space-y-8">
-        {/* Significados */}
         <section class="space-y-6">
           <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
             Interpretación
@@ -104,7 +118,6 @@ const imageUrl = card.imagem
           </div>
         </section>
 
-        {/* Símbolos */}
         <section class="space-y-4">
           <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
             🔍 Símbolos Clave
@@ -112,7 +125,7 @@ const imageUrl = card.imagem
           
           {card.simbolos.principales.length > 0 ? (
             <ul class="columns-2 gap-4">
-              {card.simbolos.principales.map(symbol => (
+              {card.simbolos.principales.map((symbol) => (
                 <li class="mb-2 flex items-center">
                   <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
                   {symbol}
@@ -131,14 +144,13 @@ const imageUrl = card.imagem
           </div>
         </section>
 
-        {/* Keywords */}
         {card.keywords && card.keywords.length > 0 && (
           <section>
             <h2 class="text-2xl font-semibold text-purple-800 border-b pb-2">
               📌 Keywords
             </h2>
             <div class="flex flex-wrap gap-2 mt-4">
-              {card.keywords.map(keyword => (
+              {card.keywords.map((keyword) => (
                 <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
                   {keyword}
                 </span>
@@ -159,3 +171,12 @@ const imageUrl = card.imagem
     </footer>
   </article>
 </Layout>
+
+<style>
+  .bg-gray-100 {
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
