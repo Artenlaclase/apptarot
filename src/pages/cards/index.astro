@@ -4,20 +4,49 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 
-// Obtener cartas ordenadas
+interface FirestoreCard {
+  id: string;
+  nombre?: string;
+  numero?: string | number;
+  imagem?: string | null;
+  imagen?: string | null; // Campo alternativo por si acaso
+}
+
 const q = query(collection(db, 'cards'), orderBy('numero'));
 const querySnapshot = await getDocs(q);
+
+const processImageUrl = (url: string | undefined | null): string => {
+  // 1. Verificación básica
+  if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
+  
+  // 2. Limpieza de URL (elimina espacios en blanco)
+  const cleanedUrl = url.trim();
+  
+  // 3. Manejo de Firebase Storage
+  if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
+    // Asegura el parámetro alt=media
+    return cleanedUrl.includes('alt=media') 
+      ? cleanedUrl 
+      : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
+  }
+  
+  // 4. Manejo de Cloudinary (si aplica)
+  if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
+    return cleanedUrl.replace('upload/', 'upload/w_300,f_auto,q_auto/');
+  }
+  
+  return cleanedUrl;
+};
+
 const cards = querySnapshot.docs.map(doc => {
   const data = doc.data();
+  const imageUrl = data.imagem || data.imagen; // Usa cualquier campo que exista
+  
   return {
     id: doc.id,
-    ...data,
-    nombre: data.nombre || 'Sin nombre', // Provide default values
-    numero: data.numero || 'N/A',
-    // Check if imagem exists before using replace
-    imagem: data.imagem 
-      ? data.imagem.replace('upload/', 'upload/w_300,f_auto,q_auto/')
-      : '/placeholder-card.jpg' // Use a placeholder image if none exists
+    nombre: data.nombre || 'Sin nombre',
+    numero: data.numero ?? 'N/A', // Usamos operador nullish coalescing
+    imagem: processImageUrl(imageUrl)
   };
 });
 
@@ -41,12 +70,13 @@ const pageDescription = "Explora todas las cartas del Tarot de Marsella y sus si
           <figure class="flex flex-col h-full">
             <img
               src={card.imagem}
-              alt={card.nombre}
+              alt={`Carta ${card.nombre}`}
               width="200"
               height="300"
               loading="lazy"
               decoding="async"
-              class="rounded-lg shadow-md w-full aspect-[2/3] object-cover"
+              class="rounded-lg shadow-md w-full aspect-[2/3] object-cover bg-gray-100"
+              onerror="this.src='/placeholder-card.jpg';this.classList.add('bg-gray-100')"
             />
             <figcaption class="mt-3 text-center font-medium text-gray-800">
               {card.nombre} <span class="text-gray-500">({card.numero})</span>
@@ -57,3 +87,13 @@ const pageDescription = "Explora todas las cartas del Tarot de Marsella y sus si
     </section>
   </main>
 </Layout>
+
+<style>
+  /* Estilo de respaldo para imágenes */
+  .bg-gray-100 {
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
