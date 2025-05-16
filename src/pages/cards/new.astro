@@ -1,11 +1,10 @@
 ---
-// src/pages/admin/cards/new.astro
 import { db } from '../../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 // Proteger la ruta (ejemplo básico, en producción usar autenticación)
-const isAdmin = true; // En producción, verificar sesión de admin
+const isAdmin = true;
 
 if (!isAdmin) {
   return Response.redirect('/', 302);
@@ -14,29 +13,32 @@ if (!isAdmin) {
 // Manejar el envío del formulario
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
-  
-  try {
-    await addDoc(collection(db, 'cards'), {
-      nombre: formData.get('nombre'),
-      numero: Number(formData.get('numero')),
-      arcano: formData.get('arcano'),
-      imagem: formData.get('imagem'),
-      significado: {
-        directo: formData.get('significado_directo'),
-        invertido: formData.get('significado_invertido')
-      },
-      simbolos: {
-        principales: formData.get('simbolos_principales')?.toString().split(',').map(s => s.trim()) || [],
-        interpretacion: formData.get('simbolos_interpretacion')
-      },
-      keywords: formData.get('keywords')?.toString().split(',').map(k => k.trim()) || [],
-      createdAt: new Date()
-    });
-    
-    // Redirigir después de guardar
-    return Response.redirect('/admin/cards?success=true', 303);
-  } catch (error) {
-    console.error('Error adding document: ', error);
+
+  const nombre = formData.get('nombre')?.toString().trim().toLowerCase().replace(/\s+/g, '_'); // Normalizar el ID
+
+  if (nombre) {
+    try {
+      await setDoc(doc(db, 'cards', nombre), {
+        nombre: formData.get('nombre'),
+        numero: Number(formData.get('numero')),
+        arcano: formData.get('arcano'),
+        imagem: formData.get('imagem'),
+        significado: {
+          directo: formData.get('significado_directo'),
+          invertido: formData.get('significado_invertido')
+        },
+        simbolos: {
+          principales: formData.get('simbolos_principales')?.toString().split(',').map(s => s.trim()) || [],
+          interpretacion: formData.get('simbolos_interpretacion')
+        },
+        keywords: formData.get('keywords')?.toString().split(',').map(k => k.trim()) || [],
+        createdAt: new Date()
+      });
+
+      return Response.redirect('/admin/cards?success=true', 303);
+    } catch (error) {
+      console.error('Error al guardar la carta:', error);
+    }
   }
 }
 ---
@@ -44,13 +46,12 @@ if (Astro.request.method === 'POST') {
 <AdminLayout title="Agregar Nueva Carta">
   <main class="container mx-auto px-4 py-8 max-w-4xl">
     <h1 class="text-3xl font-bold text-purple-900 mb-6">Agregar Nueva Carta</h1>
-    
+
     <form method="POST" class="space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Información Básica -->
         <div class="space-y-4">
           <h2 class="text-xl font-semibold text-purple-800">Información Básica</h2>
-          
+
           <div>
             <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input 
@@ -61,7 +62,7 @@ if (Astro.request.method === 'POST') {
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
           </div>
-          
+
           <div>
             <label for="numero" class="block text-sm font-medium text-gray-700 mb-1">Número</label>
             <input 
@@ -72,7 +73,7 @@ if (Astro.request.method === 'POST') {
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
           </div>
-          
+
           <div>
             <label for="arcano" class="block text-sm font-medium text-gray-700 mb-1">Arcano</label>
             <select 
@@ -85,23 +86,21 @@ if (Astro.request.method === 'POST') {
               <option value="menor">Menor</option>
             </select>
           </div>
-          
+
           <div>
             <label for="imagem" class="block text-sm font-medium text-gray-700 mb-1">URL de la Imagen</label>
             <input 
               type="url" 
               id="imagem" 
               name="imagem" 
-              
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
           </div>
         </div>
-        
-        <!-- Significados -->
+
         <div class="space-y-4">
           <h2 class="text-xl font-semibold text-purple-800">Significados</h2>
-          
+
           <div>
             <label for="significado_directo" class="block text-sm font-medium text-gray-700 mb-1">Significado Directo</label>
             <textarea 
@@ -112,7 +111,7 @@ if (Astro.request.method === 'POST') {
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             ></textarea>
           </div>
-          
+
           <div>
             <label for="significado_invertido" class="block text-sm font-medium text-gray-700 mb-1">Significado Invertido</label>
             <textarea 
@@ -125,11 +124,10 @@ if (Astro.request.method === 'POST') {
           </div>
         </div>
       </div>
-      
-      <!-- Símbolos -->
+
       <div class="space-y-4">
         <h2 class="text-xl font-semibold text-purple-800">Símbolos</h2>
-        
+
         <div>
           <label for="simbolos_principales" class="block text-sm font-medium text-gray-700 mb-1">Símbolos Principales (separados por comas)</label>
           <input 
@@ -139,7 +137,7 @@ if (Astro.request.method === 'POST') {
             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
           >
         </div>
-        
+
         <div>
           <label for="simbolos_interpretacion" class="block text-sm font-medium text-gray-700 mb-1">Interpretación de Símbolos</label>
           <textarea 
@@ -150,8 +148,7 @@ if (Astro.request.method === 'POST') {
           ></textarea>
         </div>
       </div>
-      
-      <!-- Keywords -->
+
       <div>
         <label for="keywords" class="block text-sm font-medium text-gray-700 mb-1">Keywords (separadas por comas)</label>
         <input 
@@ -161,7 +158,7 @@ if (Astro.request.method === 'POST') {
           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
         >
       </div>
-      
+
       <div class="flex justify-end">
         <button 
           type="submit" 
