@@ -139,10 +139,34 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       }
     }
     
+    // Función para procesar URLs de imágenes (idéntica a la de index.astro)
+    function processImageUrl(url) {
+      // 1. Verificación básica
+      if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
+      
+      // 2. Limpieza de URL (elimina espacios en blanco)
+      const cleanedUrl = url.trim();
+      
+      // 3. Manejo de Firebase Storage
+      if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
+        // Asegura el parámetro alt=media
+        return cleanedUrl.includes('alt=media') 
+          ? cleanedUrl 
+          : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
+      }
+      
+      // 4. Manejo de Cloudinary (si aplica)
+      if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
+        return cleanedUrl.replace('upload/', 'upload/w_300,f_auto,q_auto/');
+      }
+      
+      return cleanedUrl;
+    }
+    
     // Función para validar si una URL es correcta
     function isValidImageUrl(url) {
       // Si es una URL relativa que comienza con "/", asumir que es válida
-      if (url.startsWith('/')) {
+      if (url && url.startsWith('/')) {
         return true;
       }
       
@@ -176,6 +200,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             workingCards[index].imageLoaded = false;
             workingCards[index].imageError = 'URL inválida';
             loadedCount++;
+            console.error(`URL inválida (${loadedCount}/${totalCards}): ${card.imagem}`);
             
             if (loadedCount === totalCards) {
               console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
@@ -244,6 +269,13 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       // Asegurarnos de que las imágenes están precargadas
       if (!workingCards.some(card => card.imageLoaded !== undefined)) {
         console.log('Iniciando precarga de imágenes...');
+        
+        // Procesamos las URLs antes de precargar
+        workingCards = workingCards.map(card => ({
+          ...card,
+          imagem: processImageUrl(card.imagem)
+        }));
+        
         await preloadImages();
         // Mostrar información de depuración
         showDebugInfo(true);
@@ -304,8 +336,8 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
                 width="200"
                 height="300"
                 loading="lazy"
-                class="rounded-lg shadow-md w-full aspect-[2/3] object-cover"
-                onerror="this.onerror=null; this.src='/images/placeholder-card.jpg';"
+                class="rounded-lg shadow-md w-full aspect-[2/3] object-cover bg-gray-100"
+                onerror="this.onerror=null; this.src='/placeholder-card.jpg'; this.classList.add('bg-gray-100')"
               />
               <figcaption class="mt-3 text-center font-medium text-gray-800">
                 ${card.nombre} <span class="text-gray-500">(${card.numero})</span>
