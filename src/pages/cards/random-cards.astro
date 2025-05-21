@@ -9,6 +9,8 @@ interface Card {
   nombre: string;
   numero: number;
   imagem: string;
+  imageLoaded?: boolean;
+  imageError?: string; // Nuevo campo para registrar errores de carga
 }
 
 const querySnapshot = await getDocs(collection(db, 'cards'));
@@ -18,9 +20,12 @@ const allCards = querySnapshot.docs.map(doc => {
     id: doc.id,
     nombre: data.nombre || 'Sin nombre',
     numero: data.numero || 0,
-    imagem: data.imagem || '/images/placeholder-card.jpg'
+    imagem: data.imagem || '/images/placeholder-card.jpg',
+    imageLoaded: false
   };
 });
+
+console.log(`Cargadas ${allCards.length} cartas desde Firestore`);
 
 const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
 const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
@@ -59,11 +64,22 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       </div>
     </section>
 
+    <!-- Sección de estado para depuración -->
+    <section id="debugStatus" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8 max-w-2xl mx-auto hidden">
+      <h3 class="font-medium text-yellow-800 mb-2">Estado de carga de imágenes:</h3>
+      <div id="debugInfo" class="text-sm text-yellow-700"></div>
+    </section>
+
     <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
       <div id="initialMessage" class="col-span-full text-center py-12">
         <p class="text-xl text-gray-500">Presiona el botón "Generar Cartas" para comenzar</p>
       </div>
     </section>
+    
+    <div id="loadingIndicator" class="hidden text-center py-6">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+      <p class="mt-2 text-purple-700">Cargando cartas...</p>
+    </div>
   </main>
 </Layout>
 
@@ -75,61 +91,222 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     const cardCountInput = document.getElementById('cardCount');
     const cardsContainer = document.getElementById('cardsContainer');
     const initialMessage = document.getElementById('initialMessage');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const debugStatus = document.getElementById('debugStatus');
+    const debugInfo = document.getElementById('debugInfo');
     
-    // Datos de las cartas ya están disponibles como 'allCards'
+    // Crear una copia profunda de las cartas para trabajar
+    let workingCards = JSON.parse(JSON.stringify(allCards));
     
-    // Evento para generar cartas
-    generateBtn?.addEventListener('click', () => {
-      // Limpiar contenedor y ocultar mensaje inicial
-      if (cardsContainer) cardsContainer.innerHTML = '';
-      if (initialMessage) initialMessage.style.display = 'none';
+    // Función para mostrar información de depuración
+    function showDebugInfo(show = true) {
+      if (!debugStatus || !debugInfo) return;
+      
+      if (show) {
+        debugStatus.classList.remove('hidden');
+        
+        // Contar cartas válidas e inválidas
+        const validCount = workingCards.filter(c => c.imageLoaded === true).length;
+        const invalidCount = workingCards.filter(c => c.imageLoaded === false).length;
+        const totalCount = workingCards.length;
+        
+        let infoHtml = `
+          <p>Total de cartas: ${totalCount}</p>
+          <p>Cartas con imágenes válidas: ${validCount}</p>
+          <p>Cartas con imágenes inválidas: ${invalidCount}</p>
+        `;
+        
+        // Mostrar los primeros 5 ejemplos de errores si hay alguno
+        const cardsWithErrors = workingCards.filter(c => c.imageError);
+        if (cardsWithErrors.length > 0) {
+          infoHtml += '<p class="mt-2 font-medium">Ejemplos de errores:</p><ul class="list-disc pl-5">';
+          cardsWithErrors.slice(0, 5).forEach(card => {
+            infoHtml += `<li>${card.nombre} (${card.id}): ${card.imagem} - ${card.imageError}</li>`;
+          });
+          infoHtml += '</ul>';
+        }
+        
+        // Mostrar ejemplos de URLs de imágenes
+        infoHtml += '<p class="mt-2 font-medium">Ejemplos de URLs de imágenes:</p><ul class="list-disc pl-5">';
+        workingCards.slice(0, 5).forEach(card => {
+          infoHtml += `<li>${card.nombre}: ${card.imagem}</li>`;
+        });
+        infoHtml += '</ul>';
+        
+        debugInfo.innerHTML = infoHtml;
+      } else {
+        debugStatus.classList.add('hidden');
+      }
+    }
+    
+    // Función para validar si una URL es correcta
+    function isValidImageUrl(url) {
+      // Si es una URL relativa que comienza con "/", asumir que es válida
+      if (url.startsWith('/')) {
+        return true;
+      }
+      
+      // Intentar crear una URL válida
+      try {
+        new URL(url);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // Precargar todas las imágenes para saber cuáles son válidas
+    function preloadImages() {
+      return new Promise(resolve => {
+        let loadedCount = 0;
+        const totalCards = workingCards.length;
+        
+        console.log(`Iniciando precarga de ${totalCards} imágenes...`);
+        
+        // Si no hay cartas para precargar, resolvemos inmediatamente
+        if (totalCards === 0) {
+          console.warn('No hay cartas para precargar');
+          resolve();
+          return;
+        }
+        
+        workingCards.forEach((card, index) => {
+          // Validar primero si la URL parece correcta
+          if (!card.imagem || !isValidImageUrl(card.imagem)) {
+            workingCards[index].imageLoaded = false;
+            workingCards[index].imageError = 'URL inválida';
+            loadedCount++;
+            
+            if (loadedCount === totalCards) {
+              console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
+              resolve();
+            }
+            return;
+          }
+          
+          const img = new Image();
+          
+          img.onload = () => {
+            workingCards[index].imageLoaded = true;
+            loadedCount++;
+            console.log(`Imagen cargada (${loadedCount}/${totalCards}): ${card.imagem}`);
+            
+            if (loadedCount === totalCards) {
+              console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
+              resolve();
+            }
+          };
+          
+          img.onerror = (e) => {
+            workingCards[index].imageLoaded = false;
+            workingCards[index].imageError = 'Error al cargar la imagen';
+            loadedCount++;
+            console.error(`Error al cargar imagen (${loadedCount}/${totalCards}): ${card.imagem}`, e);
+            
+            if (loadedCount === totalCards) {
+              console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
+              resolve();
+            }
+          };
+          
+          // Usar la URL directamente si es absoluta o agregarle el origen si es relativa
+          if (card.imagem.startsWith('/')) {
+            img.src = window.location.origin + card.imagem;
+            console.log(`Cargando imagen relativa: ${img.src}`);
+          } else {
+            img.src = card.imagem;
+            console.log(`Cargando imagen absoluta: ${img.src}`);
+          }
+        });
+        
+        // Resolución de seguridad después de 8 segundos
+        setTimeout(() => {
+          if (loadedCount < totalCards) {
+            console.warn(`Tiempo de carga excedido, continuando con ${loadedCount}/${totalCards} cartas verificadas`);
+            resolve();
+          }
+        }, 8000);
+      });
+    }
+    
+    // Función para mostrar cartas aleatorias con imágenes válidas
+    async function generateRandomCards() {
+      if (!cardsContainer) return;
       
       // Obtener y validar el número de cartas
       let cardCount = parseInt(cardCountInput?.value || '3');
       cardCount = Math.min(13, Math.max(1, isNaN(cardCount) ? 3 : cardCount));
       if (cardCountInput) cardCountInput.value = cardCount.toString();
       
-      // Crear una copia para no modificar el original
-      const cardsCopy = [...allCards];
+      // Mostrar indicador de carga
+      if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+      
+      // Asegurarnos de que las imágenes están precargadas
+      if (!workingCards.some(card => card.imageLoaded !== undefined)) {
+        console.log('Iniciando precarga de imágenes...');
+        await preloadImages();
+        // Mostrar información de depuración
+        showDebugInfo(true);
+      }
+      
+      // Si todas las imágenes fallan, intentar con todas las cartas sin validación
+      let validCards = workingCards.filter(card => card.imageLoaded === true);
+      
+      if (validCards.length === 0) {
+        console.warn('No se encontraron imágenes válidas. Intentando mostrar todas las cartas sin validación.');
+        validCards = workingCards.map(card => ({ ...card, imageLoaded: true }));
+      }
+      
+      // Verificar si hay suficientes cartas válidas
+      if (validCards.length < cardCount) {
+        alert(`Solo hay ${validCards.length} cartas con imágenes válidas disponibles.`);
+        cardCount = validCards.length;
+      }
+      
+      // Si no hay cartas válidas, mostrar mensaje
+      if (validCards.length === 0) {
+        cardsContainer.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <p class="text-xl text-red-500">No hay cartas con imágenes disponibles</p>
+            <p class="mt-4 text-gray-600">Verifica que las imágenes están correctamente configuradas en la base de datos.</p>
+          </div>
+        `;
+        if (loadingIndicator) loadingIndicator.classList.add('hidden');
+        return;
+      }
+      
+      // Limpiar contenedor y ocultar mensaje inicial
+      cardsContainer.innerHTML = '';
+      if (initialMessage) initialMessage.style.display = 'none';
       
       // Mezclar array y tomar las primeras N cartas
-      const shuffled = cardsCopy.sort(() => 0.5 - Math.random());
+      const shuffled = [...validCards].sort(() => 0.5 - Math.random());
       const selectedCards = shuffled.slice(0, cardCount);
-      
-      // Crear un contador para saber cuándo se han cargado todas las imágenes
-      let loadedImages = 0;
-      const totalImages = selectedCards.length;
       
       // Mostrar cartas seleccionadas
       selectedCards.forEach(card => {
         const cardElement = document.createElement('div');
         cardElement.className = 'flex flex-col';
         
-        // Generar un identificador único para esta instancia de carta
-        const uniqueId = `card-${card.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        // Determinar la URL correcta de la imagen
+        let imageUrl = card.imagem;
+        if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
+          // Es una ruta relativa, añadir el origen
+          imageUrl = window.location.origin + imageUrl;
+        }
         
-        // Crear el elemento de imagen con un ID único
-        const imgPath = card.imagem || '/images/placeholder-card.jpg';
-        
-        // Construir el HTML con el placeholder ya incluido
         cardElement.innerHTML = `
           <a href="/cards/${card.id}" class="block transition-transform duration-300 hover:-translate-y-2 hover:shadow-lg">
             <figure class="flex flex-col h-full">
-              <div id="${uniqueId}" class="relative w-full aspect-[2/3] rounded-lg shadow-md bg-gray-100 flex items-center justify-center">
-                <img
-                  src="${imgPath}"
-                  alt="Carta ${card.nombre}"
-                  width="200"
-                  height="300"
-                  loading="lazy"
-                  class="rounded-lg shadow-md w-full h-full object-cover absolute top-0 left-0"
-                  onerror="this.style.display='none'; document.getElementById('${uniqueId}-placeholder').style.display='flex';"
-                  onload="this.style.display='block'; document.getElementById('${uniqueId}-placeholder').style.display='none';"
-                />
-                <div id="${uniqueId}-placeholder" class="w-full h-full flex items-center justify-center absolute top-0 left-0" style="display: none;">
-                  <span class="text-gray-500 text-sm">Imagen no disponible</span>
-                </div>
-              </div>
+              <img
+                src="${imageUrl}"
+                alt="Carta ${card.nombre}"
+                width="200"
+                height="300"
+                loading="lazy"
+                class="rounded-lg shadow-md w-full aspect-[2/3] object-cover"
+                onerror="this.onerror=null; this.src='/images/placeholder-card.jpg';"
+              />
               <figcaption class="mt-3 text-center font-medium text-gray-800">
                 ${card.nombre} <span class="text-gray-500">(${card.numero})</span>
               </figcaption>
@@ -137,12 +314,26 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           </a>
         `;
         
-        // Añadir la carta al contenedor
-        if (cardsContainer) {
-          cardsContainer.appendChild(cardElement);
-        }
+        cardsContainer.appendChild(cardElement);
       });
+      
+      // Ocultar indicador de carga
+      if (loadingIndicator) loadingIndicator.classList.add('hidden');
+    }
+    
+    // Mostrar botón para depuración
+    const debugButton = document.createElement('button');
+    debugButton.textContent = 'Mostrar información de depuración';
+    debugButton.className = 'mt-4 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors text-xs';
+    debugButton.addEventListener('click', () => {
+      showDebugInfo(true);
     });
+    
+    // Asociar evento al botón principal
+    generateBtn?.addEventListener('click', generateRandomCards);
+    
+    // Agregar botón de depuración después del botón principal
+    generateBtn?.parentNode?.appendChild(debugButton);
   });
 </script>
 
@@ -159,5 +350,13 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
   
   input[type="number"] {
     -moz-appearance: textfield;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
 </style>
