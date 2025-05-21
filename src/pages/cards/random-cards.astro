@@ -89,37 +89,58 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       cardCount = Math.min(13, Math.max(1, isNaN(cardCount) ? 3 : cardCount));
       if (cardCountInput) cardCountInput.value = cardCount.toString();
       
+      // Crear una copia para no modificar el original
+      const cardsCopy = [...allCards];
+      
       // Mezclar array y tomar las primeras N cartas
-      const shuffled = [...allCards].sort(() => 0.5 - Math.random());
+      const shuffled = cardsCopy.sort(() => 0.5 - Math.random());
       const selectedCards = shuffled.slice(0, cardCount);
+      
+      // Crear un contador para saber cuándo se han cargado todas las imágenes
+      let loadedImages = 0;
+      const totalImages = selectedCards.length;
       
       // Mostrar cartas seleccionadas
       selectedCards.forEach(card => {
         const cardElement = document.createElement('div');
         cardElement.className = 'flex flex-col';
         
-        // Verificar si la imagen existe
+        // Generar un identificador único para esta instancia de carta
+        const uniqueId = `card-${card.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        
+        // Crear el elemento de imagen con un ID único
         const imgPath = card.imagem || '/images/placeholder-card.jpg';
         
+        // Construir el HTML con el placeholder ya incluido
         cardElement.innerHTML = `
           <a href="/cards/${card.id}" class="block transition-transform duration-300 hover:-translate-y-2 hover:shadow-lg">
             <figure class="flex flex-col h-full">
-              <img
-                src="${imgPath}"
-                alt="Carta ${card.nombre}"
-                width="200"
-                height="300"
-                loading="lazy"
-                class="rounded-lg shadow-md w-full aspect-[2/3] object-cover bg-gray-100"
-                onerror="this.src='/images/placeholder-card.jpg';this.classList.add('bg-gray-100')"
-              />
+              <div id="${uniqueId}" class="relative w-full aspect-[2/3] rounded-lg shadow-md bg-gray-100 flex items-center justify-center">
+                <img
+                  src="${imgPath}"
+                  alt="Carta ${card.nombre}"
+                  width="200"
+                  height="300"
+                  loading="lazy"
+                  class="rounded-lg shadow-md w-full h-full object-cover absolute top-0 left-0"
+                  onerror="this.style.display='none'; document.getElementById('${uniqueId}-placeholder').style.display='flex';"
+                  onload="this.style.display='block'; document.getElementById('${uniqueId}-placeholder').style.display='none';"
+                />
+                <div id="${uniqueId}-placeholder" class="w-full h-full flex items-center justify-center absolute top-0 left-0" style="display: none;">
+                  <span class="text-gray-500 text-sm">Imagen no disponible</span>
+                </div>
+              </div>
               <figcaption class="mt-3 text-center font-medium text-gray-800">
                 ${card.nombre} <span class="text-gray-500">(${card.numero})</span>
               </figcaption>
             </figure>
           </a>
         `;
-        cardsContainer?.appendChild(cardElement);
+        
+        // Añadir la carta al contenedor
+        if (cardsContainer) {
+          cardsContainer.appendChild(cardElement);
+        }
       });
     });
   });
@@ -128,9 +149,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 <style>
   .bg-gray-100 {
     background-color: #f3f4f6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   
   input[type="number"]::-webkit-inner-spin-button,
