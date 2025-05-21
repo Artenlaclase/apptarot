@@ -1,0 +1,145 @@
+---
+// src/pages/random-cards.astro
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import Layout from '../../layouts/Layout.astro';
+
+interface Card {
+  id: string;
+  nombre: string;
+  numero: number;
+  imagem: string;
+}
+
+const querySnapshot = await getDocs(collection(db, 'cards'));
+const allCards = querySnapshot.docs.map(doc => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    nombre: data.nombre || 'Sin nombre',
+    numero: data.numero || 0,
+    imagem: data.imagem || '/images/placeholder-card.jpg'
+  };
+});
+
+const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
+const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <main class="container mx-auto px-4 py-8 max-w-7xl">
+    <header class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-purple-900 mb-4">Tirada de Cartas Aleatorias</h1>
+      <p class="text-xl text-purple-700">Selecciona cuántas cartas quieres ver (máximo 13)</p>
+    </header>
+
+    <section class="bg-white rounded-xl shadow-md p-6 mb-12 max-w-2xl mx-auto">
+      <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+        <div class="flex-1 w-full sm:w-auto">
+          <label for="cardCount" class="block text-sm font-medium text-gray-700 mb-1">
+            Número de cartas:
+          </label>
+          <input
+            type="number"
+            id="cardCount"
+            name="cardCount"
+            min="1"
+            max="13"
+            value="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+          />
+        </div>
+        <button
+          type="button"
+          id="generateBtn"
+          class="mt-2 sm:mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+        >
+          Generar Cartas
+        </button>
+      </div>
+    </section>
+
+    <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
+      <div id="initialMessage" class="col-span-full text-center py-12">
+        <p class="text-xl text-gray-500">Presiona el botón "Generar Cartas" para comenzar</p>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script define:vars={{ allCards }}>
+  // Asegurarnos de que el DOM está completamente cargado
+  document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del DOM
+    const generateBtn = document.getElementById('generateBtn');
+    const cardCountInput = document.getElementById('cardCount');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const initialMessage = document.getElementById('initialMessage');
+    
+    // Datos de las cartas ya están disponibles como 'allCards'
+    
+    // Evento para generar cartas
+    generateBtn?.addEventListener('click', () => {
+      // Limpiar contenedor y ocultar mensaje inicial
+      if (cardsContainer) cardsContainer.innerHTML = '';
+      if (initialMessage) initialMessage.style.display = 'none';
+      
+      // Obtener y validar el número de cartas
+      let cardCount = parseInt(cardCountInput?.value || '3');
+      cardCount = Math.min(13, Math.max(1, isNaN(cardCount) ? 3 : cardCount));
+      if (cardCountInput) cardCountInput.value = cardCount.toString();
+      
+      // Mezclar array y tomar las primeras N cartas
+      const shuffled = [...allCards].sort(() => 0.5 - Math.random());
+      const selectedCards = shuffled.slice(0, cardCount);
+      
+      // Mostrar cartas seleccionadas
+      selectedCards.forEach(card => {
+        const cardElement = document.createElement('div');
+        cardElement.className = 'flex flex-col';
+        
+        // Verificar si la imagen existe
+        const imgPath = card.imagem || '/images/placeholder-card.jpg';
+        
+        cardElement.innerHTML = `
+          <a href="/cards/${card.id}" class="block transition-transform duration-300 hover:-translate-y-2 hover:shadow-lg">
+            <figure class="flex flex-col h-full">
+              <img
+                src="${imgPath}"
+                alt="Carta ${card.nombre}"
+                width="200"
+                height="300"
+                loading="lazy"
+                class="rounded-lg shadow-md w-full aspect-[2/3] object-cover bg-gray-100"
+                onerror="this.src='/images/placeholder-card.jpg';this.classList.add('bg-gray-100')"
+              />
+              <figcaption class="mt-3 text-center font-medium text-gray-800">
+                ${card.nombre} <span class="text-gray-500">(${card.numero})</span>
+              </figcaption>
+            </figure>
+          </a>
+        `;
+        cardsContainer?.appendChild(cardElement);
+      });
+    });
+  });
+</script>
+
+<style>
+  .bg-gray-100 {
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+</style>
