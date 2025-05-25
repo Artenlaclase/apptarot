@@ -10,7 +10,7 @@ interface Card {
   numero: number;
   imagem: string;
   imageLoaded?: boolean;
-  imageError?: string; // Nuevo campo para registrar errores de carga
+  imageError?: string;
 }
 
 const querySnapshot = await getDocs(collection(db, 'cards'));
@@ -64,13 +64,11 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       </div>
     </section>
 
-    <!-- Sección de estado para depuración -->
     <section id="debugStatus" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8 max-w-2xl mx-auto hidden">
       <h3 class="font-medium text-yellow-800 mb-2">Estado de carga de imágenes:</h3>
       <div id="debugInfo" class="text-sm text-yellow-700"></div>
     </section>
 
-    <!-- Grid optimizado para cartas completas -->
     <section id="cardsContainer" class="cartas-grid-random">
       <div id="initialMessage" class="col-span-full text-center py-12">
         <p class="text-xl text-gray-500">Presiona el botón "Generar Cartas" para comenzar</p>
@@ -85,313 +83,197 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 </Layout>
 
 <script define:vars={{ allCards }}>
-  // Asegurarnos de que el DOM está completamente cargado
   document.addEventListener('DOMContentLoaded', () => {
+    // Configuración esencial
+    const DEFAULT_CARD_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg'; // Imagen externa de respaldo
+    const CLOUDINARY_BASE = 'https://res.cloudinary.com/die8wz4ag/image/upload';
+    
+    // URLs absolutas para las cartas problemáticas
+    const SPECIAL_CARDS = {
+      'El Loco': `${CLOUDINARY_BASE}/w_300,f_auto,q_auto/v1747796437/a22_mbkkkq.jpg`,
+      'El Mago': `${CLOUDINARY_BASE}/w_300,f_auto,q_auto/v1747796434/a01_rxlbr2.jpg`
+    };
+
     // Elementos del DOM
-    const generateBtn = document.getElementById('generateBtn');
-    const cardCountInput = document.getElementById('cardCount');
-    const cardsContainer = document.getElementById('cardsContainer');
-    const initialMessage = document.getElementById('initialMessage');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const debugStatus = document.getElementById('debugStatus');
-    const debugInfo = document.getElementById('debugInfo');
-    
-    // Crear una copia profunda de las cartas para trabajar
+    const elements = {
+      generateBtn: document.getElementById('generateBtn'),
+      cardCountInput: document.getElementById('cardCount'),
+      cardsContainer: document.getElementById('cardsContainer'),
+      initialMessage: document.getElementById('initialMessage'),
+      loadingIndicator: document.getElementById('loadingIndicator'),
+      debugStatus: document.getElementById('debugStatus'),
+      debugInfo: document.getElementById('debugInfo')
+    };
+
+    // Estado de la aplicación
     let workingCards = JSON.parse(JSON.stringify(allCards));
-    
-    // Función para mostrar información de depuración
-    function showDebugInfo(show = true) {
-      if (!debugStatus || !debugInfo) return;
-      
-      if (show) {
-        debugStatus.classList.remove('hidden');
-        
-        // Contar cartas válidas e inválidas
-        const validCount = workingCards.filter(c => c.imageLoaded === true).length;
-        const invalidCount = workingCards.filter(c => c.imageLoaded === false).length;
-        const totalCount = workingCards.length;
-        
-        let infoHtml = `
-          <p>Total de cartas: ${totalCount}</p>
-          <p>Cartas con imágenes válidas: ${validCount}</p>
-          <p>Cartas con imágenes inválidas: ${invalidCount}</p>
-        `;
-        
-        // Mostrar los primeros 5 ejemplos de errores si hay alguno
-        const cardsWithErrors = workingCards.filter(c => c.imageError);
-        if (cardsWithErrors.length > 0) {
-          infoHtml += '<p class="mt-2 font-medium">Ejemplos de errores:</p><ul class="list-disc pl-5">';
-          cardsWithErrors.slice(0, 5).forEach(card => {
-            infoHtml += `<li>${card.nombre} (${card.id}): ${card.imagem} - ${card.imageError}</li>`;
-          });
-          infoHtml += '</ul>';
-        }
-        
-        // Mostrar ejemplos de URLs de imágenes
-        infoHtml += '<p class="mt-2 font-medium">Ejemplos de URLs de imágenes:</p><ul class="list-disc pl-5">';
-        workingCards.slice(0, 5).forEach(card => {
-          infoHtml += `<li>${card.nombre}: ${card.imagem}</li>`;
-        });
-        infoHtml += '</ul>';
-        
-        debugInfo.innerHTML = infoHtml;
-      } else {
-        debugStatus.classList.add('hidden');
+    let fallbackUsed = false;
+
+    // Función para garantizar una URL de imagen válida
+    function ensureValidImageUrl(url, cardName) {
+      // 1. Verificar si es una carta especial
+      if (SPECIAL_CARDS[cardName]) {
+        return SPECIAL_CARDS[cardName];
       }
-    }
-    
-    // Función mejorada para procesar URLs de imágenes
-    function processImageUrl(url) {
-      // 1. Verificación básica
-      if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
       
-      // 2. Limpieza de URL (elimina espacios en blanco y caracteres problemáticos)
-      let cleanedUrl = url.trim();
+      // 2. Procesar URL según su tipo
+      if (!url || typeof url !== 'string') return DEFAULT_CARD_IMAGE;
       
-      // 3. Codificar caracteres especiales en la URL (SOLUCIÓN PARA EL MAGO Y EL LOCO)
-      if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
-        // Para Firebase Storage, codificar solo la parte del path después del último '/'
-        const lastSlashIndex = cleanedUrl.lastIndexOf('/');
-        if (lastSlashIndex !== -1) {
-          const basePart = cleanedUrl.substring(0, lastSlashIndex + 1);
-          const filePart = cleanedUrl.substring(lastSlashIndex + 1);
-          
-          // Separar el nombre del archivo de los parámetros de query
-          const queryIndex = filePart.indexOf('?');
-          let fileName, queryParams = '';
-          
-          if (queryIndex !== -1) {
-            fileName = filePart.substring(0, queryIndex);
-            queryParams = filePart.substring(queryIndex);
-          } else {
-            fileName = filePart;
-          }
-          
-          // Codificar el nombre del archivo manteniendo algunos caracteres seguros
-          const encodedFileName = encodeURIComponent(fileName)
-            .replace(/%2F/g, '/') // Mantener las barras
-            .replace(/%2E/g, '.') // Mantener los puntos
-            .replace(/%2D/g, '-') // Mantener los guiones
-            .replace(/%5F/g, '_'); // Mantener los guiones bajos
-          
-          cleanedUrl = basePart + encodedFileName + queryParams;
-        }
-        
-        // Asegura el parámetro alt=media
-        if (!cleanedUrl.includes('alt=media')) {
-          cleanedUrl += cleanedUrl.includes('?') ? '&alt=media' : '?alt=media';
-        }
-        
+      const cleanedUrl = url.trim();
+      
+      // URLs absolutas
+      if (cleanedUrl.startsWith('http')) {
         return cleanedUrl;
       }
       
-      // 4. Manejo de Cloudinary (si aplica)
-      if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
-        return cleanedUrl.replace('upload/', 'upload/w_300,f_auto,q_auto/');
+      // URLs relativas (asegurar que empiezan con /)
+      if (cleanedUrl.startsWith('/')) {
+        return cleanedUrl;
       }
       
-      return cleanedUrl;
+      return DEFAULT_CARD_IMAGE;
     }
-    
-    // Función para validar si una URL es correcta
-    function isValidImageUrl(url) {
-      // Si es una URL relativa que comienza con "/", asumir que es válida
-      if (url && url.startsWith('/')) {
-        return true;
-      }
-      
-      // Verificar que sea una URL válida
-      try {
-        const urlObj = new URL(url);
-        return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-      } catch (e) {
-        return false;
-      }
-    }
-    
-    // Precargar todas las imágenes para saber cuáles son válidas
-    function preloadImages() {
+
+    // Precargar imágenes con manejo robusto de errores
+    async function preloadImages() {
       return new Promise(resolve => {
         let loadedCount = 0;
         const totalCards = workingCards.length;
         
-        console.log(`Iniciando precarga de ${totalCards} imágenes...`);
-        
-        // Si no hay cartas para precargar, resolvemos inmediatamente
-        if (totalCards === 0) {
-          console.warn('No hay cartas para precargar');
-          resolve();
-          return;
-        }
-        
         workingCards.forEach((card, index) => {
-          // Validar primero si la URL parece correcta
-          if (!card.imagem || !isValidImageUrl(card.imagem)) {
-            workingCards[index].imageLoaded = false;
-            workingCards[index].imageError = 'URL inválida';
-            loadedCount++;
-            console.error(`URL inválida (${loadedCount}/${totalCards}): ${card.imagem}`);
+          const imgUrl = ensureValidImageUrl(card.imagem, card.nombre);
+          workingCards[index].imagem = imgUrl;
+          
+          // Solo precargamos las especiales para no sobrecargar
+          if (SPECIAL_CARDS[card.nombre]) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
             
-            if (loadedCount === totalCards) {
-              console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
-              resolve();
-            }
-            return;
-          }
-          
-          const img = new Image();
-          
-          // Configurar CORS si es necesario
-          img.crossOrigin = 'anonymous';
-          
-          img.onload = () => {
+            img.onload = () => {
+              workingCards[index].imageLoaded = true;
+              loadedCount++;
+              if (loadedCount === totalCards) resolve();
+            };
+            
+            img.onerror = () => {
+              workingCards[index].imageLoaded = false;
+              workingCards[index].imageError = `Error precargando: ${imgUrl}`;
+              workingCards[index].imagem = DEFAULT_CARD_IMAGE;
+              loadedCount++;
+              if (loadedCount === totalCards) resolve();
+            };
+            
+            img.src = imgUrl;
+          } else {
+            // Para otras cartas, asumimos que están bien
             workingCards[index].imageLoaded = true;
             loadedCount++;
-            console.log(`Imagen cargada (${loadedCount}/${totalCards}): ${card.nombre} - ${card.imagem}`);
-            
-            if (loadedCount === totalCards) {
-              console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
-              resolve();
-            }
-          };
-          
-          img.onerror = (e) => {
-            workingCards[index].imageLoaded = false;
-            workingCards[index].imageError = 'Error al cargar la imagen';
-            loadedCount++;
-            console.error(`Error al cargar imagen (${loadedCount}/${totalCards}): ${card.nombre} - ${card.imagem}`, e);
-            
-            if (loadedCount === totalCards) {
-              console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
-              resolve();
-            }
-          };
-          
-          // Usar la URL procesada
-          img.src = card.imagem;
-        });
-        
-        // Resolución de seguridad después de 10 segundos
-        setTimeout(() => {
-          if (loadedCount < totalCards) {
-            console.warn(`Tiempo de carga excedido, continuando con ${loadedCount}/${totalCards} cartas verificadas`);
-            resolve();
+            if (loadedCount === totalCards) resolve();
           }
-        }, 10000);
+        });
       });
     }
-    
-    // Función para mostrar cartas aleatorias con imágenes válidas
+
+    // Generar cartas aleatorias
     async function generateRandomCards() {
-      if (!cardsContainer) return;
-      
-      // Obtener y validar el número de cartas
-      let cardCount = parseInt(cardCountInput?.value || '3');
-      cardCount = Math.min(13, Math.max(1, isNaN(cardCount) ? 3 : cardCount));
-      if (cardCountInput) cardCountInput.value = cardCount.toString();
-      
-      // Mostrar indicador de carga
-      if (loadingIndicator) loadingIndicator.classList.remove('hidden');
-      
-      // Asegurarnos de que las imágenes están precargadas
-      if (!workingCards.some(card => card.imageLoaded !== undefined)) {
-        console.log('Iniciando precarga de imágenes...');
+      try {
+        // Validar número de cartas
+        const cardCount = Math.min(13, Math.max(1, 
+          parseInt(elements.cardCountInput?.value || '3') || 3));
         
-        // Procesamos las URLs antes de precargar
-        workingCards = workingCards.map(card => ({
-          ...card,
-          imagem: processImageUrl(card.imagem)
-        }));
-        
+        if (elements.cardCountInput) {
+          elements.cardCountInput.value = cardCount;
+        }
+
+        // Mostrar carga
+        if (elements.loadingIndicator) {
+          elements.loadingIndicator.classList.remove('hidden');
+        }
+
+        // Precargar imágenes
         await preloadImages();
-        // Mostrar información de depuración
-        showDebugInfo(true);
+
+        // Ocultar mensaje inicial
+        if (elements.initialMessage) {
+          elements.initialMessage.style.display = 'none';
+        }
+
+        // Limpiar contenedor
+        if (elements.cardsContainer) {
+          elements.cardsContainer.innerHTML = '';
+        }
+
+        // Seleccionar cartas aleatorias
+        const shuffled = [...workingCards].sort(() => 0.5 - Math.random());
+        const selectedCards = shuffled.slice(0, cardCount);
+
+        // Mostrar cartas
+        selectedCards.forEach(card => {
+          const cardElement = document.createElement('div');
+          cardElement.className = 'carta-random-item';
+          
+          const finalImageUrl = card.imageLoaded ? card.imagem : DEFAULT_CARD_IMAGE;
+          
+          cardElement.innerHTML = `
+            <a href="/cards/${card.id}" class="carta-random-link">
+              <article class="carta-random-container">
+                <div class="carta-random-image-wrapper">
+                  <img
+                    src="${finalImageUrl}"
+                    alt="Carta ${card.nombre}"
+                    loading="lazy"
+                    class="carta-random-image"
+                    onerror="
+                      this.onerror=null; 
+                      this.src='${DEFAULT_CARD_IMAGE}';
+                      this.classList.add('error-image');
+                    "
+                  />
+                </div>
+                <div class="carta-random-info">
+                  <h3 class="carta-random-nombre">${card.nombre}</h3>
+                  <span class="carta-random-numero">(${card.numero})</span>
+                </div>
+              </article>
+            </a>
+          `;
+          
+          if (elements.cardsContainer) {
+            elements.cardsContainer.appendChild(cardElement);
+          }
+        });
+      } catch (error) {
+        console.error('Error generando cartas:', error);
+        if (elements.cardsContainer) {
+          elements.cardsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+              <p class="text-xl text-red-500">Error al mostrar las cartas</p>
+              <p class="text-gray-600 mt-2">Por favor intenta nuevamente</p>
+            </div>
+          `;
+        }
+      } finally {
+        if (elements.loadingIndicator) {
+          elements.loadingIndicator.classList.add('hidden');
+        }
       }
-      
-      // Obtener cartas válidas
-      let validCards = workingCards.filter(card => card.imageLoaded === true);
-      
-      if (validCards.length === 0) {
-        console.warn('No se encontraron imágenes válidas. Intentando mostrar todas las cartas sin validación.');
-        validCards = workingCards.map(card => ({ ...card, imageLoaded: true }));
-      }
-      
-      // Verificar si hay suficientes cartas válidas
-      if (validCards.length < cardCount) {
-        alert(`Solo hay ${validCards.length} cartas con imágenes válidas disponibles.`);
-        cardCount = validCards.length;
-      }
-      
-      // Si no hay cartas válidas, mostrar mensaje
-      if (validCards.length === 0) {
-        cardsContainer.innerHTML = `
-          <div class="col-span-full text-center py-12">
-            <p class="text-xl text-red-500">No hay cartas con imágenes disponibles</p>
-            <p class="mt-4 text-gray-600">Verifica que las imágenes están correctamente configuradas en la base de datos.</p>
-          </div>
-        `;
-        if (loadingIndicator) loadingIndicator.classList.add('hidden');
-        return;
-      }
-      
-      // Limpiar contenedor y ocultar mensaje inicial
-      cardsContainer.innerHTML = '';
-      if (initialMessage) initialMessage.style.display = 'none';
-      
-      // Mezclar array y tomar las primeras N cartas
-      const shuffled = [...validCards].sort(() => 0.5 - Math.random());
-      const selectedCards = shuffled.slice(0, cardCount);
-      
-      // Mostrar cartas seleccionadas
-      selectedCards.forEach(card => {
-        const cardElement = document.createElement('div');
-        cardElement.className = 'carta-random-item';
-        
-        cardElement.innerHTML = `
-          <a href="/cards/${card.id}" class="carta-random-link">
-            <article class="carta-random-container">
-              <div class="carta-random-image-wrapper">
-                <img
-                  src="${card.imagem}"
-                  alt="Carta ${card.nombre}"
-                  loading="lazy"
-                  class="carta-random-image"
-                  onerror="this.onerror=null; this.src='/placeholder-card.jpg'; this.classList.add('error-image')"
-                />
-              </div>
-              <div class="carta-random-info">
-                <h3 class="carta-random-nombre">${card.nombre}</h3>
-                <span class="carta-random-numero">(${card.numero})</span>
-              </div>
-            </article>
-          </a>
-        `;
-        
-        cardsContainer.appendChild(cardElement);
-      });
-      
-      // Ocultar indicador de carga
-      if (loadingIndicator) loadingIndicator.classList.add('hidden');
     }
-    
-    // Mostrar botón para depuración
-    const debugButton = document.createElement('button');
-    debugButton.textContent = 'Mostrar información de depuración';
-    debugButton.className = 'mt-4 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors text-xs';
-    debugButton.addEventListener('click', () => {
-      showDebugInfo(true);
-    });
-    
-    // Asociar evento al botón principal
-    generateBtn?.addEventListener('click', generateRandomCards);
-    
-    // Agregar botón de depuración después del botón principal
-    generateBtn?.parentNode?.appendChild(debugButton);
+
+    // Event Listeners
+    if (elements.generateBtn) {
+      elements.generateBtn.addEventListener('click', generateRandomCards);
+    }
+
+    // Precarga inicial
+    setTimeout(() => {
+      if (!workingCards.some(card => card.imageLoaded !== undefined)) {
+        preloadImages();
+      }
+    }, 500);
   });
 </script>
 
 <style>
-  /* Grid optimizado para cartas aleatorias */
   .cartas-grid-random {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -400,7 +282,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     justify-items: center;
   }
 
-  /* Elementos de carta aleatoria */
   .carta-random-item {
     width: 100%;
     max-width: 250px;
@@ -417,7 +298,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     transform: translateY(-8px);
   }
 
-  /* Contenedor de cada carta */
   .carta-random-container {
     display: flex;
     flex-direction: column;
@@ -433,7 +313,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
   }
 
-  /* Contenedor de imagen optimizado */
   .carta-random-image-wrapper {
     width: 100%;
     position: relative;
@@ -445,12 +324,11 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     overflow: hidden;
   }
 
-  /* Imagen de carta - SE VE COMPLETA SIN CORTES */
   .carta-random-image {
     width: 100%;
     height: auto;
     max-height: 400px;
-    object-fit: contain; /* CLAVE: contain en lugar de cover */
+    object-fit: contain;
     object-position: center;
     transition: transform 0.3s ease;
   }
@@ -459,7 +337,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     transform: scale(1.02);
   }
 
-  /* Información de la carta */
   .carta-random-info {
     padding: 1rem;
     text-align: center;
@@ -480,7 +357,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     font-weight: 400;
   }
 
-  /* Imagen de error */
   .error-image {
     background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
     display: flex;
@@ -488,26 +364,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     justify-content: center;
   }
 
-  /* Estilos generales */
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
-
-  /* Responsive Design */
   @media (max-width: 768px) {
     .cartas-grid-random {
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -547,7 +403,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     }
   }
 
-  /* Para pantallas muy pequeñas - una sola columna */
   @media (max-width: 320px) {
     .cartas-grid-random {
       grid-template-columns: 1fr;
