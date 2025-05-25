@@ -70,7 +70,8 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       <div id="debugInfo" class="text-sm text-yellow-700"></div>
     </section>
 
-    <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
+    <!-- Grid optimizado para cartas completas -->
+    <section id="cardsContainer" class="cartas-grid-random">
       <div id="initialMessage" class="col-span-full text-center py-12">
         <p class="text-xl text-gray-500">Presiona el botón "Generar Cartas" para comenzar</p>
       </div>
@@ -139,20 +140,49 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       }
     }
     
-    // Función para procesar URLs de imágenes (idéntica a la de index.astro)
+    // Función mejorada para procesar URLs de imágenes
     function processImageUrl(url) {
       // 1. Verificación básica
       if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
       
-      // 2. Limpieza de URL (elimina espacios en blanco)
-      const cleanedUrl = url.trim();
+      // 2. Limpieza de URL (elimina espacios en blanco y caracteres problemáticos)
+      let cleanedUrl = url.trim();
       
-      // 3. Manejo de Firebase Storage
+      // 3. Codificar caracteres especiales en la URL (SOLUCIÓN PARA EL MAGO Y EL LOCO)
       if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
+        // Para Firebase Storage, codificar solo la parte del path después del último '/'
+        const lastSlashIndex = cleanedUrl.lastIndexOf('/');
+        if (lastSlashIndex !== -1) {
+          const basePart = cleanedUrl.substring(0, lastSlashIndex + 1);
+          const filePart = cleanedUrl.substring(lastSlashIndex + 1);
+          
+          // Separar el nombre del archivo de los parámetros de query
+          const queryIndex = filePart.indexOf('?');
+          let fileName, queryParams = '';
+          
+          if (queryIndex !== -1) {
+            fileName = filePart.substring(0, queryIndex);
+            queryParams = filePart.substring(queryIndex);
+          } else {
+            fileName = filePart;
+          }
+          
+          // Codificar el nombre del archivo manteniendo algunos caracteres seguros
+          const encodedFileName = encodeURIComponent(fileName)
+            .replace(/%2F/g, '/') // Mantener las barras
+            .replace(/%2E/g, '.') // Mantener los puntos
+            .replace(/%2D/g, '-') // Mantener los guiones
+            .replace(/%5F/g, '_'); // Mantener los guiones bajos
+          
+          cleanedUrl = basePart + encodedFileName + queryParams;
+        }
+        
         // Asegura el parámetro alt=media
-        return cleanedUrl.includes('alt=media') 
-          ? cleanedUrl 
-          : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
+        if (!cleanedUrl.includes('alt=media')) {
+          cleanedUrl += cleanedUrl.includes('?') ? '&alt=media' : '?alt=media';
+        }
+        
+        return cleanedUrl;
       }
       
       // 4. Manejo de Cloudinary (si aplica)
@@ -170,10 +200,10 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         return true;
       }
       
-      // Intentar crear una URL válida
+      // Verificar que sea una URL válida
       try {
-        new URL(url);
-        return true;
+        const urlObj = new URL(url);
+        return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
       } catch (e) {
         return false;
       }
@@ -211,10 +241,13 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           
           const img = new Image();
           
+          // Configurar CORS si es necesario
+          img.crossOrigin = 'anonymous';
+          
           img.onload = () => {
             workingCards[index].imageLoaded = true;
             loadedCount++;
-            console.log(`Imagen cargada (${loadedCount}/${totalCards}): ${card.imagem}`);
+            console.log(`Imagen cargada (${loadedCount}/${totalCards}): ${card.nombre} - ${card.imagem}`);
             
             if (loadedCount === totalCards) {
               console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
@@ -226,7 +259,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             workingCards[index].imageLoaded = false;
             workingCards[index].imageError = 'Error al cargar la imagen';
             loadedCount++;
-            console.error(`Error al cargar imagen (${loadedCount}/${totalCards}): ${card.imagem}`, e);
+            console.error(`Error al cargar imagen (${loadedCount}/${totalCards}): ${card.nombre} - ${card.imagem}`, e);
             
             if (loadedCount === totalCards) {
               console.log(`Precarga completada. ${workingCards.filter(c => c.imageLoaded).length} imágenes válidas.`);
@@ -234,23 +267,17 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             }
           };
           
-          // Usar la URL directamente si es absoluta o agregarle el origen si es relativa
-          if (card.imagem.startsWith('/')) {
-            img.src = window.location.origin + card.imagem;
-            console.log(`Cargando imagen relativa: ${img.src}`);
-          } else {
-            img.src = card.imagem;
-            console.log(`Cargando imagen absoluta: ${img.src}`);
-          }
+          // Usar la URL procesada
+          img.src = card.imagem;
         });
         
-        // Resolución de seguridad después de 8 segundos
+        // Resolución de seguridad después de 10 segundos
         setTimeout(() => {
           if (loadedCount < totalCards) {
             console.warn(`Tiempo de carga excedido, continuando con ${loadedCount}/${totalCards} cartas verificadas`);
             resolve();
           }
-        }, 8000);
+        }, 10000);
       });
     }
     
@@ -281,7 +308,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         showDebugInfo(true);
       }
       
-      // Si todas las imágenes fallan, intentar con todas las cartas sin validación
+      // Obtener cartas válidas
       let validCards = workingCards.filter(card => card.imageLoaded === true);
       
       if (validCards.length === 0) {
@@ -318,31 +345,25 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       // Mostrar cartas seleccionadas
       selectedCards.forEach(card => {
         const cardElement = document.createElement('div');
-        cardElement.className = 'flex flex-col';
-        
-        // Determinar la URL correcta de la imagen
-        let imageUrl = card.imagem;
-        if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
-          // Es una ruta relativa, añadir el origen
-          imageUrl = window.location.origin + imageUrl;
-        }
+        cardElement.className = 'carta-random-item';
         
         cardElement.innerHTML = `
-          <a href="/cards/${card.id}" class="block transition-transform duration-300 hover:-translate-y-2 hover:shadow-lg">
-            <figure class="flex flex-col h-full">
-              <img
-                src="${imageUrl}"
-                alt="Carta ${card.nombre}"
-                width="200"
-                height="300"
-                loading="lazy"
-                class="rounded-lg shadow-md w-full aspect-[2/3] object-cover bg-gray-100"
-                onerror="this.onerror=null; this.src='/placeholder-card.jpg'; this.classList.add('bg-gray-100')"
-              />
-              <figcaption class="mt-3 text-center font-medium text-gray-800">
-                ${card.nombre} <span class="text-gray-500">(${card.numero})</span>
-              </figcaption>
-            </figure>
+          <a href="/cards/${card.id}" class="carta-random-link">
+            <article class="carta-random-container">
+              <div class="carta-random-image-wrapper">
+                <img
+                  src="${card.imagem}"
+                  alt="Carta ${card.nombre}"
+                  loading="lazy"
+                  class="carta-random-image"
+                  onerror="this.onerror=null; this.src='/placeholder-card.jpg'; this.classList.add('error-image')"
+                />
+              </div>
+              <div class="carta-random-info">
+                <h3 class="carta-random-nombre">${card.nombre}</h3>
+                <span class="carta-random-numero">(${card.numero})</span>
+              </div>
+            </article>
           </a>
         `;
         
@@ -370,10 +391,104 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 </script>
 
 <style>
-  .bg-gray-100 {
-    background-color: #f3f4f6;
+  /* Grid optimizado para cartas aleatorias */
+  .cartas-grid-random {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 2rem;
+    padding: 1rem 0;
+    justify-items: center;
   }
-  
+
+  /* Elementos de carta aleatoria */
+  .carta-random-item {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .carta-random-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+  }
+
+  .carta-random-link:hover {
+    transform: translateY(-8px);
+  }
+
+  /* Contenedor de cada carta */
+  .carta-random-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .carta-random-link:hover .carta-random-container {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Contenedor de imagen optimizado */
+  .carta-random-image-wrapper {
+    width: 100%;
+    position: relative;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    overflow: hidden;
+  }
+
+  /* Imagen de carta - SE VE COMPLETA SIN CORTES */
+  .carta-random-image {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain; /* CLAVE: contain en lugar de cover */
+    object-position: center;
+    transition: transform 0.3s ease;
+  }
+
+  .carta-random-link:hover .carta-random-image {
+    transform: scale(1.02);
+  }
+
+  /* Información de la carta */
+  .carta-random-info {
+    padding: 1rem;
+    text-align: center;
+    background: white;
+  }
+
+  .carta-random-nombre {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.3;
+  }
+
+  .carta-random-numero {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 400;
+  }
+
+  /* Imagen de error */
+  .error-image {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Estilos generales */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -390,5 +505,57 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
   
   .animate-spin {
     animation: spin 1s linear infinite;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .cartas-grid-random {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+      padding: 0.5rem;
+    }
+
+    .carta-random-image-wrapper {
+      min-height: 250px;
+    }
+
+    .carta-random-image {
+      max-height: 320px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .cartas-grid-random {
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .carta-random-image-wrapper {
+      min-height: 220px;
+    }
+
+    .carta-random-image {
+      max-height: 280px;
+    }
+
+    .carta-random-info {
+      padding: 0.75rem;
+    }
+
+    .carta-random-nombre {
+      font-size: 1rem;
+    }
+  }
+
+  /* Para pantallas muy pequeñas - una sola columna */
+  @media (max-width: 320px) {
+    .cartas-grid-random {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .carta-random-item {
+      max-width: 100%;
+    }
   }
 </style>
