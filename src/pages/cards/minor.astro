@@ -14,13 +14,18 @@ interface FirestoreCard {
   imagen?: string | null;
 }
 
-// Organizamos por palo y luego por valor
-const q = query(
-  collection(db, 'cards'),
-  where('arcano', '==', 'menor'),
-  orderBy('palo'),
-  orderBy('valor')
-);
+// Definir el orden correcto de los valores
+const valorOrder = ['as', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'sota', 'caballo', 'rey'];
+
+// Función para obtener el índice de orden del valor
+const getValorOrderIndex = (valor: string): number => {
+  const normalizedValor = valor.toLowerCase().trim();
+  const index = valorOrder.indexOf(normalizedValor);
+  return index === -1 ? 999 : index; // Si no encuentra el valor, lo pone al final
+};
+
+// Query básica sin filtros complejos mientras se construye el índice
+const q = collection(db, 'cards');
 
 const querySnapshot = await getDocs(q);
 
@@ -29,8 +34,8 @@ const processImageUrl = (url: string | undefined | null): string => {
   const cleanedUrl = url.trim();
   
   if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
-    return cleanedUrl.includes('alt=media') 
-      ? cleanedUrl 
+    return cleanedUrl.includes('alt=media')
+      ? cleanedUrl
       : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
   }
   
@@ -41,18 +46,21 @@ const processImageUrl = (url: string | undefined | null): string => {
   return cleanedUrl;
 };
 
-const cards = querySnapshot.docs.map(doc => {
-  const data = doc.data();
-  const imageUrl = data.imagem || data.imagen;
-  
-  return {
-    id: doc.id,
-    nombre: data.nombre || 'Sin nombre',
-    palo: data.palo || 'Sin palo',
-    valor: data.valor || 'N/A',
-    imagem: processImageUrl(imageUrl)
-  };
-});
+const cards = querySnapshot.docs
+  .map(doc => {
+    const data = doc.data();
+    const imageUrl = data.imagem || data.imagen;
+    
+    return {
+      id: doc.id,
+      nombre: data.nombre || 'Sin nombre',
+      palo: data.palo || 'Sin palo',
+      valor: data.valor || 'N/A',
+      arcano: data.arcano || '',
+      imagem: processImageUrl(imageUrl)
+    };
+  })
+  .filter(card => card.arcano === 'menor'); // Filtrar solo arcanos menores
 
 // Agrupar cartas por palo
 const cardsBySuit = cards.reduce((acc, card) => {
@@ -63,11 +71,98 @@ const cardsBySuit = cards.reduce((acc, card) => {
   return acc;
 }, {} as Record<string, typeof cards>);
 
+// Ordenar las cartas dentro de cada palo por valor
+Object.keys(cardsBySuit).forEach(suit => {
+  cardsBySuit[suit].sort((a, b) => {
+    const orderA = getValorOrderIndex(a.valor);
+    const orderB = getValorOrderIndex(b.valor);
+    return orderA - orderB;
+  });
+});
+
+// Ordenar los palos en un orden específico
+const suitOrder = ['bastos', 'copas', 'espadas', 'oros'];
+const orderedSuits = suitOrder.filter(suit => cardsBySuit[suit] && cardsBySuit[suit].length > 0);
+
 const pageTitle = "Arcanos Menores del Tarot de Marsella";
 const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos, Copas, Espadas y Oros";
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
+  <style>
+    .cartas-grid-minor {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .carta-link-minor {
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease;
+    }
+    
+    .carta-link-minor:hover {
+      transform: translateY(-5px);
+    }
+    
+    .carta-item-minor {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+    }
+    
+    .carta-item-minor:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    
+    .carta-image-container-minor {
+      aspect-ratio: 2/3;
+      overflow: hidden;
+    }
+    
+    .carta-image-minor {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #f8f9fa;
+    }
+    
+    .carta-info-minor {
+      padding: 0.75rem;
+      text-align: center;
+    }
+    
+    .carta-nombre-minor {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem 0;
+      color: #1f2937;
+    }
+    
+    .carta-valor-minor {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    
+    @media (max-width: 768px) {
+      .cartas-grid-minor {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .cartas-grid-minor {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+      }
+    }
+  </style>
+  
   <main class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="text-center mb-12">
       <h1 class="text-4xl font-bold text-purple-900 mb-2">{pageTitle}</h1>
@@ -75,7 +170,7 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
     </header>
 
     <!-- Sección por cada palo -->
-    {Object.entries(cardsBySuit).map(([suit, suitCards]) => (
+    {orderedSuits.map(suit => (
       <section class="mb-16">
         <h2 class="text-3xl font-semibold text-purple-800 mb-6 capitalize border-b-2 border-purple-200 pb-2">
           {suit === 'bastos' && 'Bastos - El elemento Fuego'}
@@ -86,9 +181,9 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
 
         <!-- Grid para las cartas del palo -->
         <div class="cartas-grid-minor">
-          {suitCards.map(card => (
-            <a 
-              href={`/cards/${card.id}`} 
+          {cardsBySuit[suit].map(card => (
+            <a
+              href={`/cards/${card.id}`}
               class="carta-link-minor"
             >
               <article class="carta-item-minor">
