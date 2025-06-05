@@ -4,43 +4,121 @@ import { db } from '../../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
-// Proteger la ruta (ejemplo básico, en producción usar autenticación)
-const isAdmin = true;
+// Configuración
+const isAdmin = true; // En producción, reemplazar con lógica de autenticación real
+const MAX_KEYWORDS = 10;
+const MAX_SYMBOLS = 15;
 
+// Estados del formulario
+let errorMessage = '';
+let successMessage = '';
+let formValues = {
+  nombre: '',
+  palo: '',
+  valor: '',
+  imagem: '',
+  significado_directo: '',
+  significado_invertido: '',
+  simbolos_principales: '',
+  simbolos_interpretacion: '',
+  keywords: ''
+};
+
+// Protección de ruta
 if (!isAdmin) {
   return Response.redirect('/', 302);
 }
 
-// Manejar el envío del formulario
+// Manejo del envío del formulario
 if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
+  
+  try {
+    // Recoger y validar datos básicos
+    formValues.nombre = formData.get('nombre')?.toString().trim() || '';
+    formValues.palo = formData.get('palo')?.toString() || '';
+    formValues.valor = formData.get('valor')?.toString() || '';
+    formValues.imagem = formData.get('imagem')?.toString().trim() || '';
+    
+    if (!formValues.nombre) throw new Error('El nombre es obligatorio');
+    if (!formValues.palo) throw new Error('Debes seleccionar un palo');
+    if (!formValues.valor) throw new Error('Debes seleccionar un valor');
 
-  const nombre = formData.get('nombre')?.toString().trim().toLowerCase().replace(/\s+/g, '_'); // Normalizar el ID
-
-  if (nombre) {
-    try {
-      await setDoc(doc(db, 'cards', nombre), {
-        nombre: formData.get('nombre'),
-        palo: formData.get('palo'),
-        valor: formData.get('valor'),
-        arcano: 'menor', // Fijo para arcanos menores
-        imagem: formData.get('imagem'),
-        significado: {
-          directo: formData.get('significado_directo'),
-          invertido: formData.get('significado_invertido')
-        },
-        simbolos: {
-          principales: formData.get('simbolos_principales')?.toString().split(',').map(s => s.trim()) || [],
-          interpretacion: formData.get('simbolos_interpretacion')
-        },
-        keywords: formData.get('keywords')?.toString().split(',').map(k => k.trim()) || [],
-        createdAt: new Date()
-      });
-
-      return Response.redirect('/admin/cards?success=true', 303);
-    } catch (error) {
-      console.error('Error al guardar la carta:', error);
+    // Validar URL de imagen si existe
+    if (formValues.imagem && !isValidUrl(formValues.imagem)) {
+      throw new Error('La URL de la imagen no es válida');
     }
+
+    // Procesar datos complejos
+    const simbolosPrincipales = formData.get('simbolos_principales')?.toString().split(',') || [];
+    if (simbolosPrincipales.length > MAX_SYMBOLS) {
+      throw new Error(`Máximo ${MAX_SYMBOLS} símbolos permitidos`);
+    }
+
+    const keywords = formData.get('keywords')?.toString().split(',') || [];
+    if (keywords.length > MAX_KEYWORDS) {
+      throw new Error(`Máximo ${MAX_KEYWORDS} keywords permitidas`);
+    }
+
+    // Crear ID normalizado
+    const id = formValues.nombre.toLowerCase()
+      .replace(/\s+/g, '_')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Elimina acentos
+
+    // Guardar en Firestore
+    await setDoc(doc(db, 'cards', id), {
+      nombre: formValues.nombre,
+      palo: formValues.palo,
+      valor: formValues.valor,
+      arcano: 'menor',
+      imagem: formValues.imagem || null,
+      significado: {
+        directo: formData.get('significado_directo')?.toString().trim() || '',
+        invertido: formData.get('significado_invertido')?.toString().trim() || ''
+      },
+      simbolos: {
+        principales: simbolosPrincipales.map(s => s.trim()).filter(s => s),
+        interpretacion: formData.get('simbolos_interpretacion')?.toString().trim() || ''
+      },
+      keywords: keywords.map(k => k.trim()).filter(k => k),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    successMessage = 'Arcano menor guardado exitosamente!';
+    // Resetear valores del formulario después de éxito
+    formValues = {
+      nombre: '',
+      palo: '',
+      valor: '',
+      imagem: '',
+      significado_directo: '',
+      significado_invertido: '',
+      simbolos_principales: '',
+      simbolos_interpretacion: '',
+      keywords: ''
+    };
+
+  } catch (error) {
+    console.error('Error al guardar el arcano menor:', error);
+    errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al guardar la carta';
+    
+    // Mantener los otros valores del formulario para no perderlos
+    formValues.significado_directo = formData.get('significado_directo')?.toString() || '';
+    formValues.significado_invertido = formData.get('significado_invertido')?.toString() || '';
+    formValues.simbolos_principales = formData.get('simbolos_principales')?.toString() || '';
+    formValues.simbolos_interpretacion = formData.get('simbolos_interpretacion')?.toString() || '';
+    formValues.keywords = formData.get('keywords')?.toString() || '';
+  }
+}
+
+// Función auxiliar para validar URLs
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
   }
 }
 ---
@@ -49,45 +127,76 @@ if (Astro.request.method === 'POST') {
   <main class="container mx-auto px-4 py-8 max-w-4xl">
     <h1 class="text-3xl font-bold text-purple-900 mb-6">Agregar Arcano Menor</h1>
 
-    <form method="POST" class="space-y-6">
+    <!-- Mensajes de estado -->
+    {errorMessage && (
+      <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+        <p>{errorMessage}</p>
+      </div>
+    )}
+
+    {successMessage && (
+      <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700">
+        <p>{successMessage}</p>
+        <a 
+          href="/admin/cards/new-minor" 
+          class="mt-2 inline-block text-green-600 hover:text-green-800 font-medium"
+        >
+          Agregar otro arcano menor
+        </a>
+      </div>
+    )}
+
+    <form method="POST" class="space-y-6 bg-white p-6 rounded-lg shadow-md">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-4">
           <h2 class="text-xl font-semibold text-purple-800">Información Básica</h2>
 
           <div>
-            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre (ej. "Sota de Bastos")</label>
+            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">
+              Nombre <span class="text-red-500">*</span>
+              <span class="text-xs text-gray-500 block">Ej: "Sota de Bastos"</span>
+            </label>
             <input 
               type="text" 
               id="nombre" 
               name="nombre" 
               required
+              value={formValues.nombre}
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
           </div>
 
           <div>
-            <label for="palo" class="block text-sm font-medium text-gray-700 mb-1">Palo</label>
+            <label for="palo" class="block text-sm font-medium text-gray-700 mb-1">
+              Palo <span class="text-red-500">*</span>
+            </label>
             <select 
               id="palo" 
               name="palo" 
               required
+              value={formValues.palo}
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
-              <option value="bastos">Bastos</option>
-              <option value="copas">Copas</option>
-              <option value="espadas">Espadas</option>
-              <option value="oros">Oros</option>
+              <option value="">Selecciona un palo</option>
+              <option value="bastos">Bastos (Fuego)</option>
+              <option value="copas">Copas (Agua)</option>
+              <option value="espadas">Espadas (Aire)</option>
+              <option value="oros">Oros (Tierra)</option>
             </select>
           </div>
 
           <div>
-            <label for="valor" class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+            <label for="valor" class="block text-sm font-medium text-gray-700 mb-1">
+              Valor <span class="text-red-500">*</span>
+            </label>
             <select 
               id="valor" 
               name="valor" 
               required
+              value={formValues.valor}
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
+              <option value="">Selecciona un valor</option>
               <option value="as">As</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -106,11 +215,16 @@ if (Astro.request.method === 'POST') {
           </div>
 
           <div>
-            <label for="imagem" class="block text-sm font-medium text-gray-700 mb-1">URL de la Imagen</label>
+            <label for="imagem" class="block text-sm font-medium text-gray-700 mb-1">
+              URL de la Imagen
+              <span class="text-xs text-gray-500 block">Formatos soportados: JPG, PNG, WebP</span>
+            </label>
             <input 
               type="url" 
               id="imagem" 
               name="imagem" 
+              value={formValues.imagem}
+              placeholder="https://ejemplo.com/imagen.jpg"
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
           </div>
@@ -120,25 +234,27 @@ if (Astro.request.method === 'POST') {
           <h2 class="text-xl font-semibold text-purple-800">Significados</h2>
 
           <div>
-            <label for="significado_directo" class="block text-sm font-medium text-gray-700 mb-1">Significado Directo</label>
+            <label for="significado_directo" class="block text-sm font-medium text-gray-700 mb-1">
+              Significado Directo
+            </label>
             <textarea 
               id="significado_directo" 
               name="significado_directo" 
-              rows="3"
-              required
+              rows="4"
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
-            ></textarea>
+            >{formValues.significado_directo}</textarea>
           </div>
 
           <div>
-            <label for="significado_invertido" class="block text-sm font-medium text-gray-700 mb-1">Significado Invertido</label>
+            <label for="significado_invertido" class="block text-sm font-medium text-gray-700 mb-1">
+              Significado Invertido
+            </label>
             <textarea 
               id="significado_invertido" 
               name="significado_invertido" 
-              rows="3"
-              required
+              rows="4"
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
-            ></textarea>
+            >{formValues.significado_invertido}</textarea>
           </div>
         </div>
       </div>
@@ -147,42 +263,58 @@ if (Astro.request.method === 'POST') {
         <h2 class="text-xl font-semibold text-purple-800">Símbolos</h2>
 
         <div>
-          <label for="simbolos_principales" class="block text-sm font-medium text-gray-700 mb-1">Símbolos Principales (separados por comas)</label>
+          <label for="simbolos_principales" class="block text-sm font-medium text-gray-700 mb-1">
+            Símbolos Principales (separados por comas)
+            <span class="text-xs text-gray-500 block">Máximo {MAX_SYMBOLS} símbolos. Ej: sol, montaña, río</span>
+          </label>
           <input 
             type="text" 
             id="simbolos_principales" 
             name="simbolos_principales" 
+            value={formValues.simbolos_principales}
             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
           >
         </div>
 
         <div>
-          <label for="simbolos_interpretacion" class="block text-sm font-medium text-gray-700 mb-1">Interpretación de Símbolos</label>
+          <label for="simbolos_interpretacion" class="block text-sm font-medium text-gray-700 mb-1">
+            Interpretación de Símbolos
+          </label>
           <textarea 
             id="simbolos_interpretacion" 
             name="simbolos_interpretacion" 
             rows="3"
             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
-          ></textarea>
+          >{formValues.simbolos_interpretacion}</textarea>
         </div>
       </div>
 
       <div>
-        <label for="keywords" class="block text-sm font-medium text-gray-700 mb-1">Keywords (separadas por comas)</label>
+        <label for="keywords" class="block text-sm font-medium text-gray-700 mb-1">
+          Keywords (separadas por comas)
+          <span class="text-xs text-gray-500 block">Máximo {MAX_KEYWORDS} palabras clave. Ej: alegría, energía, creatividad</span>
+        </label>
         <input 
           type="text" 
           id="keywords" 
           name="keywords" 
+          value={formValues.keywords}
           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
         >
       </div>
 
-      <div class="flex justify-end">
+      <div class="flex justify-between pt-4 border-t border-gray-200">
+        <a 
+          href="/admin/cards" 
+          class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+        >
+          Volver al listado
+        </a>
         <button 
           type="submit" 
-          class="px-6 py-2 bg-purple-600 text-white font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          class="px-6 py-2 bg-purple-600 text-white font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
         >
-          Guardar Carta
+          Guardar Arcano Menor
         </button>
       </div>
     </form>
