@@ -12,7 +12,8 @@ const docSnap = await getDoc(docRef);
 interface Card {
   id: string;
   nombre: string;
-  numero: number;
+  numero?: number;
+  valor?: string;
   arcano: 'mayor' | 'menor';
   imagem: string;
   imagen?: string;
@@ -53,7 +54,8 @@ const processImageUrl = (url: string | undefined | null): string => {
 const card: Card = {
   id: docSnap.id,
   nombre: docData.nombre || 'Sin nombre',
-  numero: docData.numero || 0,
+  numero: docData.numero,
+  valor: docData.valor,
   arcano: docData.arcano || 'mayor',
   imagem: processImageUrl(docData.imagem || docData.imagen),
   significado: {
@@ -67,6 +69,14 @@ const card: Card = {
   keywords: docData.keywords || []
 };
 
+// Función para obtener el identificador correcto (número o valor)
+const getCardIdentifier = (card: Card): string => {
+  if (card.arcano === 'menor' && card.valor) {
+    return card.valor;
+  }
+  return card.numero ? `#${card.numero}` : '';
+};
+
 const pageTitle = `${card.nombre} - Tarot de Marsella`;
 const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 100)}...`;
 ---
@@ -75,7 +85,10 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
   <article class="max-w-7xl mx-auto px-4 py-8">
     <header class="text-center border-b border-gray-200 pb-6 mb-8">
       <h1 class="text-4xl font-bold text-purple-900">
-        {card.nombre} <span class="text-gray-500 text-2xl">#{card.numero}</span>
+        {card.nombre} 
+        {getCardIdentifier(card) && (
+          <span class="text-gray-500 text-2xl">{getCardIdentifier(card)}</span>
+        )}
       </h1>
       <p class="italic text-purple-600 mt-2">
         {card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor'}
