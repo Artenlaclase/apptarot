@@ -1,7 +1,7 @@
 ---
 // src/pages/cards/major.astro
 import { db } from '../../lib/firebase';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
 
@@ -14,18 +14,25 @@ interface FirestoreCard {
   arcano?: string;
 }
 
-// Query para obtener solo los arcanos mayores
+interface ProcessedCard {
+  id: string;
+  nombre: string;
+  numero: string | number;
+  arcano: string;
+  imagem: string;
+}
+
+// Query para obtener solo los arcanos mayores (sin orderBy para evitar el índice compuesto)
 const q = query(
   collection(db, 'cards'), 
-  where('arcano', '==', 'mayor'),
-  orderBy('numero')
+  where('arcano', '==', 'mayor')
 );
 
 const querySnapshot = await getDocs(q);
 
 const processImageUrl = (url: string | undefined | null): string => {
   if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
-  const cleanedUrl = url.trim();
+  const cleanedUrl: string = url.trim();
   
   if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
     return cleanedUrl.includes('alt=media')
@@ -40,10 +47,10 @@ const processImageUrl = (url: string | undefined | null): string => {
   return cleanedUrl;
 };
 
-const cards = querySnapshot.docs
-  .map(doc => {
-    const data = doc.data();
-    const imageUrl = data.imagem || data.imagen;
+const cards: ProcessedCard[] = querySnapshot.docs
+  .map((doc): ProcessedCard => {
+    const data: DocumentData = doc.data();
+    const imageUrl: string | null | undefined = data.imagem || data.imagen;
     
     return {
       id: doc.id,
@@ -53,10 +60,25 @@ const cards = querySnapshot.docs
       imagem: processImageUrl(imageUrl)
     };
   })
-  .filter(card => card.arcano === 'mayor'); // Filtro adicional para asegurar solo arcanos mayores
+  .filter((card: ProcessedCard): boolean => card.arcano === 'mayor') // Filtro adicional para asegurar solo arcanos mayores
+  .sort((a: ProcessedCard, b: ProcessedCard): number => {
+    // Ordenamiento client-side por número
+    const getNumericValue = (value: string | number): number => {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string') {
+        const parsed: number = parseInt(value, 10);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+      return 0;
+    };
+    
+    const numA: number = getNumericValue(a.numero);
+    const numB: number = getNumericValue(b.numero);
+    return numA - numB;
+  });
 
-const pageTitle = "Arcanos Mayores del Tarot de Marsella";
-const pageDescription = "Explora los 22 Arcanos Mayores del Tarot de Marsella y descubre su profundo simbolismo espiritual";
+const pageTitle: string = "Arcanos Mayores del Tarot de Marsella";
+const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Marsella y descubre su profundo simbolismo espiritual";
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -96,7 +118,7 @@ const pageDescription = "Explora los 22 Arcanos Mayores del Tarot de Marsella y 
 
     <!-- Grid responsivo para los arcanos mayores -->
     <section class="cartas-grid-major">
-      {cards.map(card => (
+      {cards.map((card: ProcessedCard) => (
         <a
           href={`/cards/${card.id}`}
           class="carta-link-major"
