@@ -60,13 +60,13 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             </div>
           </label>
           
-          <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
+         <!--  <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
             <input type="radio" name="tiradaMode" value="mayores-aclaracion" class="mr-3 text-purple-600">
             <div>
               <div class="font-medium text-purple-800">Mayores + Aclaración</div>
               <div class="text-sm text-gray-600">Mayores con menores para aclarar</div>
             </div>
-          </label>
+          </label>-->
           
           <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
             <input type="radio" name="tiradaMode" value="mixta" class="mr-3 text-purple-600" checked>
@@ -127,7 +127,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       </div>
     </section>
 
-    <section id="cardsContainer" class="cartas-grid-random">
+    <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
       <div id="initialMessage" class="col-span-full text-center py-12">
         <p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
       </div>
@@ -383,7 +383,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     // Actualizar controles según el modo
     function updateControls() {
       currentMode = getCurrentMode();
-      const showAclaracion = (currentMode === 'mayores' || currentMode === 'mayores-aclaracion' || currentMode === 'mixta') && tiradaGenerated;
+      const showAclaracion = (currentMode === 'mayores' || currentMode === 'mixta') && tiradaGenerated;
       
       if (elements.aclaracionControls) {
         elements.aclaracionControls.classList.toggle('hidden', !showAclaracion);
@@ -413,11 +413,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         
         switch (currentMode) {
           case 'mayores':
-            await preloadImages(workingCardsMayores);
-            cardPool = [...workingCardsMayores];
-            break;
-            
-          case 'mayores-aclaracion':
             await preloadImages(workingCardsMayores);
             cardPool = [...workingCardsMayores];
             break;
