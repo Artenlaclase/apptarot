@@ -1,93 +1,164 @@
 ---
 // src/pages/cards/index.astro
-import { db } from '../../lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
 
-interface FirestoreCard {
-  id: string;
-  nombre?: string;
-  numero?: string | number;
-  imagem?: string | null;
-  imagen?: string | null; // Campo alternativo por si acaso
-}
-
-const q = query(collection(db, 'cards'), orderBy('numero'));
-const querySnapshot = await getDocs(q);
-
-const processImageUrl = (url: string | undefined | null): string => {
-  // 1. Verificación básica
-  if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
-  
-  // 2. Limpieza de URL (elimina espacios en blanco)
-  const cleanedUrl = url.trim();
-  
-  // 3. Manejo de Firebase Storage
-  if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
-    // Asegura el parámetro alt=media
-    return cleanedUrl.includes('alt=media') 
-      ? cleanedUrl 
-      : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
-  }
-  
-  // 4. Manejo de Cloudinary (si aplica)
-  if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
-    return cleanedUrl.replace('upload/', 'upload/w_300,f_auto,q_auto/');
-  }
-  
-  return cleanedUrl;
-};
-
-const cards = querySnapshot.docs.map(doc => {
-  const data = doc.data();
-  const imageUrl = data.imagem || data.imagen; // Usa cualquier campo que exista
-  
-  return {
-    id: doc.id,
-    nombre: data.nombre || 'Sin nombre',
-    numero: data.numero ?? 'N/A', // Usamos operador nullish coalescing
-    imagem: processImageUrl(imageUrl)
-  };
-});
-
-const pageTitle = "Mazo Completo de Tarot de Marsella";
-const pageDescription = "Explora todas las cartas del Tarot de Marsella y sus significados";
+const pageTitle = "Tarot de Marsella - Mazo Completo";
+const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcanos Mayores y Menores con sus significados profundos";
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
-  <main class="container mx-auto px-4 py-8 max-w-7xl">
-    <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-purple-900 mb-2">{pageTitle}</h1>
-      <p class="text-xl text-purple-700">Descubre los arcanos mayores y menores</p>
+  <main class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header principal -->
+    <header class="text-center mb-16">
+      <h1 class="text-5xl font-bold text-purple-900 mb-4">{pageTitle}</h1>
+      <p class="text-xl text-purple-700 max-w-3xl mx-auto leading-relaxed">
+        Explora la sabiduría ancestral del Tarot de Marsella, uno de los mazos más antiguos y respetados en la tradición esotérica occidental
+      </p>
     </header>
 
-    <!-- Grid responsivo optimizado para cartas completas -->
-    <section class="cartas-grid-custom">
-      {cards.map(card => (
-        <a 
-          href={`/cards/${card.id}`} 
-          class="carta-link"
-        >
-          <article class="carta-item">
-            <div class="carta-image-container">
-              <img
-                src={card.imagem}
-                alt={`Carta ${card.nombre}`}
-                loading="lazy"
-                decoding="async"
-                class="carta-image"
-                onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
-              />
+    <!-- Introducción al Tarot de Marsella -->
+    <section class="mb-16 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-8">
+      <h2 class="text-3xl font-semibold text-purple-800 mb-6 text-center">El Tarot de Marsella</h2>
+      <div class="prose prose-lg max-w-none text-gray-700">
+        <p class="mb-4">
+          El Tarot de Marsella es considerado el arquetipo de todos los tarots. Originario del siglo XV, 
+          este mazo ha preservado su esencia a través de los siglos, manteniendo un simbolismo puro y 
+          poderoso que conecta con la sabiduría universal.
+        </p>
+        <p class="mb-4">
+          Compuesto por 78 cartas divididas en dos grupos principales, cada carta del Tarot de Marsella 
+          encierra conocimientos profundos sobre la condición humana, los ciclos de la vida y los 
+          misterios del universo.
+        </p>
+        <p>
+          Su estilo artístico único, con colores vibrantes y simbolos ancestrales, lo convierte en una 
+          herramienta incomparable para la introspección, la meditación y la comprensión de los caminos 
+          de la existencia.
+        </p>
+      </div>
+    </section>
+
+    <!-- Secciones de Arcanos -->
+    <div class="grid md:grid-cols-2 gap-12 mb-16">
+      
+      <!-- Arcanos Mayores -->
+      <section class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <a href="/cards/major" class="block group">
+          <div class="relative h-64 bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
+            <div class="text-center">
+              <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                <span class="text-3xl font-bold text-purple-700">I</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-2">Arcanos Mayores</h3>
+              <p class="text-purple-100">22 Cartas</p>
             </div>
-            <div class="carta-info">
-              <h3 class="carta-nombre">{card.nombre}</h3>
-              <span class="carta-numero">({card.numero})</span>
+          </div>
+          <div class="p-6">
+            <p class="text-gray-600 mb-4 leading-relaxed">
+              Los 22 Arcanos Mayores representan el viaje del alma a través de las experiencias 
+              fundamentales de la vida. Desde El Loco hasta El Mundo, cada carta simboliza una 
+              etapa de crecimiento espiritual y autoconocimiento.
+            </p>
+            <div class="flex items-center text-purple-600 font-semibold group-hover:text-purple-800 transition-colors">
+              <span>Explorar Arcanos Mayores</span>
+              <svg class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
             </div>
-          </article>
+          </div>
         </a>
-      ))}
+      </section>
+
+      <!-- Arcanos Menores -->
+      <section class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <a href="/cards/minor" class="block group">
+          <div class="relative h-64 bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center">
+            <div class="text-center">
+              <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                <span class="text-3xl font-bold text-emerald-700">♠</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-2">Arcanos Menores</h3>
+              <p class="text-emerald-100">56 Cartas</p>
+            </div>
+          </div>
+          <div class="p-6">
+            <p class="text-gray-600 mb-4 leading-relaxed">
+              Los 56 Arcanos Menores se dividen en cuatro palos: Bastos, Copas, Espadas y Oros. 
+              Representan las situaciones cotidianas, emociones, pensamientos y aspectos 
+              materiales de nuestra existencia diaria.
+            </p>
+            <div class="flex items-center text-emerald-600 font-semibold group-hover:text-emerald-800 transition-colors">
+              <span>Explorar Arcanos Menores</span>
+              <svg class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+        </a>
+      </section>
+    </div>
+
+    <!-- Los Cuatro Elementos -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-semibold text-purple-800 mb-8 text-center">Los Cuatro Elementos en el Tarot</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <div class="bg-red-50 rounded-lg p-6 text-center border-2 border-red-100">
+          <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="text-white text-2xl font-bold">🔥</span>
+          </div>
+          <h3 class="text-xl font-semibold text-red-700 mb-2">Fuego - Bastos</h3>
+          <p class="text-red-600 text-sm">Pasión, creatividad, energía vital</p>
+        </div>
+
+        <div class="bg-blue-50 rounded-lg p-6 text-center border-2 border-blue-100">
+          <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="text-white text-2xl font-bold">💧</span>
+          </div>
+          <h3 class="text-xl font-semibold text-blue-700 mb-2">Agua - Copas</h3>
+          <p class="text-blue-600 text-sm">Emociones, intuición, espiritualidad</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-6 text-center border-2 border-gray-200">
+          <div class="w-16 h-16 bg-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="text-white text-2xl font-bold">💨</span>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">Aire - Espadas</h3>
+          <p class="text-gray-600 text-sm">Pensamiento, comunicación, conflicto</p>
+        </div>
+
+        <div class="bg-yellow-50 rounded-lg p-6 text-center border-2 border-yellow-200">
+          <div class="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="text-white text-2xl font-bold">🌍</span>
+          </div>
+          <h3 class="text-xl font-semibold text-yellow-700 mb-2">Tierra - Oros</h3>
+          <p class="text-yellow-600 text-sm">Materia, recursos, prosperidad</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="text-center bg-purple-900 text-white rounded-xl p-12">
+      <h2 class="text-3xl font-bold mb-4">Comienza tu Viaje</h2>
+      <p class="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
+        Sumérgete en la sabiduría del Tarot de Marsella y descubre los mensajes que el universo 
+        tiene para ti
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a 
+          href="/cards/major" 
+          class="bg-white text-purple-900 px-8 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+        >
+          Ver Arcanos Mayores
+        </a>
+        <a 
+          href="/cards/minor" 
+          class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-900 transition-colors"
+        >
+          Ver Arcanos Menores
+        </a>
+      </div>
     </section>
   </main>
 </Layout>
-
