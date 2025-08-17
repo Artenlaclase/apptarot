@@ -3,10 +3,9 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import type { FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
-  connectFirestoreEmulator,
   initializeFirestore,
-  Firestore,
-  FirestoreError
+  type Firestore,
+  type FirestoreError
 } from "firebase/firestore";
 import { 
   persistentLocalCache, 

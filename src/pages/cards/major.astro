@@ -4,6 +4,8 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { processImageUrl, type MajorArcanaCard } from '../../utils/index.js';
 
 interface FirestoreCard {
   id: string;
@@ -30,23 +32,6 @@ const q = query(
 
 const querySnapshot = await getDocs(q);
 
-const processImageUrl = (url: string | undefined | null): string => {
-  if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
-  const cleanedUrl: string = url.trim();
-  
-  if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
-    return cleanedUrl.includes('alt=media')
-      ? cleanedUrl
-      : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
-  }
-  
-  if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
-    return cleanedUrl.replace('upload/', 'upload/w_300,f_auto,q_auto/');
-  }
-  
-  return cleanedUrl;
-};
-
 const cards: ProcessedCard[] = querySnapshot.docs
   .map((doc): ProcessedCard => {
     const data: DocumentData = doc.data();
@@ -60,9 +45,8 @@ const cards: ProcessedCard[] = querySnapshot.docs
       imagem: processImageUrl(imageUrl)
     };
   })
-  .filter((card: ProcessedCard): boolean => card.arcano === 'mayor') // Filtro adicional para asegurar solo arcanos mayores
+  .filter((card: ProcessedCard): boolean => card.arcano === 'mayor')
   .sort((a: ProcessedCard, b: ProcessedCard): number => {
-    // Ordenamiento client-side por número
     const getNumericValue = (value: string | number): number => {
       if (typeof value === 'number') return value;
       if (typeof value === 'string') {

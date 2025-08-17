@@ -4,20 +4,25 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { 
+  processImageUrl, 
+  getOptimizedCardUrl,
+  DEFAULT_IMAGES,
+  SPECIAL_CARD_URLS,
+  filterCardsByArcana,
+  type BaseCard 
+} from '../../utils/index.js';
 
-interface Card {
-  id: string;
-  nombre: string;
+interface RandomCard extends BaseCard {
   numero?: number;
   valor?: string;
-  arcano: 'mayor' | 'menor';
-  imagem: string;
   imageLoaded?: boolean;
   imageError?: string;
 }
 
 const querySnapshot = await getDocs(collection(db, 'cards'));
-const allCards = querySnapshot.docs.map(doc => {
+const allCards: RandomCard[] = querySnapshot.docs.map(doc => {
   const data = doc.data();
   return {
     id: doc.id,
@@ -25,12 +30,12 @@ const allCards = querySnapshot.docs.map(doc => {
     numero: data.numero,
     valor: data.valor,
     arcano: data.arcano || 'mayor',
-    imagem: data.imagem || '/images/placeholder-card.jpg',
+    imagem: processImageUrl(data.imagem, 300),
     imageLoaded: false
-  };
+  } as RandomCard;
 });
 
-// Separar arcanos mayores y menores
+// Separar arcanos mayores y menores manualmente por compatibilidad
 const arcanosMayores = allCards.filter(card => card.arcano === 'mayor');
 const arcanosMenores = allCards.filter(card => card.arcano === 'menor');
 
@@ -151,18 +156,15 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
   </main>
 </Layout>
 
-<script define:vars={{ allCards, arcanosMayores, arcanosMenores }}>
+<script define:vars={{ allCards, arcanosMayores, arcanosMenores, DEFAULT_IMAGES, SPECIAL_CARD_URLS }}>
   document.addEventListener('DOMContentLoaded', () => {
-    // Configuración esencial
-    const DEFAULT_CARD_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg';
-    const CARDBACK_IMAGE = '/cardback.jpg';
+    // Usar constantes importadas
+    const DEFAULT_CARD_IMAGE = DEFAULT_IMAGES.DEFAULT_CARD;
+    const CARDBACK_IMAGE = DEFAULT_IMAGES.CARD_BACK;
     const CLOUDINARY_BASE = 'https://res.cloudinary.com/die8wz4ag/image/upload';
     
-    // URLs absolutas para las cartas problemáticas
-    const SPECIAL_CARDS = {
-      'El Loco': `${CLOUDINARY_BASE}/w_300,f_auto,q_auto/v1747796437/a22_mbkkkq.jpg`,
-      'El Mago': `${CLOUDINARY_BASE}/w_300,f_auto,q_auto/v1747796434/a01_rxlbr2.jpg`
-    };
+    // URLs especiales para cartas problemáticas
+    const SPECIAL_CARDS = SPECIAL_CARD_URLS;
 
     // Elementos del DOM
     const elements = {

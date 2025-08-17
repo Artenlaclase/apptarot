@@ -1,9 +1,18 @@
 ---
 // src/pages/cards/minor.astro
 import { db } from '../../lib/firebase';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { 
+  processImageUrl, 
+  getMinorArcanaOrderIndex, 
+  groupCardsBySuit, 
+  SUIT_ORDER, 
+  SUITS,
+  type MinorArcanaCard 
+} from '../../utils/index.js';
 
 interface FirestoreCard {
   id: string;
@@ -14,37 +23,9 @@ interface FirestoreCard {
   imagen?: string | null;
 }
 
-// Definir el orden correcto de los valores
-const valorOrder = ['as', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'sota', 'caballo','reina','rey'];
-
-// Función para obtener el índice de orden del valor
-const getValorOrderIndex = (valor: string): number => {
-  const normalizedValor = valor.toLowerCase().trim();
-  const index = valorOrder.indexOf(normalizedValor);
-  return index === -1 ? 999 : index; // Si no encuentra el valor, lo pone al final
-};
-
 // Query básica sin filtros complejos mientras se construye el índice
 const q = collection(db, 'cards');
-
 const querySnapshot = await getDocs(q);
-
-const processImageUrl = (url: string | undefined | null): string => {
-  if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
-  const cleanedUrl = url.trim();
-  
-  if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
-    return cleanedUrl.includes('alt=media')
-      ? cleanedUrl
-      : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
-  }
-  
-  if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
-    return cleanedUrl.replace('upload/', 'upload/w_300,f_auto,q_auto/');
-  }
-  
-  return cleanedUrl;
-};
 
 const cards = querySnapshot.docs
   .map(doc => {
@@ -60,29 +41,13 @@ const cards = querySnapshot.docs
       imagem: processImageUrl(imageUrl)
     };
   })
-  .filter(card => card.arcano === 'menor'); // Filtrar solo arcanos menores
+  .filter(card => card.arcano === 'menor');
 
-// Agrupar cartas por palo
-const cardsBySuit = cards.reduce((acc, card) => {
-  if (!acc[card.palo]) {
-    acc[card.palo] = [];
-  }
-  acc[card.palo].push(card);
-  return acc;
-}, {} as Record<string, typeof cards>);
+// Agrupar cartas por palo usando la utilidad compartida
+const cardsBySuit = groupCardsBySuit(cards as MinorArcanaCard[]);
 
-// Ordenar las cartas dentro de cada palo por valor
-Object.keys(cardsBySuit).forEach(suit => {
-  cardsBySuit[suit].sort((a, b) => {
-    const orderA = getValorOrderIndex(a.valor);
-    const orderB = getValorOrderIndex(b.valor);
-    return orderA - orderB;
-  });
-});
-
-// Ordenar los palos en un orden específico
-const suitOrder = ['bastos', 'copas', 'espadas', 'oros'];
-const orderedSuits = suitOrder.filter(suit => cardsBySuit[suit] && cardsBySuit[suit].length > 0);
+// Usar el orden predefinido de palos
+const orderedSuits = SUIT_ORDER.filter(suit => cardsBySuit[suit] && cardsBySuit[suit].length > 0);
 
 const pageTitle = "Arcanos Menores del Tarot de Marsella";
 const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos, Copas, Espadas y Oros";
@@ -99,10 +64,10 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
     {orderedSuits.map(suit => (
       <section class="mb-16">
         <h2 class="text-3xl font-semibold text-purple-800 mb-6 capitalize border-b-2 border-purple-200 pb-2">
-          {suit === 'bastos' && 'Bastos - El elemento Fuego'}
-          {suit === 'copas' && 'Copas - El elemento Agua'}
-          {suit === 'espadas' && 'Espadas - El elemento Aire'}
-          {suit === 'oros' && 'Oros - El elemento Tierra'}
+          {suit === 'bastos' && `Bastos - El elemento ${SUITS.bastos.element}`}
+          {suit === 'copas' && `Copas - El elemento ${SUITS.copas.element}`}
+          {suit === 'espadas' && `Espadas - El elemento ${SUITS.espadas.element}`}
+          {suit === 'oros' && `Oros - El elemento ${SUITS.oros.element}`}
         </h2>
 
         <!-- Grid para las cartas del palo -->

@@ -4,78 +4,27 @@ import { db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { 
+  processImageUrl, 
+  mapFirestoreToDetailedCard, 
+  getCardIdentifier, 
+  type DetailedCard 
+} from '../../utils/index.js';
 
 const { id } = Astro.params as { id: string };
 const docRef = doc(db, 'cards', id);
 const docSnap = await getDoc(docRef);
-
-interface Card {
-  id: string;
-  nombre: string;
-  numero?: number;
-  valor?: string;
-  arcano: 'mayor' | 'menor';
-  imagem: string;
-  imagen?: string;
-  significado: {
-    directo: string;
-    invertido: string;
-  };
-  simbolos: {
-    principales: string[];
-    interpretacion: string;
-  };
-  keywords?: string[];
-}
 
 const docData = docSnap.data();
 if (!docData) {
   return Response.redirect('/404', 404);
 }
 
-const processImageUrl = (url: string | undefined | null): string => {
-  if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
-  
-  const cleanedUrl = url.trim();
-  
-  if (cleanedUrl.startsWith('https://firebasestorage.googleapis.com')) {
-    return cleanedUrl.includes('alt=media') 
-      ? cleanedUrl 
-      : `${cleanedUrl}${cleanedUrl.includes('?') ? '&' : '?'}alt=media`;
-  }
-  
-  if (cleanedUrl.includes('res.cloudinary.com') && !cleanedUrl.includes('upload/w_')) {
-    return cleanedUrl.replace('upload/', 'upload/w_600,f_auto,q_auto/');
-  }
-  
-  return cleanedUrl;
-};
-
-const card: Card = {
-  id: docSnap.id,
-  nombre: docData.nombre || 'Sin nombre',
-  numero: docData.numero,
-  valor: docData.valor,
-  arcano: docData.arcano || 'mayor',
-  imagem: processImageUrl(docData.imagem || docData.imagen),
-  significado: {
-    directo: docData.significado?.directo || 'No disponible',
-    invertido: docData.significado?.invertido || 'No disponible'
-  },
-  simbolos: {
-    principales: docData.simbolos?.principales || [],
-    interpretacion: docData.simbolos?.interpretacion || 'No disponible'
-  },
-  keywords: docData.keywords || []
-};
-
-// Función para obtener el identificador correcto (número o valor)
-const getCardIdentifier = (card: Card): string => {
-  if (card.arcano === 'menor' && card.valor) {
-    return card.valor;
-  }
-  return card.numero ? `#${card.numero}` : '';
-};
+// Usar la utilidad para convertir los datos de Firestore
+const card: DetailedCard = mapFirestoreToDetailedCard(docSnap.id, docData);
+// Procesar la imagen con la utilidad compartida (con mayor resolución para vista detalle)
+card.imagem = processImageUrl(docData.imagem || docData.imagen, 600);
 
 const pageTitle = `${card.nombre} - Tarot de Marsella`;
 const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 100)}...`;
