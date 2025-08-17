@@ -60,14 +60,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             </div>
           </label>
           
-         <!--  <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
-            <input type="radio" name="tiradaMode" value="mayores-aclaracion" class="mr-3 text-purple-600">
-            <div>
-              <div class="font-medium text-purple-800">Mayores + Aclaración</div>
-              <div class="text-sm text-gray-600">Mayores con menores para aclarar</div>
-            </div>
-          </label>-->
-          
           <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
             <input type="radio" name="tiradaMode" value="mixta" class="mr-3 text-purple-600" checked>
             <div>
@@ -110,7 +102,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         </button>
       </div>
 
-      <!-- Controles de aclaración (solo visible en ciertos modos) -->
+      <!-- Controles de aclaración -->
       <div id="aclaracionControls" class="border-t pt-4 hidden">
         <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
           <div class="text-sm text-gray-600">
@@ -153,6 +145,8 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
 <script define:vars={{ allCards, arcanosMayores, arcanosMenores }}>
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM completamente cargado'); // Debug
+    
     // Configuración esencial
     const DEFAULT_CARD_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg';
     const CARDBACK_IMAGE = '/cardback.jpg';
@@ -179,14 +173,21 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       tiradaModeInputs: document.querySelectorAll('input[name="tiradaMode"]')
     };
 
+    // Verificar que todos los elementos existen
+    console.log('Elementos del DOM:', elements); // Debug
+    
     // Estado de la aplicación
     let workingCardsMayores = JSON.parse(JSON.stringify(arcanosMayores));
     let workingCardsMenores = JSON.parse(JSON.stringify(arcanosMenores));
     let workingCardsAll = JSON.parse(JSON.stringify(allCards));
     let currentTirada = [];
     let currentMode = 'mixta';
-    let availableCards = []; // Pool de cartas disponibles para voltear
-    let tiradaGenerated = false; // Indica si hay una tirada activa
+    let availableCards = [];
+    let tiradaGenerated = false;
+
+    console.log('Cartas cargadas - Mayores:', workingCardsMayores.length, 
+                'Menores:', workingCardsMenores.length, 
+                'Total:', workingCardsAll.length); // Debug
 
     // Función para obtener el identificador de carta
     function getCardIdentifier(card) {
@@ -217,20 +218,27 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       return DEFAULT_CARD_IMAGE;
     }
 
-    // Precargar imágenes
+    // Precargar imágenes (versión simplificada)
     async function preloadImages(cards) {
-      return new Promise(resolve => {
-        let loadedCount = 0;
-        const totalCards = cards.length;
-        
-        cards.forEach((card, index) => {
-          const imgUrl = ensureValidImageUrl(card.imagem, card.nombre);
-          cards[index].imagem = imgUrl;
-          cards[index].imageLoaded = true;
-          loadedCount++;
-          if (loadedCount === totalCards) resolve();
+      console.log('Precargando imágenes para', cards.length, 'cartas'); // Debug
+      const promises = cards.map(card => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = ensureValidImageUrl(card.imagem, card.nombre);
+          img.onload = () => {
+            card.imageLoaded = true;
+            resolve();
+          };
+          img.onerror = () => {
+            card.imagem = DEFAULT_CARD_IMAGE;
+            card.imageLoaded = true;
+            resolve();
+          };
         });
       });
+      
+      await Promise.all(promises);
+      console.log('Precarga de imágenes completada'); // Debug
     }
 
     // Crear elemento de carta boca abajo (clickeable)
@@ -260,7 +268,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         </div>
       `;
       
-      // Agregar evento de clic para voltear
       cardElement.addEventListener('click', () => flipCard(cardElement, cardIndex));
       
       return cardElement;
@@ -305,7 +312,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       return cardElement;
     }
 
-    // Crear elemento de carta de aclaración (siempre revelada)
+    // Crear elemento de carta de aclaración
     function createAclaracionCardElement(card) {
       const cardElement = document.createElement('div');
       cardElement.className = 'carta-aclaracion-item';
@@ -351,26 +358,19 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         return;
       }
 
-      // Obtener una carta aleatoria del pool disponible
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       const selectedCard = availableCards[randomIndex];
-      
-      // Remover la carta del pool disponible
       availableCards.splice(randomIndex, 1);
 
-      // Crear elemento de carta revelada
       const revealedElement = createRevealedCardElement(selectedCard);
       
-      // Agregar clase de animación
       cardElement.classList.add('flipping');
       
-      // Después de la animación, reemplazar el elemento
       setTimeout(() => {
         cardElement.parentNode.replaceChild(revealedElement, cardElement);
         revealedElement.classList.add('card-revealed');
       }, 300);
 
-      // Agregar la carta a la tirada actual
       currentTirada.push(selectedCard);
     }
 
@@ -390,79 +390,97 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       }
     }
 
-    // Generar cartas aleatorias
+    // Generar cartas aleatorias (versión mejorada)
     async function generateRandomCards() {
+      console.log('Iniciando generación de cartas...'); // Debug
+      
       try {
         currentMode = getCurrentMode();
+        console.log('Modo seleccionado:', currentMode); // Debug
         
-        // Validar número de cartas
         const cardCount = Math.min(13, Math.max(1, 
           parseInt(elements.cardCountInput?.value || '3') || 3));
+        console.log('Número de cartas a generar:', cardCount); // Debug
         
         if (elements.cardCountInput) {
           elements.cardCountInput.value = cardCount;
         }
 
-        // Mostrar carga
+        // Mostrar indicador de carga
         if (elements.loadingIndicator) {
           elements.loadingIndicator.classList.remove('hidden');
         }
 
-        // Preparar pool de cartas según el modo
+        // Seleccionar el mazo adecuado
         let cardPool = [];
-        
         switch (currentMode) {
           case 'mayores':
-            await preloadImages(workingCardsMayores);
             cardPool = [...workingCardsMayores];
             break;
-            
           case 'mixta':
           default:
-            await preloadImages(workingCardsAll);
             cardPool = [...workingCardsAll];
             break;
         }
 
-        // Mezclar el pool de cartas disponibles
-        availableCards = cardPool.sort(() => 0.5 - Math.random());
+        console.log('Cartas disponibles en el pool:', cardPool.length); // Debug
+        
+        if (cardPool.length === 0) {
+          throw new Error('No hay cartas disponibles para generar la tirada');
+        }
 
-        // Ocultar mensaje inicial
+        // Precargar imágenes
+        await preloadImages(cardPool);
+        
+        // Mezclar cartas
+        availableCards = [...cardPool].sort(() => 0.5 - Math.random());
+        console.log('Cartas mezcladas:', availableCards.length); // Debug
+
+        // Limpiar contenedor y ocultar mensaje inicial
         if (elements.initialMessage) {
           elements.initialMessage.style.display = 'none';
         }
 
-        // Limpiar contenedor
         if (elements.cardsContainer) {
           elements.cardsContainer.innerHTML = '';
-        }
-
-        // Crear cartas boca abajo
-        for (let i = 0; i < cardCount; i++) {
-          const cardElement = createFlippableCardElement(i);
-          if (elements.cardsContainer) {
+          
+          // Crear cartas boca abajo
+          for (let i = 0; i < cardCount; i++) {
+            const cardElement = createFlippableCardElement(i);
             elements.cardsContainer.appendChild(cardElement);
           }
         }
 
-        // Resetear tirada actual
+        // Actualizar estado
         currentTirada = [];
-        tiradaGenerated = true; // Marcar que hay una tirada activa
-        
-        // Actualizar controles
+        tiradaGenerated = true;
         updateControls();
 
+        console.log('Tirada generada exitosamente'); // Debug
+
       } catch (error) {
-        console.error('Error generando cartas:', error);
+        console.error('Error al generar cartas:', error);
+        
+        // Mostrar mensaje de error al usuario
         if (elements.cardsContainer) {
           elements.cardsContainer.innerHTML = `
             <div class="col-span-full text-center py-12">
-              <p class="text-xl text-red-500">Error al mostrar las cartas</p>
-              <p class="text-gray-600 mt-2">Por favor intenta nuevamente</p>
+              <p class="text-xl text-red-500">Error al generar las cartas</p>
+              <p class="text-gray-600 mt-2">${error.message}</p>
             </div>
           `;
         }
+        
+        // Mostrar mensaje en consola para desarrollo
+        console.error('Detalles del error:', {
+          currentMode,
+          availableCards: availableCards?.length,
+          workingCardsMayores: workingCardsMayores?.length,
+          workingCardsAll: workingCardsAll?.length,
+          error
+        });
       } finally {
+        // Ocultar indicador de carga
         if (elements.loadingIndicator) {
           elements.loadingIndicator.classList.add('hidden');
         }
@@ -472,46 +490,47 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     // Generar carta de aclaración
     async function generateAclaracion() {
       try {
+        if (workingCardsMenores.length === 0) {
+          throw new Error('No hay más arcanos menores disponibles');
+        }
+
         await preloadImages(workingCardsMenores);
         const shuffledMenores = [...workingCardsMenores].sort(() => 0.5 - Math.random());
         const aclaracionCard = shuffledMenores[0];
 
-        if (!aclaracionCard) {
-          alert('No hay más arcanos menores disponibles para aclaración');
-          return;
-        }
-
-        // Mostrar sección de aclaración si está oculta
+        // Mostrar sección si está oculta
         if (elements.aclaracionSection) {
           elements.aclaracionSection.classList.remove('hidden');
         }
 
-        // Crear y agregar carta de aclaración (siempre revelada)
+        // Agregar carta
         const cardElement = createAclaracionCardElement(aclaracionCard);
         if (elements.aclaracionContainer) {
           elements.aclaracionContainer.appendChild(cardElement);
         }
 
-        // Remover la carta usada del mazo de menores
+        // Eliminar carta usada
         const usedIndex = workingCardsMenores.findIndex(card => card.id === aclaracionCard.id);
         if (usedIndex > -1) {
           workingCardsMenores.splice(usedIndex, 1);
         }
 
       } catch (error) {
-        console.error('Error generando carta de aclaración:', error);
-        alert('Error al generar carta de aclaración');
+        console.error('Error en aclaración:', error);
+        alert(`Error: ${error.message}`);
       }
     }
 
     // Limpiar todo
     function resetAll() {
+      console.log('Reseteando aplicación...'); // Debug
+      
       // Restaurar mazos
       workingCardsMayores = JSON.parse(JSON.stringify(arcanosMayores));
       workingCardsMenores = JSON.parse(JSON.stringify(arcanosMenores));
       workingCardsAll = JSON.parse(JSON.stringify(allCards));
       
-      // Limpiar contenedores
+      // Limpiar UI
       if (elements.cardsContainer) {
         elements.cardsContainer.innerHTML = `
           <div id="initialMessage" class="col-span-full text-center py-12">
@@ -532,15 +551,18 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       // Resetear estado
       currentTirada = [];
       availableCards = [];
-      tiradaGenerated = false; // No hay tirada activa
-      
-      // Actualizar controles
+      tiradaGenerated = false;
       updateControls();
+      
+      console.log('Aplicación reseteada'); // Debug
     }
 
-    // Event Listeners
+    // Event Listeners (con verificación de elementos)
     if (elements.generateBtn) {
+      console.log('Registrando evento para generateBtn'); // Debug
       elements.generateBtn.addEventListener('click', generateRandomCards);
+    } else {
+      console.error('No se encontró el botón generateBtn');
     }
 
     if (elements.resetBtn) {
@@ -552,12 +574,15 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     }
 
     // Listener para cambio de modo
-    elements.tiradaModeInputs.forEach(input => {
-      input.addEventListener('change', updateControls);
-    });
+    if (elements.tiradaModeInputs) {
+      elements.tiradaModeInputs.forEach(input => {
+        input.addEventListener('change', updateControls);
+      });
+    }
 
     // Inicialización
     updateControls();
+    console.log('Aplicación inicializada correctamente'); // Debug
   });
 </script>
 
