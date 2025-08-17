@@ -1,0 +1,81 @@
+---
+// Página de prueba simple para diagnosticar el problema de tiradas
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import Layout from '../../layouts/Layout.astro';
+
+// Obtener cartas desde Firestore
+const querySnapshot = await getDocs(collection(db, 'cards'));
+const allCards = querySnapshot.docs.map(doc => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    nombre: data.nombre || 'Sin nombre',
+    numero: data.numero,
+    valor: data.valor,
+    arcano: data.arcano || 'mayor',
+    imagem: data.imagem || '/cardback.jpg'
+  };
+});
+
+console.log('Test: Cargas obtenidas:', allCards.length);
+---
+
+<Layout title="Test de Tiradas">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Test de Tiradas</h1>
+    
+    <button id="testBtn" class="px-4 py-2 bg-blue-600 text-white rounded">
+      Generar Test
+    </button>
+    
+    <div id="testResults" class="mt-4 grid grid-cols-3 gap-4">
+      <!-- Aquí aparecerán las cartas -->
+    </div>
+  </main>
+</Layout>
+
+<script define:vars={{ allCards }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('🧪 Test iniciado');
+    console.log('Cartas disponibles:', allCards.length);
+    console.log('Primera carta:', allCards[0]);
+    
+    const testBtn = document.getElementById('testBtn');
+    const testResults = document.getElementById('testResults');
+    
+    if (testBtn && testResults) {
+      console.log('✅ Elementos encontrados');
+      
+      testBtn.addEventListener('click', () => {
+        console.log('🎯 Botón clickeado');
+        
+        testResults.innerHTML = '';
+        
+        // Seleccionar 3 cartas aleatorias
+        const shuffled = [...allCards].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 3);
+        
+        console.log('Cartas seleccionadas:', selected);
+        
+        selected.forEach((card, index) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = 'border p-4 rounded';
+          cardDiv.innerHTML = `
+            <h3 class="font-bold">${card.nombre}</h3>
+            <p class="text-sm">${card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor'}</p>
+            <img src="${card.imagem}" alt="${card.nombre}" class="w-full h-32 object-cover mt-2" />
+          `;
+          testResults.appendChild(cardDiv);
+        });
+        
+        console.log('✅ Cartas mostradas');
+      });
+    } else {
+      console.error('❌ Elementos no encontrados');
+      console.log('testBtn:', testBtn);
+      console.log('testResults:', testResults);
+    }
+  });
+</script>
+</Layout>

@@ -4,6 +4,8 @@ import type { FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
   initializeFirestore,
+  collection,
+  getDocs,
   type Firestore,
   type FirestoreError
 } from "firebase/firestore";
@@ -82,6 +84,39 @@ export function handleFirebaseError(error: FirestoreError): string {
       return 'La operación fue cancelada.';
     default:
       return 'Error al conectar con la base de datos. Inténtalo más tarde.';
+  }
+}
+
+// Interface for card data
+export interface Card {
+  id: string;
+  name: string;
+  type: 'major' | 'minor';
+  suit?: string;
+  description?: string;
+  image_url?: string;
+}
+
+// Function to get all cards from Firestore
+export async function getAllCards(): Promise<Card[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'cards'));
+    const cards: Card[] = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.nombre || data.name || 'Sin nombre',
+        type: data.arcano === 'mayor' ? 'major' : 'minor',
+        suit: data.palo || data.suit,
+        description: data.descripcion || data.description,
+        image_url: data.imagem || data.image_url || data.imagen
+      } as Card;
+    });
+    
+    return cards;
+  } catch (error) {
+    console.error('Error fetching cards:', error);
+    throw error;
   }
 }
 

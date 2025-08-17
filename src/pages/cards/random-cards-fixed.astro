@@ -1,0 +1,649 @@
+---
+// src/pages/random-cards.astro
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { 
+  processImageUrl, 
+  getOptimizedCardUrl,
+  DEFAULT_IMAGES,
+  SPECIAL_CARD_URLS,
+  filterCardsByArcana,
+  type BaseCard 
+} from '../../utils/index.js';
+
+interface RandomCard extends BaseCard {
+  numero?: number;
+  valor?: string;
+  imageLoaded?: boolean;
+  imageError?: string;
+}
+
+const querySnapshot = await getDocs(collection(db, 'cards'));
+const allCards: RandomCard[] = querySnapshot.docs.map(doc => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    nombre: data.nombre || 'Sin nombre',
+    numero: data.numero,
+    valor: data.valor,
+    arcano: data.arcano || 'mayor',
+    imagem: data.imagem || '/cardback.jpg',
+    imageLoaded: false
+  } as RandomCard;
+});
+
+// Separar arcanos mayores y menores manualmente por compatibilidad
+const arcanosMayores = allCards.filter(card => card.arcano === 'mayor');
+const arcanosMenores = allCards.filter(card => card.arcano === 'menor');
+
+console.log(`Cargadas ${allCards.length} cartas desde Firestore (${arcanosMayores.length} mayores, ${arcanosMenores.length} menores)`);
+
+const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
+const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <main class="container mx-auto px-4 py-8 max-w-7xl">
+    <header class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-purple-900 mb-4">Tirada de Cartas Aleatorias</h1>
+      <p class="text-xl text-purple-700">Elige tu modalidad de tirada y número de cartas</p>
+    </header>
+
+    <section class="bg-white rounded-xl shadow-md p-6 mb-12 max-w-4xl mx-auto">
+      <!-- Modalidad de tirada -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Modalidad de tirada:</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
+            <input type="radio" name="tiradaMode" value="mayores" class="mr-3 text-purple-600">
+            <div>
+              <div class="font-medium text-purple-800">Solo Arcanos Mayores</div>
+              <div class="text-sm text-gray-600">22 cartas principales</div>
+            </div>
+          </label>
+          
+          <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
+            <input type="radio" name="tiradaMode" value="mixta" class="mr-3 text-purple-600" checked>
+            <div>
+              <div class="font-medium text-purple-800">Tirada Mixta</div>
+              <div class="text-sm text-gray-600">Mayores y menores mezclados</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Controles principales -->
+      <div class="flex flex-col sm:flex-row gap-4 items-end justify-center mb-4">
+        <div class="flex-1 w-full sm:w-auto">
+          <label for="cardCount" class="block text-sm font-medium text-gray-700 mb-1">
+            Número de cartas:
+          </label>
+          <input
+            type="number"
+            id="cardCount"
+            name="cardCount"
+            min="1"
+            max="13"
+            value="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+          />
+        </div>
+        <button
+          type="button"
+          id="generateBtn"
+          class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+        >
+          Barajar Cartas
+        </button>
+        <button
+          type="button"
+          id="resetBtn"
+          class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+        >
+          Limpiar
+        </button>
+      </div>
+
+      <!-- Controles de aclaración -->
+      <div id="aclaracionControls" class="border-t pt-4 hidden">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+          <div class="text-sm text-gray-600">
+            <strong>Aclaración:</strong> Saca arcanos menores para profundizar en las cartas ya mostradas
+          </div>
+          <button
+            type="button"
+            id="aclaracionBtn"
+            class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+          >
+            Sacar Carta de Aclaración
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div id="initialMessage" class="col-span-full text-center py-12">
+        <p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
+      </div>
+    </section>
+    
+    <div id="loadingIndicator" class="hidden text-center py-6">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+      <p class="mt-2 text-purple-700">Cargando cartas...</p>
+    </div>
+
+    <!-- Sección de cartas de aclaración -->
+    <section id="aclaracionSection" class="mt-12 hidden">
+      <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
+        <h3 class="text-xl font-semibold text-amber-800 mb-4 text-center">
+          Cartas de Aclaración
+        </h3>
+        <div id="aclaracionContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script define:vars={{ allCards, arcanosMayores, arcanosMenores }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('Script del cliente iniciado');
+    console.log('Cartas totales:', allCards?.length || 0);
+    
+    // Configuracion esencial
+    const DEFAULT_CARD_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg';
+    const CARDBACK_IMAGE = '/cardback.jpg';
+    const CLOUDINARY_BASE = 'https://res.cloudinary.com/die8wz4ag/image/upload';
+    
+    // URLs absolutas para las cartas problematicas
+    const SPECIAL_CARDS = {
+      'El Loco': `${CLOUDINARY_BASE}/w_300,f_auto,q_auto/v1747796437/a22_mbkkkq.jpg`,
+      'El Mago': `${CLOUDINARY_BASE}/w_300,f_auto,q_auto/v1747796434/a01_rxlbr2.jpg`
+    };
+
+    // Elementos del DOM
+    const elements = {
+      generateBtn: document.getElementById('generateBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      aclaracionBtn: document.getElementById('aclaracionBtn'),
+      cardCountInput: document.getElementById('cardCount'),
+      cardsContainer: document.getElementById('cardsContainer'),
+      aclaracionContainer: document.getElementById('aclaracionContainer'),
+      aclaracionSection: document.getElementById('aclaracionSection'),
+      aclaracionControls: document.getElementById('aclaracionControls'),
+      initialMessage: document.getElementById('initialMessage'),
+      loadingIndicator: document.getElementById('loadingIndicator'),
+      tiradaModeInputs: document.querySelectorAll('input[name="tiradaMode"]')
+    };
+
+    // Debug: Verificar elementos DOM
+    console.log('Verificando elementos DOM:');
+    console.log('- generateBtn:', !!elements.generateBtn);
+    console.log('- cardsContainer:', !!elements.cardsContainer);
+    console.log('- cardCountInput:', !!elements.cardCountInput);
+
+    // Estado de la aplicacion
+    let workingCardsMayores = JSON.parse(JSON.stringify(arcanosMayores));
+    let workingCardsMenores = JSON.parse(JSON.stringify(arcanosMenores));
+    let workingCardsAll = JSON.parse(JSON.stringify(allCards));
+    let currentTirada = [];
+    let currentMode = 'mixta';
+    let availableCards = []; 
+    let tiradaGenerated = false;
+
+    // Debug: Verificar que las cartas se cargan correctamente
+    console.log('Cartas cargadas correctamente');
+    console.log('Total de cartas:', allCards.length);
+    console.log('Arcanos mayores:', arcanosMayores.length);
+    console.log('Arcanos menores:', arcanosMenores.length);
+
+    // Funcion para barajar array usando Fisher-Yates
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Funcion para obtener el identificador de carta
+    function getCardIdentifier(card) {
+      if (card.arcano === 'menor' && card.valor) {
+        return card.valor;
+      }
+      return card.numero ? `${card.numero}` : '';
+    }
+
+    // Funcion para garantizar una URL de imagen valida
+    function ensureValidImageUrl(url, cardName) {
+      if (SPECIAL_CARDS[cardName]) {
+        return SPECIAL_CARDS[cardName];
+      }
+      
+      if (!url || typeof url !== 'string') return DEFAULT_CARD_IMAGE;
+      
+      const cleanedUrl = url.trim();
+      
+      if (cleanedUrl.startsWith('http')) {
+        return cleanedUrl;
+      }
+      
+      if (cleanedUrl.startsWith('/')) {
+        return cleanedUrl;
+      }
+      
+      return DEFAULT_CARD_IMAGE;
+    }
+
+    // Precargar imagenes (simplificado para evitar bloqueos)
+    async function preloadImages(cards) {
+      // Procesar imagenes sin esperar la carga completa
+      cards.forEach((card, index) => {
+        const imgUrl = ensureValidImageUrl(card.imagem, card.nombre);
+        cards[index].imagem = imgUrl;
+        cards[index].imageLoaded = true;
+      });
+      
+      console.log('Imagenes procesadas:', cards.length);
+      return Promise.resolve();
+    }
+
+    // Crear elemento de carta boca abajo (clickeable)
+    function createFlippableCardElement(cardIndex) {
+      const cardElement = document.createElement('div');
+      cardElement.className = 'carta-random-item flippable-card';
+      cardElement.dataset.cardIndex = cardIndex;
+      
+      cardElement.innerHTML = `
+        <div class="carta-random-container cursor-pointer transform transition-transform hover:scale-105">
+          <div class="carta-random-image-wrapper">
+            <img
+              src="${CARDBACK_IMAGE}"
+              alt="Carta boca abajo"
+              loading="lazy"
+              class="carta-random-image"
+              onerror="this.onerror=null; this.src='${DEFAULT_CARD_IMAGE}';"
+            />
+          </div>
+          <div class="carta-random-info">
+            <h3 class="carta-random-nombre">?</h3>
+            <div class="text-sm text-gray-600">
+              <span class="carta-random-numero">Haz clic para revelar</span>
+              <span class="block text-xs">Carta oculta</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Agregar evento de clic para voltear
+      cardElement.addEventListener('click', () => flipCard(cardElement, cardIndex));
+      
+      return cardElement;
+    }
+
+    // Crear elemento de carta revelada
+    function createRevealedCardElement(card) {
+      const cardElement = document.createElement('div');
+      cardElement.className = 'carta-random-item revealed-card';
+      
+      const finalImageUrl = card.imageLoaded ? card.imagem : DEFAULT_CARD_IMAGE;
+      const identifier = getCardIdentifier(card);
+      const arcanoLabel = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
+      
+      cardElement.innerHTML = `
+        <a href="/cards/${card.id}" class="carta-random-link">
+          <article class="carta-random-container">
+            <div class="carta-random-image-wrapper">
+              <img
+                src="${finalImageUrl}"
+                alt="Carta ${card.nombre}"
+                loading="lazy"
+                class="carta-random-image"
+                onerror="
+                  this.onerror=null; 
+                  this.src='${DEFAULT_CARD_IMAGE}';
+                  this.classList.add('error-image');
+                "
+              />
+            </div>
+            <div class="carta-random-info">
+              <h3 class="carta-random-nombre">${card.nombre}</h3>
+              <div class="text-sm text-gray-600">
+                <span class="carta-random-numero">${identifier}</span>
+                <span class="block text-xs">${arcanoLabel}</span>
+              </div>
+            </div>
+          </article>
+        </a>
+      `;
+      
+      return cardElement;
+    }
+
+    // Crear elemento de carta de aclaracion (siempre revelada)
+    function createAclaracionCardElement(card) {
+      const cardElement = document.createElement('div');
+      cardElement.className = 'carta-aclaracion-item';
+      
+      const finalImageUrl = card.imageLoaded ? card.imagem : DEFAULT_CARD_IMAGE;
+      const identifier = getCardIdentifier(card);
+      const arcanoLabel = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
+      
+      cardElement.innerHTML = `
+        <a href="/cards/${card.id}" class="carta-random-link">
+          <article class="carta-random-container border-amber-300">
+            <div class="carta-random-image-wrapper">
+              <img
+                src="${finalImageUrl}"
+                alt="Carta ${card.nombre}"
+                loading="lazy"
+                class="carta-random-image"
+                onerror="
+                  this.onerror=null; 
+                  this.src='${DEFAULT_CARD_IMAGE}';
+                  this.classList.add('error-image');
+                "
+              />
+            </div>
+            <div class="carta-random-info">
+              <h3 class="carta-random-nombre">${card.nombre}</h3>
+              <div class="text-sm text-gray-600">
+                <span class="carta-random-numero">${identifier}</span>
+                <span class="block text-xs">${arcanoLabel}</span>
+              </div>
+            </div>
+          </article>
+        </a>
+      `;
+      
+      return cardElement;
+    }
+
+    // Funcion para voltear una carta
+    function flipCard(cardElement, cardIndex) {
+      if (availableCards.length === 0) {
+        console.error('No hay cartas disponibles para revelar');
+        return;
+      }
+
+      // Obtener una carta aleatoria del pool disponible
+      const randomIndex = Math.floor(Math.random() * availableCards.length);
+      const selectedCard = availableCards[randomIndex];
+      
+      // Remover la carta del pool disponible
+      availableCards.splice(randomIndex, 1);
+
+      // Crear elemento de carta revelada
+      const revealedElement = createRevealedCardElement(selectedCard);
+      
+      // Agregar clase de animacion
+      cardElement.classList.add('flipping');
+      
+      // Despues de la animacion, reemplazar el elemento
+      setTimeout(() => {
+        cardElement.parentNode.replaceChild(revealedElement, cardElement);
+        revealedElement.classList.add('card-revealed');
+      }, 300);
+
+      // Agregar la carta a la tirada actual
+      currentTirada.push(selectedCard);
+    }
+
+    // Obtener modo de tirada actual
+    function getCurrentMode() {
+      const selectedMode = document.querySelector('input[name="tiradaMode"]:checked');
+      return selectedMode ? selectedMode.value : 'mixta';
+    }
+
+    // Actualizar controles segun el modo
+    function updateControls() {
+      currentMode = getCurrentMode();
+      const showAclaracion = (currentMode === 'mayores' || currentMode === 'mixta') && tiradaGenerated;
+      
+      if (elements.aclaracionControls) {
+        elements.aclaracionControls.classList.toggle('hidden', !showAclaracion);
+      }
+    }
+
+    // Generar cartas aleatorias
+    async function generateRandomCards() {
+      try {
+        console.log('Generando tirada aleatoria...');
+        
+        currentMode = getCurrentMode();
+        console.log('Modo seleccionado:', currentMode);
+        
+        // Validar numero de cartas
+        const cardCount = Math.min(13, Math.max(1, 
+          parseInt(elements.cardCountInput?.value || '3') || 3));
+        console.log('Numero de cartas:', cardCount);
+        
+        if (elements.cardCountInput) {
+          elements.cardCountInput.value = cardCount;
+        }
+
+        // Mostrar carga
+        if (elements.loadingIndicator) {
+          elements.loadingIndicator.classList.remove('hidden');
+        }
+
+        // Preparar pool de cartas segun el modo
+        let cardPool = [];
+        
+        switch (currentMode) {
+          case 'mayores':
+            await preloadImages(workingCardsMayores);
+            cardPool = [...workingCardsMayores];
+            console.log('Pool de arcanos mayores:', cardPool.length);
+            break;
+            
+          case 'mixta':
+          default:
+            await preloadImages(workingCardsAll);
+            cardPool = [...workingCardsAll];
+            console.log('Pool de cartas mixtas:', cardPool.length);
+            break;
+        }
+
+        // Mezclar el pool de cartas disponibles usando algoritmo correcto
+        availableCards = shuffleArray(cardPool);
+
+        // Ocultar mensaje inicial
+        if (elements.initialMessage) {
+          elements.initialMessage.style.display = 'none';
+        }
+
+        // Limpiar contenedor
+        if (elements.cardsContainer) {
+          elements.cardsContainer.innerHTML = '';
+        }
+
+        // Crear cartas boca abajo
+        console.log('Creando', cardCount, 'cartas boca abajo...');
+        for (let i = 0; i < cardCount; i++) {
+          console.log('Creando carta', i + 1);
+          const cardElement = createFlippableCardElement(i);
+          if (elements.cardsContainer) {
+            elements.cardsContainer.appendChild(cardElement);
+            console.log('Carta', i + 1, 'añadida al contenedor');
+          } else {
+            console.error('Contenedor de cartas no encontrado');
+          }
+        }
+
+        // Resetear tirada actual
+        currentTirada = [];
+        tiradaGenerated = true; // Marcar que hay una tirada activa
+        
+        // Actualizar controles
+        updateControls();
+
+      } catch (error) {
+        console.error('Error generando cartas:', error);
+        if (elements.cardsContainer) {
+          elements.cardsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+              <p class="text-xl text-red-500">Error al mostrar las cartas</p>
+              <p class="text-gray-600 mt-2">Por favor intenta nuevamente</p>
+            </div>
+          `;
+        }
+      } finally {
+        if (elements.loadingIndicator) {
+          elements.loadingIndicator.classList.add('hidden');
+        }
+      }
+    }
+
+    // Generar carta de aclaracion
+    async function generateAclaracion() {
+      try {
+        await preloadImages(workingCardsMenores);
+        const shuffledMenores = shuffleArray(workingCardsMenores);
+        const aclaracionCard = shuffledMenores[0];
+
+        if (!aclaracionCard) {
+          alert('No hay mas arcanos menores disponibles para aclaracion');
+          return;
+        }
+
+        // Mostrar seccion de aclaracion si esta oculta
+        if (elements.aclaracionSection) {
+          elements.aclaracionSection.classList.remove('hidden');
+        }
+
+        // Crear y agregar carta de aclaracion (siempre revelada)
+        const cardElement = createAclaracionCardElement(aclaracionCard);
+        if (elements.aclaracionContainer) {
+          elements.aclaracionContainer.appendChild(cardElement);
+        }
+
+        // Remover la carta usada del mazo de menores
+        const usedIndex = workingCardsMenores.findIndex(card => card.id === aclaracionCard.id);
+        if (usedIndex > -1) {
+          workingCardsMenores.splice(usedIndex, 1);
+        }
+
+      } catch (error) {
+        console.error('Error generando carta de aclaracion:', error);
+        alert('Error al generar carta de aclaracion');
+      }
+    }
+
+    // Limpiar todo
+    function resetAll() {
+      // Restaurar mazos
+      workingCardsMayores = JSON.parse(JSON.stringify(arcanosMayores));
+      workingCardsMenores = JSON.parse(JSON.stringify(arcanosMenores));
+      workingCardsAll = JSON.parse(JSON.stringify(allCards));
+      
+      // Limpiar contenedores
+      if (elements.cardsContainer) {
+        elements.cardsContainer.innerHTML = `
+          <div id="initialMessage" class="col-span-full text-center py-12">
+            <p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
+          </div>
+        `;
+        elements.initialMessage = document.getElementById('initialMessage');
+      }
+      
+      if (elements.aclaracionContainer) {
+        elements.aclaracionContainer.innerHTML = '';
+      }
+      
+      if (elements.aclaracionSection) {
+        elements.aclaracionSection.classList.add('hidden');
+      }
+      
+      // Resetear estado
+      currentTirada = [];
+      availableCards = [];
+      tiradaGenerated = false; // No hay tirada activa
+      
+      // Actualizar controles
+      updateControls();
+    }
+
+    // Event Listeners
+    if (elements.generateBtn) {
+      console.log('Boton generar encontrado, agregando event listener');
+      elements.generateBtn.addEventListener('click', () => {
+        console.log('Click en boton generar detectado');
+        generateRandomCards();
+      });
+    } else {
+      console.error('Boton generar no encontrado');
+    }
+
+    if (elements.resetBtn) {
+      elements.resetBtn.addEventListener('click', resetAll);
+    }
+
+    if (elements.aclaracionBtn) {
+      elements.aclaracionBtn.addEventListener('click', generateAclaracion);
+    }
+
+    // Listener para cambio de modo
+    elements.tiradaModeInputs.forEach(input => {
+      input.addEventListener('change', updateControls);
+    });
+
+    // Inicializacion
+    updateControls();
+  });
+</script>
+
+<style>
+  .flippable-card {
+    @apply transition-transform duration-300;
+  }
+  
+  .flippable-card:hover {
+    @apply scale-105;
+  }
+  
+  .flipping {
+    @apply scale-110;
+    transform: scale(1.1) rotateY(180deg);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .card-revealed {
+    animation: cardReveal 0.5s ease-out;
+  }
+  
+  @keyframes cardReveal {
+    from {
+      opacity: 0;
+      transform: scale(0.8) rotateY(180deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotateY(0deg);
+    }
+  }
+  
+  .carta-aclaracion-item {
+    @apply transition-transform hover:scale-105;
+  }
+  
+  .carta-aclaracion-item .carta-random-container {
+    @apply bg-amber-50 border-2 border-amber-300;
+  }
+  
+  input[type="radio"]:checked + div {
+    @apply text-purple-900;
+  }
+  
+  input[type="radio"]:checked {
+    @apply text-purple-600;
+  }
+  
+  label:has(input[type="radio"]:checked) {
+    @apply border-purple-400 bg-purple-50;
+  }
+</style>

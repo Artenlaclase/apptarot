@@ -1,0 +1,235 @@
+---
+// src/pages/random-cards.astro
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { 
+  processImageUrl, 
+  getOptimizedCardUrl,
+  DEFAULT_IMAGES,
+  SPECIAL_CARD_URLS,
+  filterCardsByArcana,
+  type BaseCard 
+} from '../../utils/index.js';
+
+interface RandomCard extends BaseCard {
+  numero?: number;
+  valor?: string;
+  imageLoaded?: boolean;
+  imageError?: string;
+}
+
+const querySnapshot = await getDocs(collection(db, 'cards'));
+const allCards: RandomCard[] = querySnapshot.docs.map(doc => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    nombre: data.nombre || 'Sin nombre',
+    numero: data.numero,
+    valor: data.valor,
+    arcano: data.arcano || 'mayor',
+    imagem: data.imagem || '/cardback.jpg',
+    imageLoaded: false
+  } as RandomCard;
+});
+
+// Separar arcanos mayores y menores manualmente por compatibilidad
+const arcanosMayores = allCards.filter(card => card.arcano === 'mayor');
+const arcanosMenores = allCards.filter(card => card.arcano === 'menor');
+
+console.log(`Cargadas ${allCards.length} cartas desde Firestore (${arcanosMayores.length} mayores, ${arcanosMenores.length} menores)`);
+
+const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
+const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <main class="container mx-auto px-4 py-8 max-w-7xl">
+    <header class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-purple-900 mb-4">Tirada de Cartas Aleatorias</h1>
+      <p class="text-xl text-purple-700">Elige tu modalidad de tirada y número de cartas</p>
+    </header>
+
+    <section class="bg-white rounded-xl shadow-md p-6 mb-12 max-w-4xl mx-auto">
+      <!-- Modalidad de tirada -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Modalidad de tirada:</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
+            <input type="radio" name="tiradaMode" value="mayores" class="mr-3 text-purple-600">
+            <div>
+              <div class="font-medium text-purple-800">Solo Arcanos Mayores</div>
+              <div class="text-sm text-gray-600">22 cartas principales</div>
+            </div>
+          </label>
+          
+          <label class="flex items-center p-3 border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors">
+            <input type="radio" name="tiradaMode" value="mixta" class="mr-3 text-purple-600" checked>
+            <div>
+              <div class="font-medium text-purple-800">Tirada Mixta</div>
+              <div class="text-sm text-gray-600">Mayores y menores mezclados</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Controles principales -->
+      <div class="flex flex-col sm:flex-row gap-4 items-end justify-center mb-4">
+        <div class="flex-1 w-full sm:w-auto">
+          <label for="cardCount" class="block text-sm font-medium text-gray-700 mb-1">
+            Número de cartas:
+          </label>
+          <input
+            type="number"
+            id="cardCount"
+            name="cardCount"
+            min="1"
+            max="13"
+            value="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+          />
+        </div>
+        <button
+          type="button"
+          id="generateBtn"
+          class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+        >
+          Barajar Cartas
+        </button>
+        <button
+          type="button"
+          id="resetBtn"
+          class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+        >
+          Limpiar
+        </button>
+      </div>
+    </section>
+
+    <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div id="initialMessage" class="col-span-full text-center py-12">
+        <p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
+      </div>
+    </section>
+    
+    <div id="loadingIndicator" class="hidden text-center py-6">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+      <p class="mt-2 text-purple-700">Cargando cartas...</p>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  // Script de TEST SIMPLE - puramente del lado del cliente
+  console.log('Script iniciando...');
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM LISTO - Script del cliente iniciado');
+    
+    // Test básico inmediato
+    alert('JavaScript ejecutandose correctamente!');
+    
+    // Elementos del DOM
+    console.log('Buscando elementos DOM...');
+    const generateBtn = document.getElementById('generateBtn');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const initialMessage = document.getElementById('initialMessage');
+    
+    console.log('Estado de elementos DOM:');
+    console.log('  generateBtn:', generateBtn ? 'Encontrado' : 'No encontrado');
+    console.log('  cardsContainer:', cardsContainer ? 'Encontrado' : 'No encontrado');
+    console.log('  initialMessage:', initialMessage ? 'Encontrado' : 'No encontrado');
+
+    // Función de test simple
+    function testFunction() {
+      console.log('=== TEST FUNCTION EJECUTADA ===');
+      alert('Boton clickeado exitosamente!');
+      
+      if (cardsContainer) {
+        cardsContainer.innerHTML = `
+          <div class="col-span-full text-center py-8">
+            <h2 class="text-2xl font-bold text-purple-600">EXITO!</h2>
+            <p class="text-lg text-gray-600">El JavaScript esta funcionando correctamente</p>
+            <p class="text-sm text-green-600 mt-4">Boton y eventos funcionando</p>
+            <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg">
+              Recargar página
+            </button>
+          </div>
+        `;
+        console.log('Contenido actualizado correctamente');
+      }
+
+      if (initialMessage) {
+        initialMessage.style.display = 'none';
+        console.log('Mensaje inicial ocultado');
+      }
+    }
+
+    // Event Listener
+    if (generateBtn) {
+      console.log('Boton encontrado - Agregando event listener');
+      
+      generateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('CLICK DETECTADO EN BOTON!');
+        testFunction();
+      });
+      
+      // Test automático en 3 segundos
+      setTimeout(() => {
+        console.log('Ejecutando test automatico en 3 segundos...');
+        generateBtn.click();
+      }, 3000);
+      
+    } else {
+      console.error('BOTON GENERAR NO ENCONTRADO!');
+    }
+
+    console.log('Script inicializado completamente');
+  });
+</script>
+
+<style>
+  .flippable-card {
+    @apply transition-transform duration-300;
+  }
+  
+  .flippable-card:hover {
+    @apply scale-105;
+  }
+  
+  .flipping {
+    @apply scale-110;
+    transform: scale(1.1) rotateY(180deg);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .card-revealed {
+    animation: cardReveal 0.5s ease-out;
+  }
+  
+  @keyframes cardReveal {
+    from {
+      opacity: 0;
+      transform: scale(0.8) rotateY(180deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotateY(0deg);
+    }
+  }
+  
+  input[type="radio"]:checked + div {
+    @apply text-purple-900;
+  }
+  
+  input[type="radio"]:checked {
+    @apply text-purple-600;
+  }
+  
+  label:has(input[type="radio"]:checked) {
+    @apply border-purple-400 bg-purple-50;
+  }
+</style>

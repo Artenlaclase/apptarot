@@ -1,0 +1,150 @@
+---
+import { getAllCards, type Card } from "../../lib/firebase";
+import Layout from "../../layouts/Layout.astro";
+
+let cards = await getAllCards();
+console.log(`Cargadas ${cards.length} cartas desde Firestore (${cards.filter((c: Card) => c.type === 'major').length} mayores, ${cards.filter((c: Card) => c.type === 'minor').length} menores)`);
+---
+
+<Layout title="Tirada de Cartas Aleatoria">
+    <div id="app" class="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 py-8">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold text-white text-center mb-8">Tirada de Cartas Aleatoria</h1>
+            
+            <div class="text-center mb-8">
+                <button id="generateCards" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg text-lg mr-4 mb-4">
+                    Generar Cartas
+                </button>
+                
+                <button id="resetCards" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg text-lg mb-4" style="display: none;">
+                    Reiniciar
+                </button>
+            </div>
+
+            <div id="cardContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // @ts-nocheck
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado, iniciando script');
+            let shuffledCards = [];
+            let currentIndex = 0;
+            
+            const cardsElement = document.getElementById('cardsData');
+            if (!cardsElement) {
+                console.error('No se encontró el elemento cardsData');
+                return;
+            }
+            
+            const allCards = JSON.parse(cardsElement.textContent);
+            console.log('Total cartas cargadas:', allCards.length);
+            
+            function shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+            
+            function getOptimizedCardUrl(cardUrl) {
+                if (!cardUrl) return '/cardback.jpg';
+                
+                if (cardUrl.includes('firebasestorage.googleapis.com')) {
+                    const baseUrl = cardUrl.split('?')[0];
+                    return baseUrl + '?alt=media&token=' + cardUrl.split('token=')[1];
+                }
+                
+                if (cardUrl.includes('res.cloudinary.com')) {
+                    return cardUrl.replace('/upload/', '/upload/w_300,h_500,f_auto,q_auto/');
+                }
+                
+                return cardUrl;
+            }
+            
+            function updateControls() {
+                const generateBtn = document.getElementById('generateCards');
+                const resetBtn = document.getElementById('resetCards');
+                
+                if (!generateBtn || !resetBtn) return;
+                
+                if (currentIndex >= shuffledCards.length) {
+                    generateBtn.textContent = 'No hay mas cartas';
+                    (generateBtn as HTMLButtonElement).disabled = true;
+                } else {
+                    generateBtn.textContent = 'Generar Cartas';
+                    (generateBtn as HTMLButtonElement).disabled = false;
+                }
+                
+                resetBtn.style.display = currentIndex > 0 ? 'inline-block' : 'none';
+            }
+            
+            function displayCards(cards) {
+                const container = document.getElementById('cardContainer');
+                if (!container) return;
+                
+                cards.forEach(card => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition-transform duration-200';
+                    
+                    const imageUrl = getOptimizedCardUrl(card.image_url);
+                    
+                    cardDiv.innerHTML = `
+                        <img src="${imageUrl}" alt="${card.name}" class="w-full h-64 object-cover rounded-lg mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${card.name}</h3>
+                        <p class="text-gray-600 mb-2"><strong>Tipo:</strong> ${card.type === 'major' ? 'Arcano Mayor' : 'Arcano Menor'}</p>
+                        ${card.suit ? `<p class="text-gray-600 mb-2"><strong>Palo:</strong> ${card.suit}</p>` : ''}
+                        <p class="text-sm text-gray-500">${card.description || 'Sin descripcion disponible'}</p>
+                    `;
+                    
+                    container.appendChild(cardDiv);
+                });
+            }
+            
+            const generateBtn = document.getElementById('generateCards');
+            const resetBtn = document.getElementById('resetCards');
+            
+            if (generateBtn) {
+                generateBtn.addEventListener('click', function() {
+                    console.log('Botón generar clickeado');
+                    if (shuffledCards.length === 0) {
+                        shuffledCards = shuffleArray(allCards);
+                        currentIndex = 0;
+                        console.log('Cartas mezcladas:', shuffledCards.length);
+                    }
+                    
+                    const cardsToShow = Math.min(3, shuffledCards.length - currentIndex);
+                    if (cardsToShow > 0) {
+                        const selectedCards = shuffledCards.slice(currentIndex, currentIndex + cardsToShow);
+                        console.log('Mostrando cartas:', selectedCards.length);
+                        displayCards(selectedCards);
+                        currentIndex += cardsToShow;
+                        updateControls();
+                    }
+                });
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    console.log('Reset clickeado');
+                    const container = document.getElementById('cardContainer');
+                    if (container) {
+                        container.innerHTML = '';
+                    }
+                    shuffledCards = [];
+                    currentIndex = 0;
+                    updateControls();
+                });
+            }
+            
+            updateControls();
+            console.log('Sistema de cartas inicializado correctamente');
+        });
+    </script>
+
+    <script type="application/json" id="cardsData" set:html={JSON.stringify(cards)} />
+</Layout>
