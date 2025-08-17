@@ -1,16 +1,36 @@
 ---
-import { getAllCards, type Card } from "../../lib/firebase";
-import Layout from "../../layouts/Layout.astro";
+// src/pages/random-cards.astro
+import { getAllCards, type Card } from '../../lib/firebase';
+import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
+// Importar utilidades compartidas
+import { 
+  processImageUrl, 
+  getOptimizedCardUrl,
+  DEFAULT_IMAGES,
+  SPECIAL_CARD_URLS,
+  filterCardsByArcana,
+  type BaseCard 
+} from '../../utils/index.js';
 
-let cards = await getAllCards();
-console.log(`Cargadas ${cards.length} cartas desde Firestore (${cards.filter((c: Card) => c.type === 'major').length} mayores, ${cards.filter((c: Card) => c.type === 'minor').length} menores)`);
+interface RandomCard extends BaseCard {
+  numero?: number;
+  valor?: string;
+  imageLoaded?: boolean;
+  imageError?: string;
+}
+
+const allCards = await getAllCards();
+console.log(`Cargadas ${allCards.length} cartas desde Firestore (${allCards.filter((c: Card) => c.type === 'major').length} mayores, ${allCards.filter((c: Card) => c.type === 'minor').length} menores)`);
+
+// Separar arcanos mayores y menores usando la nueva interface
+const arcanosMayores = allCards.filter(card => card.type === 'major');
+const arcanosMenores = allCards.filter(card => card.type === 'minor');
+
+console.log(`Cargadas ${allCards.length} cartas desde Firestore (${arcanosMayores.length} mayores, ${arcanosMenores.length} menores)`);
 
 const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
 const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
-
-const arcanosMayores = cards.filter(card => card.type === 'major');
-const arcanosMenores = cards.filter(card => card.type === 'minor');
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -66,50 +86,301 @@ const arcanosMenores = cards.filter(card => card.type === 'minor');
         >
           Barajar Cartas
         </button>
-        
         <button
           type="button"
           id="resetBtn"
-          class="hidden px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+          class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
         >
-          Reiniciar
+          Limpiar
         </button>
       </div>
     </section>
 
-    <!-- Contenedor de cartas -->
-    <section id="cardsContainer" class="mb-12">
-      <div id="initialMessage" class="text-center py-12">
-        <div class="text-6xl mb-4">🔮</div>
-        <h2 class="text-2xl font-bold text-purple-900 mb-2">¿Listo para conocer tu destino?</h2>
-        <p class="text-purple-700 text-lg">Haz clic en "Barajar Cartas" para comenzar tu tirada</p>
-      </div>
-      
-      <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden">
-        <!-- Las cartas se generarán aquí dinámicamente -->
+    <section id="cardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div id="initialMessage" class="col-span-full text-center py-12">
+        <p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
       </div>
     </section>
+    
+    <div id="loadingIndicator" class="hidden text-center py-6">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+      <p class="mt-2 text-purple-700">Cargando cartas...</p>
+    </div>
   </main>
-
-    <script>
-        console.log('SCRIPT CARGANDO...');
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM READY!');
-            
-            // Test inmediato
-            const generateBtn = document.getElementById('generateBtn');
-            console.log('Botón encontrado:', !!generateBtn);
-            
-            if (generateBtn) {
-                console.log('Agregando click listener...');
-                generateBtn.addEventListener('click', function() {
-                    console.log('CLICK DETECTADO!');
-                    alert('El botón funciona!');
-                });
-            }
-        });
-    </script>
-
-    <script type="application/json" id="cardsData" set:html={JSON.stringify(cards)} />
 </Layout>
+
+<script>
+  // Type declarations
+  interface Card {
+    id: string;
+    name: string;
+    type: 'major' | 'minor';
+    suit?: string;
+    image_url: string;
+    description?: string;
+  }
+
+  declare global {
+    interface Window {
+      cardsData: Card[];
+    }
+  }
+
+  console.log('Script iniciando...');
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM LISTO - Script del cliente iniciado');
+    
+    // Variables globales
+    let currentTirada = [];
+    let tiradaGenerated = false;
+    
+    // Elementos del DOM
+    const generateBtn = document.getElementById('generateBtn');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const initialMessage = document.getElementById('initialMessage');
+    const cardCountInput = document.getElementById('cardCount');
+    const resetBtn = document.getElementById('resetBtn');
+    
+    console.log('Estado de elementos DOM:');
+    console.log('  generateBtn:', generateBtn ? 'Encontrado' : 'No encontrado');
+    console.log('  cardsContainer:', cardsContainer ? 'Encontrado' : 'No encontrado');
+    console.log('  initialMessage:', initialMessage ? 'Encontrado' : 'No encontrado');
+    
+    // Obtener datos de cartas 
+    console.log('window.cardsData:', window.cardsData);
+    console.log('typeof window.cardsData:', typeof window.cardsData);
+    let allCards: Card[] = [];
+    try {
+      allCards = window.cardsData || [];
+      console.log('Cartas cargadas:', allCards.length);
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      return;
+    }
+    
+    // Función para mezclar cartas (Fisher-Yates)
+    function shuffleArray<T>(array: T[]): T[] {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+    
+    // Función para obtener URL optimizada de imagen
+    function getOptimizedCardUrl(cardUrl: string): string {
+      if (!cardUrl) return '/cardback.jpg';
+      
+      if (cardUrl.includes('firebasestorage.googleapis.com')) {
+        const baseUrl = cardUrl.split('?')[0];
+        if (cardUrl.includes('token=')) {
+          return baseUrl + '?alt=media&token=' + cardUrl.split('token=')[1];
+        }
+        return baseUrl;
+      }
+      
+      if (cardUrl.includes('res.cloudinary.com')) {
+        return cardUrl.replace('/upload/', '/upload/w_300,h_500,f_auto,q_auto/');
+      }
+      
+      return cardUrl;
+    }
+    
+    // Función principal para generar cartas
+    function generateCards() {
+      console.log('Generando cartas...');
+      
+      const selectedMode = (document.querySelector('input[name="tiradaMode"]:checked') as HTMLInputElement)?.value || 'mixta';
+      const cardCount = parseInt((cardCountInput as HTMLInputElement)?.value) || 3;
+      
+      console.log('Modo seleccionado:', selectedMode);
+      console.log('Número de cartas:', cardCount);
+      
+      // Filtrar cartas según el modo
+      let cardsToUse;
+      if (selectedMode === 'mayores') {
+        cardsToUse = allCards.filter(card => card.type === 'major');
+      } else {
+        cardsToUse = allCards; // mixta = todas las cartas
+      }
+      
+      console.log('Cartas disponibles:', cardsToUse.length);
+      
+      // Mezclar y seleccionar
+      const shuffledCards = shuffleArray(cardsToUse);
+      const selectedCards = shuffledCards.slice(0, Math.min(cardCount, shuffledCards.length));
+      
+      console.log('Cartas seleccionadas:', selectedCards.length);
+      
+      // Mostrar cartas
+      displayCards(selectedCards);
+      
+      // Actualizar estado
+      currentTirada = selectedCards;
+      tiradaGenerated = true;
+      updateUI();
+    }
+    
+    // Función para mostrar las cartas
+    function displayCards(cards: Card[]) {
+      if (!cardsContainer || !initialMessage) {
+        console.error('Contenedores no encontrados');
+        return;
+      }
+      
+      // Ocultar mensaje inicial
+      if (initialMessage) {
+        initialMessage.style.display = 'none';
+      }
+      
+      // Crear contenedor de cartas
+      let cardsGrid = document.getElementById('cardsGrid');
+      if (!cardsGrid) {
+        cardsGrid = document.createElement('div');
+        cardsGrid.id = 'cardsGrid';
+        cardsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
+        cardsContainer.appendChild(cardsGrid);
+      }
+      
+      // Limpiar contenido previo
+      cardsGrid.innerHTML = '';
+      
+      // Generar HTML para cada carta
+      cards.forEach((card: Card, index: number) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card-item bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300 hover:shadow-2xl';
+        
+        const imageUrl = getOptimizedCardUrl(card.image_url);
+        const cardName = card.name || 'Carta sin nombre';
+        const cardType = card.type === 'major' ? 'Arcano Mayor' : 'Arcano Menor';
+        const cardSuit = card.suit ? card.suit : '';
+        const cardDescription = card.description || 'Sin descripción disponible';
+        
+        cardDiv.innerHTML = `
+          <div class="relative">
+            <img 
+              src="${imageUrl}" 
+              alt="${cardName}" 
+              class="w-full h-64 object-cover"
+              onerror="this.src='/cardback.jpg'"
+            />
+            <div class="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded-full text-sm font-medium">
+              ${index + 1}
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="text-xl font-bold text-purple-900 mb-2">${cardName}</h3>
+            <p class="text-sm text-purple-600 mb-1">
+              <strong>Tipo:</strong> ${cardType}
+            </p>
+            ${cardSuit ? `<p class="text-sm text-purple-600 mb-2"><strong>Palo:</strong> ${cardSuit}</p>` : ''}
+            <p class="text-sm text-gray-600 line-clamp-3">${cardDescription}</p>
+          </div>
+        `;
+        
+        cardsGrid.appendChild(cardDiv);
+      });
+      
+      console.log('Cartas mostradas exitosamente');
+    }
+    
+    // Función para reiniciar
+    function resetCards() {
+      console.log('Reiniciando cartas...');
+      
+      const cardsGrid = document.getElementById('cardsGrid');
+      if (cardsGrid) {
+        cardsGrid.remove();
+      }
+      
+      if (initialMessage) {
+        initialMessage.style.display = 'block';
+      }
+      
+      currentTirada = [];
+      tiradaGenerated = false;
+      updateUI();
+    }
+    
+    // Función para actualizar UI
+    function updateUI() {
+      if (resetBtn) {
+        resetBtn.style.display = tiradaGenerated ? 'inline-block' : 'none';
+      }
+    }
+    
+    // Event Listeners
+    if (generateBtn) {
+      console.log('Boton encontrado - Agregando event listener');
+      generateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('CLICK DETECTADO EN BOTON!');
+        generateCards();
+      });
+    } else {
+      console.error('BOTON GENERAR NO ENCONTRADO!');
+    }
+    
+    if (resetBtn) {
+      resetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('RESET DETECTADO!');
+        resetCards();
+      });
+    }
+    
+    // Inicialización
+    updateUI();
+    console.log('Script inicializado completamente');
+  });
+</script>
+
+<script is:inline define:vars={{ cards: allCards }}>
+  window.cardsData = cards;
+  console.log('Data pasada al cliente:', window.cardsData?.length || 0, 'cartas');
+</script>
+
+<style>
+  .flippable-card {
+    @apply transition-transform duration-300;
+  }
+  
+  .flippable-card:hover {
+    @apply scale-105;
+  }
+  
+  .flipping {
+    @apply scale-110;
+    transform: scale(1.1) rotateY(180deg);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .card-revealed {
+    animation: cardReveal 0.5s ease-out;
+  }
+  
+  @keyframes cardReveal {
+    from {
+      opacity: 0;
+      transform: scale(0.8) rotateY(180deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotateY(0deg);
+    }
+  }
+  
+  input[type="radio"]:checked + div {
+    @apply text-purple-900;
+  }
+  
+  input[type="radio"]:checked {
+    @apply text-purple-600;
+  }
+  
+  label:has(input[type="radio"]:checked) {
+    @apply border-purple-400 bg-purple-50;
+  }
+</style>

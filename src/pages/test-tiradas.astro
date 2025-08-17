@@ -4,19 +4,25 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 
-// Obtener cartas desde Firestore
-const querySnapshot = await getDocs(collection(db, 'cards'));
-const allCards = querySnapshot.docs.map(doc => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    nombre: data.nombre || 'Sin nombre',
-    numero: data.numero,
-    valor: data.valor,
-    arcano: data.arcano || 'mayor',
-    imagem: data.imagem || '/cardback.jpg'
-  };
-});
+// Obtener cartas desde Firestore usando db directamente
+try {
+  const querySnapshot = await getDocs(collection(db, 'cards'));
+  var allCards = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      nombre: data.nombre || 'Sin nombre',
+      numero: data.numero,
+      valor: data.valor,
+      arcano: data.arcano || 'mayor',
+      imagem: data.imagem || '/cardback.jpg'
+    };
+  });
+  console.log(`Cartas cargadas directamente: ${allCards.length}`);
+} catch (error) {
+  console.error('Error cargando cartas:', error);
+  var allCards: any[] = [];
+}
 
 console.log('Test: Cargas obtenidas:', allCards.length);
 ---
