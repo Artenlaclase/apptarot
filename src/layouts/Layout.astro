@@ -16,6 +16,7 @@ const {
   description = 'Explora el conocimiento ancestral del Tarot de Marsella',
   canonicalUrl 
 } = Astro.props;
+const computedCanonical = canonicalUrl ?? Astro.url?.href;
 ---
 
 <!DOCTYPE html>
@@ -25,7 +26,7 @@ const {
     title={title} 
     description={description} 
   />
-  {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+  {computedCanonical && <link rel="canonical" href={computedCanonical} />}
   <style>
     :root {
       --font-heading: 'Cardo', serif;
@@ -42,7 +43,5 @@ const {
   
   <Footer />
   
-  <!-- Scripts -->
-  <script src="/scripts/mobile-menu.js" defer></script>
 </body>
 </html>

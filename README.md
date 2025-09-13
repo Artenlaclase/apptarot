@@ -1,47 +1,44 @@
-# Astro Starter Kit: Minimal
+# Tarot de Marsella — Astro
 
-```sh
-npm create astro@latest -- --template minimal
+Sitio en Astro para explorar el Tarot de Marsella: cartas, descripciones y tiradas aleatorias.
+
+## Estructura
+
+```
+public/
+src/
+	components/
+	layouts/
+	pages/
+	styles/
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+## Scripts
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- `npm run dev`: arranca el servidor de desarrollo en http://localhost:4321
+- `npm run build`: genera la build de producción en `dist/`
+- `npm run preview`: sirve la build generada
 
-## 🚀 Project Structure
+## Configuración
 
-Inside of your Astro project, you'll see the following folders and files:
+- TailwindCSS y PostCSS ya están configurados.
+- Sitemap automático con `@astrojs/sitemap`. Define `SITE_URL` en producción para URLs canónicas correctas.
+- `robots.txt` incluido en `public/`.
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+Variables públicas esperadas para Firebase (por ejemplo, en `.env`):
+
+```
+PUBLIC_FIREBASE_API_KEY=...
+PUBLIC_FIREBASE_AUTH_DOMAIN=...
+PUBLIC_FIREBASE_PROJECT_ID=...
+PUBLIC_FIREBASE_STORAGE_BUCKET=...
+PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+PUBLIC_FIREBASE_APP_ID=...
+SITE_URL=https://tusitio.com
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Notas
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+- Meta etiquetas y Open Graph están centralizadas en `src/components/Head.astro`.
+- Páginas legales básicas incluidas: `privacy`, `terms`, `cookies`.
 
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
