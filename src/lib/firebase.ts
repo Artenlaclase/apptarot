@@ -3,15 +3,13 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import type { FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
-  connectFirestoreEmulator,
   initializeFirestore,
-  Firestore,
-  FirestoreError
 } from "firebase/firestore";
 import { 
   persistentLocalCache, 
   persistentMultipleTabManager 
 } from "firebase/firestore";
+import type { Firestore, FirestoreError } from "firebase/firestore";
 
 // Define la interfaz para la configuración de Firebase
 interface FirebaseConfig {
@@ -59,10 +57,12 @@ try {
 
 // Connect to emulator for local development (uncomment if needed)
 /*
-if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-  connectFirestoreEmulator(db, 'localhost', 8080);
-  console.log('Connected to Firestore emulator');
-}
+// Para usar el emulador local, descomenta el siguiente bloque y añade:
+// import { connectFirestoreEmulator } from 'firebase/firestore';
+// if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+//   connectFirestoreEmulator(db, 'localhost', 8080);
+//   console.log('Connected to Firestore emulator');
+// }
 */
 
 // Export the Firestore instance

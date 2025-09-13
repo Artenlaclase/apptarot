@@ -78,11 +78,36 @@ const getCardIdentifier = (card: Card): string => {
 };
 
 const pageTitle = `${card.nombre} - Tarot de Marsella`;
-const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 100)}...`;
+const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 140)}...`;
+
+// SEO image: usa la imagen de la carta si existe; si es Cloudinary, generamos variantes
+const isCloudinary = typeof card.imagem === 'string' && card.imagem.includes('res.cloudinary.com');
+const ogImage = card.imagem || '/marsella-tarot.jpg';
+const ogImageAlt = `Carta ${card.nombre} del Tarot de Marsella`;
+
+// Responsive helpers para Cloudinary (caen en la misma URL si no es Cloudinary)
+const clSrc = (w:number) => isCloudinary 
+  ? card.imagem.replace('/upload/', `/upload/w_${w},f_auto,q_auto/`)
+  : card.imagem;
+const srcset = [320, 480, 640, 768, 960, 1200].map(w => `${clSrc(w)} ${w}w`).join(', ');
+const sizes = '(max-width: 768px) 90vw, (max-width: 1024px) 50vw, 33vw';
+
 ---
 
-<Layout title={pageTitle} description={pageDescription}>
+<Layout title={pageTitle} description={pageDescription} ogImage={ogImage} ogImageAlt={ogImageAlt}>
   <article class="max-w-7xl mx-auto px-4 py-8">
+    <script type="application/ld+json" is:inline>
+      {JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: card.nombre,
+        description: pageDescription,
+        image: ogImage,
+        url: Astro.url?.href,
+        about: card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor',
+        keywords: card.keywords ?? []
+      })}
+    </script>
     <header class="text-center border-b border-gray-200 pb-6 mb-8">
       <h1 class="text-4xl font-bold text-purple-900">
         {card.nombre} 
@@ -101,7 +126,9 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
         <figure class="carta-detalle-figure">
           <div class="carta-detalle-image-wrapper">
             <img
-              src={card.imagem}
+              src={clSrc(768)}
+              srcset={srcset}
+              sizes={sizes}
               alt={`Carta ${card.nombre}`}
               loading="eager"
               class="carta-detalle-image"
@@ -109,7 +136,7 @@ const pageDescription = `Significado de ${card.nombre}: ${card.significado.direc
             />
           </div>
           <figcaption class="text-center text-sm text-gray-500 mt-3">
-            Ilustración tradicional de Marsella <br>
+            Ilustración tradicional de Marsella <br />
             Dr. Yoav Ben-Dov 
           </figcaption>
         </figure>

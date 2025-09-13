@@ -217,6 +217,16 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       return DEFAULT_CARD_IMAGE;
     }
 
+    // Construye atributos responsivos para imágenes (Cloudinary o fallback)
+    function buildResponsiveAttrs(url) {
+      const isCloudinary = typeof url === 'string' && url.includes('res.cloudinary.com');
+      const clSrc = (w) => isCloudinary ? url.replace('/upload/', `/upload/w_${w},f_auto,q_auto/`) : url;
+      const src = clSrc(380);
+      const srcset = [260, 320, 380, 440, 520].map(w => `${clSrc(w)} ${w}w`).join(', ');
+      const sizes = '(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 280px';
+      return { src, srcset, sizes };
+    }
+
     // Precargar imágenes
     async function preloadImages(cards) {
       return new Promise(resolve => {
@@ -272,6 +282,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       cardElement.className = 'carta-random-item revealed-card';
       
       const finalImageUrl = card.imageLoaded ? card.imagem : DEFAULT_CARD_IMAGE;
+      const attrs = buildResponsiveAttrs(finalImageUrl);
       const identifier = getCardIdentifier(card);
       const arcanoLabel = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
       
@@ -280,9 +291,12 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           <article class="carta-random-container">
             <div class="carta-random-image-wrapper">
               <img
-                src="${finalImageUrl}"
+                src="${attrs.src}"
+                srcset="${attrs.srcset}"
+                sizes="${attrs.sizes}"
                 alt="Carta ${card.nombre}"
                 loading="lazy"
+                decoding="async"
                 class="carta-random-image"
                 onerror="
                   this.onerror=null; 
@@ -311,6 +325,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       cardElement.className = 'carta-aclaracion-item';
       
       const finalImageUrl = card.imageLoaded ? card.imagem : DEFAULT_CARD_IMAGE;
+      const attrs = buildResponsiveAttrs(finalImageUrl);
       const identifier = getCardIdentifier(card);
       const arcanoLabel = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
       
@@ -319,9 +334,12 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           <article class="carta-random-container border-amber-300">
             <div class="carta-random-image-wrapper">
               <img
-                src="${finalImageUrl}"
+                src="${attrs.src}"
+                srcset="${attrs.srcset}"
+                sizes="${attrs.sizes}"
                 alt="Carta ${card.nombre}"
                 loading="lazy"
+                decoding="async"
                 class="carta-random-image"
                 onerror="
                   this.onerror=null; 

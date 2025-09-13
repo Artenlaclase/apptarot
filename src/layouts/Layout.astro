@@ -9,12 +9,18 @@ interface Props {
   title?: string;
   description?: string;
   canonicalUrl?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  noindex?: boolean;
 }
 
 const { 
   title = 'Tarot de Marsella', 
   description = 'Explora el conocimiento ancestral del Tarot de Marsella',
-  canonicalUrl 
+  canonicalUrl,
+  ogImage,
+  ogImageAlt,
+  noindex
 } = Astro.props;
 const computedCanonical = canonicalUrl ?? Astro.url?.href;
 ---
@@ -25,6 +31,9 @@ const computedCanonical = canonicalUrl ?? Astro.url?.href;
   <Head 
     title={title} 
     description={description} 
+    ogImage={ogImage}
+    ogImageAlt={ogImageAlt}
+    noindex={noindex}
   />
   {computedCanonical && <link rel="canonical" href={computedCanonical} />}
   <style>
