@@ -152,7 +152,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 </Layout>
 
 <script define:vars={{ allCards, arcanosMayores, arcanosMenores }}>
-  document.addEventListener('DOMContentLoaded', () => {
+  function initializeRandomCardsPage() {
     // Configuración esencial
     const DEFAULT_CARD_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg';
     const CARDBACK_IMAGE = '/cardback.jpg';
@@ -243,6 +243,15 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       });
     }
 
+    function shuffleCards(cards) {
+      const shuffled = [...cards];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
     // Crear elemento de carta boca abajo (clickeable)
     function createFlippableCardElement(cardIndex) {
       const cardElement = document.createElement('div');
@@ -319,6 +328,36 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       return cardElement;
     }
 
+    // Función para voltear una carta
+    function flipCard(cardElement, cardIndex) {
+      if (availableCards.length === 0) {
+        console.error('No hay cartas disponibles para revelar');
+        return;
+      }
+
+      // Obtener una carta aleatoria del pool disponible
+      const randomIndex = Math.floor(Math.random() * availableCards.length);
+      const selectedCard = availableCards[randomIndex];
+      
+      // Remover la carta del pool disponible
+      availableCards.splice(randomIndex, 1);
+
+      // Crear elemento de carta revelada
+      const revealedElement = createRevealedCardElement(selectedCard);
+      
+      // Agregar clase de animación
+      cardElement.classList.add('flipping');
+      
+      // Después de la animación, reemplazar el elemento
+      setTimeout(() => {
+        cardElement.parentNode.replaceChild(revealedElement, cardElement);
+        revealedElement.classList.add('card-revealed');
+      }, 300);
+
+      // Agregar la carta a la tirada actual
+      currentTirada.push(selectedCard);
+    }
+
     // Crear elemento de carta de aclaración (siempre revelada)
     function createAclaracionCardElement(card) {
       const cardElement = document.createElement('div');
@@ -360,36 +399,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       `;
       
       return cardElement;
-    }
-
-    // Función para voltear una carta
-    function flipCard(cardElement, cardIndex) {
-      if (availableCards.length === 0) {
-        console.error('No hay cartas disponibles para revelar');
-        return;
-      }
-
-      // Obtener una carta aleatoria del pool disponible
-      const randomIndex = Math.floor(Math.random() * availableCards.length);
-      const selectedCard = availableCards[randomIndex];
-      
-      // Remover la carta del pool disponible
-      availableCards.splice(randomIndex, 1);
-
-      // Crear elemento de carta revelada
-      const revealedElement = createRevealedCardElement(selectedCard);
-      
-      // Agregar clase de animación
-      cardElement.classList.add('flipping');
-      
-      // Después de la animación, reemplazar el elemento
-      setTimeout(() => {
-        cardElement.parentNode.replaceChild(revealedElement, cardElement);
-        revealedElement.classList.add('card-revealed');
-      }, 300);
-
-      // Agregar la carta a la tirada actual
-      currentTirada.push(selectedCard);
     }
 
     // Obtener modo de tirada actual
@@ -442,8 +451,12 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             break;
         }
 
+        if (cardPool.length === 0) {
+          throw new Error('No hay cartas disponibles para la modalidad seleccionada');
+        }
+
         // Mezclar el pool de cartas disponibles
-        availableCards = cardPool.sort(() => 0.5 - Math.random());
+        availableCards = shuffleCards(cardPool);
 
         // Ocultar mensaje inicial
         if (elements.initialMessage) {
@@ -465,7 +478,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
         // Resetear tirada actual
         currentTirada = [];
-        tiradaGenerated = true; // Marcar que hay una tirada activa
+        tiradaGenerated = true;
         
         // Actualizar controles
         updateControls();
@@ -576,28 +589,34 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
     // Inicialización
     updateControls();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeRandomCardsPage, { once: true });
+  } else {
+    initializeRandomCardsPage();
+  }
 </script>
 
 <style>
   .flippable-card {
     @apply transition-transform duration-300;
   }
-  
+
   .flippable-card:hover {
     @apply scale-105;
   }
-  
+
   .flipping {
     @apply scale-110;
     transform: scale(1.1) rotateY(180deg);
     transition: transform 0.3s ease-in-out;
   }
-  
+
   .card-revealed {
     animation: cardReveal 0.5s ease-out;
   }
-  
+
   @keyframes cardReveal {
     from {
       opacity: 0;
@@ -608,7 +627,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       transform: scale(1) rotateY(0deg);
     }
   }
-  
+
   .carta-aclaracion-item {
     @apply transition-transform hover:scale-105;
   }
