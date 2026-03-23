@@ -1,7 +1,7 @@
 ---
 // src/pages/cards/minor.astro
 import { db } from '../../lib/firebase';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
 
@@ -114,14 +114,26 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
             >
               <article class="carta-item-minor">
                 <div class="carta-image-container-minor">
-                  <img
-                    src={card.imagem}
-                    alt={`Carta ${card.nombre}`}
-                    loading="lazy"
-                    decoding="async"
-                    class="carta-image-minor"
-                    onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
-                  />
+                  {
+                    (() => {
+                      const isCloudinary = typeof card.imagem === 'string' && card.imagem.includes('res.cloudinary.com');
+                      const clSrc = (w:number) => isCloudinary ? card.imagem.replace('/upload/', `/upload/w_${w},f_auto,q_auto/`) : card.imagem;
+                      const srcset = [200, 260, 320, 380, 440].map(w => `${clSrc(w)} ${w}w`).join(', ');
+                      const sizes = '(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 200px';
+                      return (
+                        <img
+                          src={clSrc(320)}
+                          srcset={srcset}
+                          sizes={sizes}
+                          alt={`Carta ${card.nombre}`}
+                          loading="lazy"
+                          decoding="async"
+                          class="carta-image-minor"
+                          onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
+                        />
+                      );
+                    })()
+                  }
                 </div>
                 <div class="carta-info-minor">
                   <h3 class="carta-nombre-minor">{card.nombre}</h3>

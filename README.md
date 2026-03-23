@@ -1,47 +1,85 @@
-# Astro Starter Kit: Minimal
+# Tarot de Marsella — Astro
 
-```sh
-npm create astro@latest -- --template minimal
+Sitio en Astro para explorar el Tarot de Marsella: cartas, descripciones, tiradas aleatorias con volteo interactivo e interpretación generada por IA.
+
+## Estructura
+
+```
+public/
+src/
+  components/       # Navbar, Footer, Head
+  layouts/          # Layout.astro, AdminLayout.astro
+  lib/              # firebase.ts
+  pages/
+    api/
+      interpretar.ts  # Endpoint POST — interpretación IA con OpenAI
+    cards/
+      [id].astro        # Detalle de carta
+      index.astro
+      major.astro
+      minor.astro
+      random-cards.astro  # Tirada aleatoria con flip y IA
+    index.astro
+    about.astro
+    meanings.astro
+    privacy.astro
+    terms.astro
+    cookies.astro
+  styles/           # global.css, cards.css, admin.css
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+## Scripts
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo en http://localhost:4321 |
+| `npm run build` | Build de producción en `dist/` |
+| `npm run preview` | Sirve la build generada localmente |
 
-## 🚀 Project Structure
+## Variables de entorno
 
-Inside of your Astro project, you'll see the following folders and files:
+Crea un archivo `.env` en la raíz con las siguientes variables:
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```env
+# Firebase — base de datos de cartas
+PUBLIC_FIREBASE_API_KEY=...
+PUBLIC_FIREBASE_AUTH_DOMAIN=...
+PUBLIC_FIREBASE_PROJECT_ID=...
+PUBLIC_FIREBASE_STORAGE_BUCKET=...
+PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+PUBLIC_FIREBASE_APP_ID=...
+
+# OpenAI — interpretación IA de tiradas (requiere crédito en la cuenta)
+# Obtén tu clave en: https://platform.openai.com/api-keys
+OPENAI_API_KEY=sk-proj-...
+
+# URL canónica para sitemap (solo producción)
+SITE_URL=https://tusitio.com
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+> **Nota:** Sin `OPENAI_API_KEY` válida con saldo disponible, el botón "Interpretar Tirada" devolverá un mensaje de error descriptivo. El resto de la aplicación funciona con normalidad.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Funcionalidades principales
 
-Any static assets, like images, can be placed in the `public/` directory.
+### Tirada aleatoria (`/cards/random-cards`)
+- Selección de modalidad: **Solo Arcanos Mayores** (22 cartas) o **Tirada Mixta** (78 cartas)
+- Número de cartas configurable (1–13)
+- Las cartas aparecen **boca abajo** al barajar
+- **Volteo individual** — clic en cada carta para revelarla con animación
+- **Revelar Todas** — voltea todas las cartas con efecto escalonado
+- **Carta de Aclaración** — saca un arcano menor adicional (siempre revelado)
+- **✨ Interpretar Tirada** — genera una interpretación en español usando `gpt-4o-mini` de OpenAI basada en las cartas reveladas
 
-## 🧞 Commands
+### Cartas
+- 78 cartas cargadas desde Firebase Firestore (22 arcanos mayores, 56 menores)
+- Imágenes servidas desde Cloudinary con transformaciones automáticas (`w_380,f_auto,q_auto`)
 
-All commands are run from the root of the project, from a terminal:
+## Configuración
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+- **Astro 5** en modo `server` con adaptador `@astrojs/node` (SSR)
+- **TailwindCSS 3** con PostCSS
+- **Sitemap** automático con `@astrojs/sitemap`
+- Meta etiquetas y Open Graph centralizadas en `src/components/Head.astro`
+- Páginas legales incluidas: `privacy`, `terms`, `cookies`
+- `robots.txt` y `site.webmanifest` en `public/`
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).

@@ -125,14 +125,26 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
         >
           <article class="carta-item">
             <div class="carta-image-container">
-              <img
-                src={card.imagem}
-                alt={`Arcano Mayor ${card.nombre}`}
-                loading="lazy"
-                decoding="async"
-                class="carta-image"
-                onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
-              />
+              {
+                (() => {
+                  const isCloudinary = typeof card.imagem === 'string' && card.imagem.includes('res.cloudinary.com');
+                  const clSrc = (w:number) => isCloudinary ? card.imagem.replace('/upload/', `/upload/w_${w},f_auto,q_auto/`) : card.imagem;
+                  const srcset = [240, 320, 400, 480, 600].map(w => `${clSrc(w)} ${w}w`).join(', ');
+                  const sizes = '(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 240px';
+                  return (
+                    <img
+                      src={clSrc(400)}
+                      srcset={srcset}
+                      sizes={sizes}
+                      alt={`Arcano Mayor ${card.nombre}`}
+                      loading="lazy"
+                      decoding="async"
+                      class="carta-image"
+                      onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
+                    />
+                  );
+                })()
+              }
             </div>
             <div class="carta-info">
               <h3 class="carta-nombre">{card.nombre}</h3>

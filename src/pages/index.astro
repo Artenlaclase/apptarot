@@ -7,8 +7,12 @@ import Layout from '../layouts/Layout.astro';
   <section class="relative w-full h-screen flex items-center justify-center bg-black text-white">
     <img 
       src="/marsella-tarot.jpg" 
-      alt="Cartas del Tarot de Marsella" 
+      srcset="/marsella-tarot.jpg 1200w" 
+      sizes="100vw" 
+      alt="Fondo con cartas del Tarot de Marsella"
       class="absolute inset-0 w-full h-full object-cover opacity-30"
+      fetchpriority="high"
+      decoding="async"
     />
     <div class="relative z-10 text-center px-4 max-w-2xl">
       <h1 class="text-4xl md:text-6xl font-bold mb-4">Explora el Tarot de Marsella</h1>
