@@ -1,44 +1,85 @@
 # Tarot de Marsella — Astro
 
-Sitio en Astro para explorar el Tarot de Marsella: cartas, descripciones y tiradas aleatorias.
+Sitio en Astro para explorar el Tarot de Marsella: cartas, descripciones, tiradas aleatorias con volteo interactivo e interpretación generada por IA.
 
 ## Estructura
 
 ```
 public/
 src/
-	components/
-	layouts/
-	pages/
-	styles/
+  components/       # Navbar, Footer, Head
+  layouts/          # Layout.astro, AdminLayout.astro
+  lib/              # firebase.ts
+  pages/
+    api/
+      interpretar.ts  # Endpoint POST — interpretación IA con OpenAI
+    cards/
+      [id].astro        # Detalle de carta
+      index.astro
+      major.astro
+      minor.astro
+      random-cards.astro  # Tirada aleatoria con flip y IA
+    index.astro
+    about.astro
+    meanings.astro
+    privacy.astro
+    terms.astro
+    cookies.astro
+  styles/           # global.css, cards.css, admin.css
 ```
 
 ## Scripts
 
-- `npm run dev`: arranca el servidor de desarrollo en http://localhost:4321
-- `npm run build`: genera la build de producción en `dist/`
-- `npm run preview`: sirve la build generada
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo en http://localhost:4321 |
+| `npm run build` | Build de producción en `dist/` |
+| `npm run preview` | Sirve la build generada localmente |
 
-## Configuración
+## Variables de entorno
 
-- TailwindCSS y PostCSS ya están configurados.
-- Sitemap automático con `@astrojs/sitemap`. Define `SITE_URL` en producción para URLs canónicas correctas.
-- `robots.txt` incluido en `public/`.
+Crea un archivo `.env` en la raíz con las siguientes variables:
 
-Variables públicas esperadas para Firebase (por ejemplo, en `.env`):
-
-```
+```env
+# Firebase — base de datos de cartas
 PUBLIC_FIREBASE_API_KEY=...
 PUBLIC_FIREBASE_AUTH_DOMAIN=...
 PUBLIC_FIREBASE_PROJECT_ID=...
 PUBLIC_FIREBASE_STORAGE_BUCKET=...
 PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 PUBLIC_FIREBASE_APP_ID=...
+
+# OpenAI — interpretación IA de tiradas (requiere crédito en la cuenta)
+# Obtén tu clave en: https://platform.openai.com/api-keys
+OPENAI_API_KEY=sk-proj-...
+
+# URL canónica para sitemap (solo producción)
 SITE_URL=https://tusitio.com
 ```
 
-## Notas
+> **Nota:** Sin `OPENAI_API_KEY` válida con saldo disponible, el botón "Interpretar Tirada" devolverá un mensaje de error descriptivo. El resto de la aplicación funciona con normalidad.
 
-- Meta etiquetas y Open Graph están centralizadas en `src/components/Head.astro`.
-- Páginas legales básicas incluidas: `privacy`, `terms`, `cookies`.
+## Funcionalidades principales
+
+### Tirada aleatoria (`/cards/random-cards`)
+- Selección de modalidad: **Solo Arcanos Mayores** (22 cartas) o **Tirada Mixta** (78 cartas)
+- Número de cartas configurable (1–13)
+- Las cartas aparecen **boca abajo** al barajar
+- **Volteo individual** — clic en cada carta para revelarla con animación
+- **Revelar Todas** — voltea todas las cartas con efecto escalonado
+- **Carta de Aclaración** — saca un arcano menor adicional (siempre revelado)
+- **✨ Interpretar Tirada** — genera una interpretación en español usando `gpt-4o-mini` de OpenAI basada en las cartas reveladas
+
+### Cartas
+- 78 cartas cargadas desde Firebase Firestore (22 arcanos mayores, 56 menores)
+- Imágenes servidas desde Cloudinary con transformaciones automáticas (`w_380,f_auto,q_auto`)
+
+## Configuración
+
+- **Astro 5** en modo `server` con adaptador `@astrojs/node` (SSR)
+- **TailwindCSS 3** con PostCSS
+- **Sitemap** automático con `@astrojs/sitemap`
+- Meta etiquetas y Open Graph centralizadas en `src/components/Head.astro`
+- Páginas legales incluidas: `privacy`, `terms`, `cookies`
+- `robots.txt` y `site.webmanifest` en `public/`
 
