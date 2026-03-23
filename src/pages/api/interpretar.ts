@@ -74,7 +74,14 @@ export async function POST({ request }: { request: Request }): Promise<Response>
   if (!aiResponse.ok) {
     const errTxt = await aiResponse.text().catch(() => '');
     console.error('[interpretar] OpenAI error:', aiResponse.status, errTxt);
-    return json({ error: 'Error al generar la interpretacion' }, 502);
+
+    let mensaje = 'Error al generar la interpretacion. Intentalo de nuevo.';
+    if (aiResponse.status === 429) {
+      mensaje = 'La cuenta de OpenAI no tiene credito disponible. Añade saldo en platform.openai.com/billing para usar esta funcion.';
+    } else if (aiResponse.status === 401) {
+      mensaje = 'La clave de OpenAI no es valida. Revisa OPENAI_API_KEY en el archivo .env.';
+    }
+    return json({ error: mensaje }, 502);
   }
 
   const data = (await aiResponse.json()) as { choices: Array<{ message: { content: string } }> };
