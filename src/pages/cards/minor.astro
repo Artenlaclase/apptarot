@@ -89,16 +89,16 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
-  <main class="container mx-auto px-4 py-8 max-w-7xl">
+  <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
     <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold page-title mb-2">{pageTitle}</h1>
-      <p class="text-xl page-lead">Los cuatro palos: Bastos, Copas, Espadas y Oros</p>
+      <h1 class="text-3xl md:text-4xl font-bold page-title mb-2">{pageTitle}</h1>
+      <p class="text-base md:text-xl page-lead">Los cuatro palos: Bastos, Copas, Espadas y Oros</p>
     </header>
 
     <!-- Sección por cada palo -->
     {orderedSuits.map(suit => (
-      <section class="mb-16 surface-card p-6 md:p-8">
-        <h2 class="text-3xl font-semibold page-title mb-6 capitalize border-b pb-2" style="border-color: var(--border);">
+      <section class="mb-10 md:mb-16 surface-card p-4 md:p-8">
+        <h2 class="text-2xl md:text-3xl font-semibold page-title mb-5 md:mb-6 capitalize border-b pb-2" style="border-color: var(--border);">
           {suit === 'bastos' && 'Bastos - El elemento Fuego'}
           {suit === 'copas' && 'Copas - El elemento Agua'}
           {suit === 'espadas' && 'Espadas - El elemento Aire'}

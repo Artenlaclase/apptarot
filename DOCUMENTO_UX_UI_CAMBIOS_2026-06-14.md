@@ -136,6 +136,15 @@ Archivo: src/styles/global.css
   - `.cta-panel`
   - `.cta-muted`
 
+### 12) Ajuste fino mobile (320-768)
+
+Archivos: src/pages/cards/random-cards.astro, src/pages/cards/index.astro, src/pages/cards/major.astro, src/pages/cards/minor.astro, src/pages/about.astro, src/pages/meanings.astro
+
+- Se redujeron escalas de titulos en mobile (`text-3xl` / `text-base`) y se mantuvo escala mayor en desktop con clases responsivas.
+- Se compactaron paddings y margenes en bloques principales para evitar scroll innecesario en pantallas pequeñas.
+- Se redujo altura de hero/cards en mobile para mejorar densidad visual sin perder jerarquia.
+- Se mantuvo intacta toda la logica funcional de interaccion y carga de datos.
+
 ## Paleta aplicada (tokens principales)
 
 - --bg: #f6f3ee
@@ -172,4 +181,6 @@ Archivo: src/styles/global.css
   - src/pages/cards/index.astro
   - src/pages/cards/major.astro
   - src/pages/cards/minor.astro
+  - src/pages/about.astro
+  - src/pages/meanings.astro
 - Resultado: sin errores detectados por analisis de editor.

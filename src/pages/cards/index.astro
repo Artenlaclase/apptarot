@@ -8,18 +8,18 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
-  <main class="container mx-auto px-4 py-8 max-w-6xl">
+  <main class="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
     <!-- Header principal -->
-    <header class="text-center mb-16">
-      <h1 class="text-5xl font-bold page-title mb-4">{pageTitle}</h1>
-      <p class="text-xl page-lead max-w-3xl mx-auto leading-relaxed">
+    <header class="text-center mb-10 md:mb-16">
+      <h1 class="text-3xl md:text-5xl font-bold page-title mb-3 md:mb-4">{pageTitle}</h1>
+      <p class="text-base md:text-xl page-lead max-w-3xl mx-auto leading-relaxed">
         Explora la sabiduría ancestral del Tarot de Marsella, uno de los mazos más antiguos y respetados en la tradición esotérica occidental
       </p>
     </header>
 
     <!-- Introducción al Tarot de Marsella -->
-    <section class="mb-16 surface-soft p-8">
-      <h2 class="text-3xl font-semibold mb-6 text-center page-title">El Tarot de Marsella</h2>
+    <section class="mb-10 md:mb-16 surface-soft p-5 md:p-8">
+      <h2 class="text-2xl md:text-3xl font-semibold mb-5 md:mb-6 text-center page-title">El Tarot de Marsella</h2>
       <div class="prose prose-lg max-w-none" style="color: var(--text-muted);">
         <p class="mb-4">
           El Tarot de Marsella es considerado el arquetipo de todos los tarots. Originario del siglo XV, 
@@ -40,12 +40,12 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
     </section>
 
     <!-- Secciones de Arcanos -->
-    <div class="grid md:grid-cols-2 gap-12 mb-16">
+    <div class="grid md:grid-cols-2 gap-6 md:gap-12 mb-10 md:mb-16">
       
       <!-- Arcanos Mayores -->
       <section class="surface-card overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <a href="/cards/major" class="block group">
-          <div class="relative h-64 flex items-center justify-center" style="background: linear-gradient(140deg, color-mix(in srgb, var(--primary) 92%, #0f0f0f), color-mix(in srgb, var(--secondary) 58%, var(--primary)));">
+          <div class="relative h-52 md:h-64 flex items-center justify-center" style="background: linear-gradient(140deg, color-mix(in srgb, var(--primary) 92%, #0f0f0f), color-mix(in srgb, var(--secondary) 58%, var(--primary)));">
             <div class="text-center">
               <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                 <span class="text-3xl font-bold" style="color: var(--primary);">I</span>
@@ -54,7 +54,7 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
               <p class="cta-muted">22 Cartas</p>
             </div>
           </div>
-          <div class="p-6">
+          <div class="p-4 md:p-6">
             <p class="page-lead mb-4 leading-relaxed">
               Los 22 Arcanos Mayores representan el viaje del alma a través de las experiencias 
               fundamentales de la vida. Desde El Loco hasta El Mundo, cada carta simboliza una 
@@ -73,7 +73,7 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
       <!-- Arcanos Menores -->
       <section class="surface-card overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <a href="/cards/minor" class="block group">
-          <div class="relative h-64 flex items-center justify-center" style="background: linear-gradient(140deg, color-mix(in srgb, var(--secondary) 84%, #0f0f0f), color-mix(in srgb, var(--secondary) 65%, var(--primary)));">
+          <div class="relative h-52 md:h-64 flex items-center justify-center" style="background: linear-gradient(140deg, color-mix(in srgb, var(--secondary) 84%, #0f0f0f), color-mix(in srgb, var(--secondary) 65%, var(--primary)));">
             <div class="text-center">
               <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                 <span class="text-3xl font-bold" style="color: var(--secondary);">♠</span>
@@ -82,7 +82,7 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
               <p class="cta-muted">56 Cartas</p>
             </div>
           </div>
-          <div class="p-6">
+          <div class="p-4 md:p-6">
             <p class="page-lead mb-4 leading-relaxed">
               Los 56 Arcanos Menores se dividen en cuatro palos: Bastos, Copas, Espadas y Oros. 
               Representan las situaciones cotidianas, emociones, pensamientos y aspectos 
@@ -100,11 +100,11 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
     </div>
 
     <!-- Los Cuatro Elementos -->
-    <section class="mb-16">
-      <h2 class="text-3xl font-semibold page-title mb-8 text-center">Los Cuatro Elementos en el Tarot</h2>
+    <section class="mb-10 md:mb-16">
+      <h2 class="text-2xl md:text-3xl font-semibold page-title mb-6 md:mb-8 text-center">Los Cuatro Elementos en el Tarot</h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        <div class="surface-soft p-6 text-center">
+        <div class="surface-soft p-4 md:p-6 text-center">
           <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <span class="text-white text-2xl font-bold">🔥</span>
           </div>
@@ -112,7 +112,7 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
           <p class="page-lead text-sm">Pasión, creatividad, energía vital</p>
         </div>
 
-        <div class="surface-soft p-6 text-center">
+        <div class="surface-soft p-4 md:p-6 text-center">
           <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <span class="text-white text-2xl font-bold">💧</span>
           </div>
@@ -120,7 +120,7 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
           <p class="page-lead text-sm">Emociones, intuición, espiritualidad</p>
         </div>
 
-        <div class="surface-soft p-6 text-center">
+        <div class="surface-soft p-4 md:p-6 text-center">
           <div class="w-16 h-16 bg-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <span class="text-white text-2xl font-bold">💨</span>
           </div>
@@ -128,7 +128,7 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
           <p class="page-lead text-sm">Pensamiento, comunicación, conflicto</p>
         </div>
 
-        <div class="surface-soft p-6 text-center">
+        <div class="surface-soft p-4 md:p-6 text-center">
           <div class="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <span class="text-white text-2xl font-bold">🌍</span>
           </div>
@@ -139,9 +139,9 @@ const pageDescription = "Descubre el mazo completo del Tarot de Marsella: Arcano
     </section>
 
     <!-- Call to Action -->
-    <section class="text-center cta-panel p-12">
-      <h2 class="text-3xl font-bold mb-4">Comienza tu Viaje</h2>
-      <p class="text-xl cta-muted mb-8 max-w-2xl mx-auto">
+    <section class="text-center cta-panel p-6 md:p-12">
+      <h2 class="text-2xl md:text-3xl font-bold mb-3 md:mb-4">Comienza tu Viaje</h2>
+      <p class="text-base md:text-xl cta-muted mb-6 md:mb-8 max-w-2xl mx-auto">
         Sumérgete en la sabiduría del Tarot de Marsella y descubre los mensajes que el universo 
         tiene para ti
       </p>

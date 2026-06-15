@@ -82,7 +82,7 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
-  <main class="container mx-auto px-4 py-8 max-w-7xl">
+  <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
     <!-- Navigation breadcrumb -->
     <nav class="mb-8">
       <ol class="flex items-center space-x-2 text-sm page-lead">
@@ -92,17 +92,17 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
       </ol>
     </nav>
 
-    <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold page-title mb-4">{pageTitle}</h1>
-      <p class="text-xl page-lead max-w-3xl mx-auto leading-relaxed">
+    <header class="text-center mb-8 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold page-title mb-3 md:mb-4">{pageTitle}</h1>
+      <p class="text-base md:text-xl page-lead max-w-3xl mx-auto leading-relaxed">
         Los 22 Arcanos Mayores representan el viaje del alma a través de las experiencias fundamentales de la vida, 
         desde El Loco hasta El Mundo
       </p>
     </header>
 
     <!-- Información sobre los Arcanos Mayores -->
-    <section class="mb-12 surface-soft p-8">
-      <h2 class="text-2xl font-semibold page-title mb-4">El Viaje del Héroe</h2>
+    <section class="mb-10 md:mb-12 surface-soft p-5 md:p-8">
+      <h2 class="text-xl md:text-2xl font-semibold page-title mb-4">El Viaje del Héroe</h2>
       <div class="prose prose-lg max-w-none" style="color: var(--text-muted);">
         <p class="mb-4">
           Los Arcanos Mayores constituyen el corazón espiritual del Tarot de Marsella. Cada carta representa 
@@ -156,22 +156,22 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
     </section>
 
     <!-- Sección de elementos clave -->
-    <section class="mt-16 grid md:grid-cols-3 gap-8">
-      <div class="surface-card p-6">
+    <section class="mt-10 md:mt-16 grid md:grid-cols-3 gap-5 md:gap-8">
+      <div class="surface-card p-5 md:p-6">
         <h3 class="text-xl font-semibold page-title mb-3">🌟 Arquetipos Universales</h3>
         <p class="page-lead">
           Cada Arcano Mayor representa un arquetipo fundamental presente en todas las culturas y tradiciones espirituales.
         </p>
       </div>
       
-      <div class="surface-card p-6">
+      <div class="surface-card p-5 md:p-6">
         <h3 class="text-xl font-semibold page-title mb-3">🎭 Simbolismo Profundo</h3>
         <p class="page-lead">
           Los símbolos del Tarot de Marsella han permanecido inalterados durante siglos, preservando su poder iniciático.
         </p>
       </div>
       
-      <div class="surface-card p-6">
+      <div class="surface-card p-5 md:p-6">
         <h3 class="text-xl font-semibold page-title mb-3">🔮 Guía Espiritual</h3>
         <p class="page-lead">
           Los Arcanos Mayores ofrecen orientación en los momentos cruciales de transformación y crecimiento personal.
@@ -180,8 +180,8 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
     </section>
 
     <!-- Call to action -->
-    <section class="mt-16 text-center cta-panel p-8">
-      <h2 class="text-2xl font-bold mb-4">Explora También</h2>
+    <section class="mt-10 md:mt-16 text-center cta-panel p-6 md:p-8">
+      <h2 class="text-xl md:text-2xl font-bold mb-4">Explora También</h2>
       <p class="cta-muted mb-6">
         Completa tu conocimiento del Tarot de Marsella explorando los Arcanos Menores
       </p>
