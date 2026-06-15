@@ -157,6 +157,24 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             ✨ Interpretar Tirada
           </button>
         </div>
+
+        <!-- Feedback de interpretación IA (visible sin scroll) -->
+        <div id="interpretarFeedback" class="hidden mt-4 text-center">
+          <!-- Estado: cargando -->
+          <div id="interpretarFeedbackLoading" class="hidden items-center justify-center gap-3 py-3 px-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <div class="flex-shrink-0 animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-indigo-600"></div>
+            <span class="text-indigo-700 font-medium">Generando interpretación...</span>
+          </div>
+          <!-- Estado: listo -->
+          <div id="interpretarFeedbackOk" class="hidden items-center justify-center gap-3 py-3 px-4 bg-green-50 border border-green-200 rounded-lg">
+            <span class="text-green-700 font-medium">✓ Interpretación lista</span>
+            <button type="button" id="interpretarScrollBtn" class="text-sm underline text-green-800 hover:text-green-900">Ver resultado ↓</button>
+          </div>
+          <!-- Estado: error -->
+          <div id="interpretarFeedbackError" class="hidden items-center justify-center gap-3 py-3 px-4 bg-red-50 border border-red-200 rounded-lg">
+            <span class="text-red-700 font-medium" id="interpretarFeedbackErrorMsg">Error al generar la interpretación.</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -530,6 +548,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     var acCtrl = document.getElementById('aclaracionControls');
     if (acCtrl) acCtrl.classList.add('hidden');
 
+    setInterpretarFeedback('hidden');
     closeMeaningModal();
     clearReadingState();
   }
@@ -557,6 +576,37 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     });
   }
 
+  function setInterpretarFeedback(state, errorMsg) {
+    var wrapper  = document.getElementById('interpretarFeedback');
+    var elLoad   = document.getElementById('interpretarFeedbackLoading');
+    var elOk     = document.getElementById('interpretarFeedbackOk');
+    var elErr    = document.getElementById('interpretarFeedbackError');
+    var elErrMsg = document.getElementById('interpretarFeedbackErrorMsg');
+
+    if (!wrapper) return;
+
+    // ocultar todos los estados internos
+    [elLoad, elOk, elErr].forEach(function (el) {
+      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    });
+
+    if (state === 'hidden') {
+      wrapper.classList.add('hidden');
+      return;
+    }
+
+    wrapper.classList.remove('hidden');
+
+    if (state === 'loading' && elLoad) {
+      elLoad.classList.remove('hidden'); elLoad.classList.add('flex');
+    } else if (state === 'ok' && elOk) {
+      elOk.classList.remove('hidden'); elOk.classList.add('flex');
+    } else if (state === 'error' && elErr) {
+      elErr.classList.remove('hidden'); elErr.classList.add('flex');
+      if (elErrMsg) elErrMsg.textContent = errorMsg || 'Error al generar la interpretación.';
+    }
+  }
+
   function interpretar() {
     var cartasReveladas = [];
     document.querySelectorAll('[data-revealed="1"]').forEach(function (el) {
@@ -575,6 +625,9 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     var texto   = document.getElementById('interpretacionTexto');
     var btn     = document.getElementById('interpretarBtn');
 
+    // Mostrar feedback inline de carga
+    setInterpretarFeedback('loading');
+
     if (sec)     sec.classList.remove('hidden');
     if (loading) loading.classList.remove('hidden');
     if (texto)   texto.innerHTML = '';
@@ -589,10 +642,13 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       .then(function (data) {
         if (loading) loading.classList.add('hidden');
         if (btn)     { btn.disabled = false; btn.textContent = '✨ Interpretar Tirada'; }
+
         if (data.error) {
-          if (texto) texto.innerHTML = '<p class="text-red-600">' + escapeHtml(data.error) + '</p>';
+          setInterpretarFeedback('error', data.error);
+          if (sec) sec.classList.add('hidden');
           return;
         }
+
         if (texto) {
           var lines = (data.interpretacion || '').split('\n').filter(function (l) { return l.trim(); });
           texto.innerHTML = lines.map(function (l) {
@@ -600,11 +656,20 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           }).join('');
           persistCurrentState();
         }
+
+        // Feedback inline: listo + scroll suave
+        setInterpretarFeedback('ok');
+        if (sec) {
+          setTimeout(function () {
+            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 400);
+        }
       })
       .catch(function () {
         if (loading) loading.classList.add('hidden');
         if (btn)     { btn.disabled = false; btn.textContent = '✨ Interpretar Tirada'; }
-        if (texto)   texto.innerHTML = '<p class="text-red-600">Error al contactar el servidor. Inténtalo de nuevo.</p>';
+        setInterpretarFeedback('error', 'Error al contactar el servidor. Inténtalo de nuevo.');
+        if (sec) sec.classList.add('hidden');
       });
   }
 
@@ -771,6 +836,14 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
     var btnInterpretar = document.getElementById('interpretarBtn');
     if (btnInterpretar) btnInterpretar.addEventListener('click', interpretar);
+
+    var btnScrollInterp = document.getElementById('interpretarScrollBtn');
+    if (btnScrollInterp) {
+      btnScrollInterp.addEventListener('click', function () {
+        var sec = document.getElementById('interpretacionSection');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
 
     setupMeaningModalEvents();
     restoreReadingState();
