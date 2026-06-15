@@ -6,7 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes",
+    "firebase:deploy:project": "firebase deploy --only firestore:rules,firestore:indexes --project"
   },
   "dependencies": {
     "@astrojs/node": "^9.2.1",
