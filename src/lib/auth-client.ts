@@ -42,7 +42,14 @@ export async function createServerSession(): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error('No se pudo crear la sesion de servidor.');
+    let message = 'No se pudo crear la sesion de servidor.';
+    try {
+      const data = (await response.json()) as { error?: string };
+      if (data?.error) message = data.error;
+    } catch {
+      // keep default message
+    }
+    throw new Error(message);
   }
 }
 
