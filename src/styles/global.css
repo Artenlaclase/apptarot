@@ -1,3 +1,123 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	color-scheme: light dark;
+
+	--bg: #f6f3ee;
+	--surface: #ffffff;
+	--surface-2: #f1ecf8;
+	--text: #1f1b2d;
+	--text-muted: #5c556f;
+	--border: #d9d1e3;
+
+	--primary: #6e3a9e;
+	--primary-hover: #5a2e85;
+	--secondary: #2f7a78;
+	--warning: #c78a2c;
+	--danger: #b84040;
+	--success: #2e8b57;
+
+	--shadow-soft: 0 10px 24px rgba(28, 21, 45, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #13111a;
+		--surface: #1a1724;
+		--surface-2: #231f31;
+		--text: #eee9f5;
+		--text-muted: #c7bdd7;
+		--border: #3a334a;
+
+		--primary: #b48ee0;
+		--primary-hover: #a277d8;
+		--secondary: #6ec7c3;
+		--warning: #e1b66b;
+		--danger: #e27b7b;
+		--success: #78c99b;
+
+		--shadow-soft: 0 14px 26px rgba(8, 6, 12, 0.4);
+	}
+}
+
+html,
+body {
+	background: radial-gradient(circle at 12% 12%, rgba(110, 58, 158, 0.13), transparent 36%), var(--bg);
+	color: var(--text);
+}
+
+.app-surface {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	box-shadow: var(--shadow-soft);
+}
+
+.app-surface-soft {
+	background: var(--surface-2);
+	border: 1px solid var(--border);
+}
+
+.btn-ui {
+	border: 0;
+	border-radius: 0.75rem;
+	font-weight: 600;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-ui:hover:not(:disabled) {
+	transform: translateY(-1px);
+}
+
+.btn-ui:focus-visible {
+	outline: 2px solid var(--text-muted);
+	outline-offset: 2px;
+}
+
+.btn-ui:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.btn-ui-primary {
+	background: var(--primary);
+	color: #ffffff;
+}
+
+.btn-ui-primary:hover:not(:disabled) {
+	background: var(--primary-hover);
+}
+
+.btn-ui-secondary {
+	background: var(--secondary);
+	color: #ffffff;
+}
+
+.btn-ui-warning {
+	background: var(--warning);
+	color: #ffffff;
+}
+
+.btn-ui-neutral {
+	background: #6b7280;
+	color: #ffffff;
+}
+
+.status-box {
+	border-radius: 0.75rem;
+	border: 1px solid var(--border);
+	padding: 0.75rem 1rem;
+}
+
+.status-loading {
+	background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+}
+
+.status-success {
+	background: color-mix(in srgb, var(--success) 12%, var(--surface));
+}
+
+.status-error {
+	background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+}
