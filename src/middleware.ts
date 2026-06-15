@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { verifySessionCookieFromRequest } from './lib/auth-server';
 
-const protectedPrefixes = ['/account', '/premium', '/profile'];
+const protectedPrefixes = ['/account', '/premium', '/profile', '/cards/random-cards'];
 
 function isProtected(pathname: string): boolean {
   return protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
