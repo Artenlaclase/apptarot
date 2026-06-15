@@ -12,6 +12,11 @@ Mejorar la experiencia de la tirada para que cartas, acciones de IA y feedback e
 4. src/layouts/Layout.astro
 5. src/components/Navbar.astro
 6. src/components/Footer.astro
+7. src/pages/about.astro
+8. src/pages/meanings.astro
+9. src/pages/cards/index.astro
+10. src/pages/cards/major.astro
+11. src/pages/cards/minor.astro
 
 ## Cambios aplicados
 
@@ -109,6 +114,28 @@ Archivo: src/layouts/Layout.astro
 
 - Se retiro `bg-gray-50` fijo del `body` para permitir que el fondo global con tokens y adaptacion a esquema del sistema se aplique en toda la app.
 
+### 10) Pulido visual de paginas secundarias
+
+Archivos: src/pages/about.astro, src/pages/meanings.astro, src/pages/cards/index.astro, src/pages/cards/major.astro, src/pages/cards/minor.astro
+
+- Se unifico jerarquia tipografica usando clases de tema (`.page-title`, `.page-lead`).
+- Se reemplazaron bloques con colores fijos por superficies tokenizadas (`.surface-card`, `.surface-soft`, `.cta-panel`).
+- Se mejoro coherencia de espaciado y separacion visual entre secciones.
+- Se mantuvo intacta la funcionalidad de navegacion, carga de datos y enlaces existentes.
+
+### 11) Nuevas utilidades globales de estilo
+
+Archivo: src/styles/global.css
+
+- Se agregaron utilidades reutilizables para homogeneizar estilo en el resto del sitio:
+  - `.page-title`
+  - `.page-lead`
+  - `.token-link`
+  - `.surface-card`
+  - `.surface-soft`
+  - `.cta-panel`
+  - `.cta-muted`
+
 ## Paleta aplicada (tokens principales)
 
 - --bg: #f6f3ee
@@ -140,4 +167,9 @@ Archivo: src/layouts/Layout.astro
   - src/layouts/Layout.astro
   - src/components/Navbar.astro
   - src/components/Footer.astro
+  - src/pages/about.astro
+  - src/pages/meanings.astro
+  - src/pages/cards/index.astro
+  - src/pages/cards/major.astro
+  - src/pages/cards/minor.astro
 - Resultado: sin errores detectados por analisis de editor.

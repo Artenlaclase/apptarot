@@ -5,16 +5,22 @@ const description = 'Historia, simbolismo y enfoque de este proyecto sobre el Ta
 ---
 
 <Layout {title} {description}>
-  <main class="container mx-auto px-4 py-12 prose prose-purple">
-    <h1>{title}</h1>
-    <p>
-      Este proyecto busca ofrecer una guía clara y visual sobre el Tarot de Marsella, uno de los mazos más
-      influyentes en la tradición del tarot. Aquí encontrarás arcanos mayores y menores con descripciones,
-      palabras clave y referencias simbólicas.
-    </p>
-    <p>
-      Si deseas sugerir mejoras o colaborar, ¡serás bienvenido! Puedes escribir a
-      <a href="mailto:contacto@tarotmarsella.com">contacto@tarotmarsella.com</a>.
-    </p>
+  <main class="container mx-auto px-4 py-12 max-w-4xl">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-bold page-title mb-3">{title}</h1>
+      <p class="page-lead">Historia, simbolismo y enfoque editorial del proyecto.</p>
+    </header>
+
+    <section class="surface-card p-6 md:p-8 space-y-5">
+      <p class="leading-relaxed" style="color: var(--text);">
+        Este proyecto busca ofrecer una guía clara y visual sobre el Tarot de Marsella, uno de los mazos más
+        influyentes en la tradición del tarot. Aquí encontrarás arcanos mayores y menores con descripciones,
+        palabras clave y referencias simbólicas.
+      </p>
+      <p class="leading-relaxed" style="color: var(--text-muted);">
+        Si deseas sugerir mejoras o colaborar, puedes escribir a
+        <a class="token-link font-medium" href="mailto:contacto@tarotmarsella.com"> contacto@tarotmarsella.com</a>.
+      </p>
+    </section>
   </main>
 </Layout>

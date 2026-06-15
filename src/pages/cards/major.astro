@@ -85,25 +85,25 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
   <main class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Navigation breadcrumb -->
     <nav class="mb-8">
-      <ol class="flex items-center space-x-2 text-sm text-purple-600">
-        <li><a href="/cards" class="hover:text-purple-800">Tarot de Marsella</a></li>
+      <ol class="flex items-center space-x-2 text-sm page-lead">
+        <li><a href="/cards" class="token-link">Tarot de Marsella</a></li>
         <li><span class="mx-2">›</span></li>
-        <li class="text-purple-800 font-semibold">Arcanos Mayores</li>
+        <li class="font-semibold page-title">Arcanos Mayores</li>
       </ol>
     </nav>
 
     <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-purple-900 mb-4">{pageTitle}</h1>
-      <p class="text-xl text-purple-700 max-w-3xl mx-auto leading-relaxed">
+      <h1 class="text-4xl font-bold page-title mb-4">{pageTitle}</h1>
+      <p class="text-xl page-lead max-w-3xl mx-auto leading-relaxed">
         Los 22 Arcanos Mayores representan el viaje del alma a través de las experiencias fundamentales de la vida, 
         desde El Loco hasta El Mundo
       </p>
     </header>
 
     <!-- Información sobre los Arcanos Mayores -->
-    <section class="mb-12 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-8">
-      <h2 class="text-2xl font-semibold text-purple-800 mb-4">El Viaje del Héroe</h2>
-      <div class="prose prose-lg max-w-none text-gray-700">
+    <section class="mb-12 surface-soft p-8">
+      <h2 class="text-2xl font-semibold page-title mb-4">El Viaje del Héroe</h2>
+      <div class="prose prose-lg max-w-none" style="color: var(--text-muted);">
         <p class="mb-4">
           Los Arcanos Mayores constituyen el corazón espiritual del Tarot de Marsella. Cada carta representa 
           una etapa crucial en el desarrollo de la conciencia humana, formando un camino iniciático que va 
@@ -157,37 +157,38 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
 
     <!-- Sección de elementos clave -->
     <section class="mt-16 grid md:grid-cols-3 gap-8">
-      <div class="bg-white rounded-lg p-6 shadow-md">
-        <h3 class="text-xl font-semibold text-purple-800 mb-3">🌟 Arquetipos Universales</h3>
-        <p class="text-gray-600">
+      <div class="surface-card p-6">
+        <h3 class="text-xl font-semibold page-title mb-3">🌟 Arquetipos Universales</h3>
+        <p class="page-lead">
           Cada Arcano Mayor representa un arquetipo fundamental presente en todas las culturas y tradiciones espirituales.
         </p>
       </div>
       
-      <div class="bg-white rounded-lg p-6 shadow-md">
-        <h3 class="text-xl font-semibold text-purple-800 mb-3">🎭 Simbolismo Profundo</h3>
-        <p class="text-gray-600">
+      <div class="surface-card p-6">
+        <h3 class="text-xl font-semibold page-title mb-3">🎭 Simbolismo Profundo</h3>
+        <p class="page-lead">
           Los símbolos del Tarot de Marsella han permanecido inalterados durante siglos, preservando su poder iniciático.
         </p>
       </div>
       
-      <div class="bg-white rounded-lg p-6 shadow-md">
-        <h3 class="text-xl font-semibold text-purple-800 mb-3">🔮 Guía Espiritual</h3>
-        <p class="text-gray-600">
+      <div class="surface-card p-6">
+        <h3 class="text-xl font-semibold page-title mb-3">🔮 Guía Espiritual</h3>
+        <p class="page-lead">
           Los Arcanos Mayores ofrecen orientación en los momentos cruciales de transformación y crecimiento personal.
         </p>
       </div>
     </section>
 
     <!-- Call to action -->
-    <section class="mt-16 text-center bg-purple-900 text-white rounded-xl p-8">
+    <section class="mt-16 text-center cta-panel p-8">
       <h2 class="text-2xl font-bold mb-4">Explora También</h2>
-      <p class="text-purple-200 mb-6">
+      <p class="cta-muted mb-6">
         Completa tu conocimiento del Tarot de Marsella explorando los Arcanos Menores
       </p>
       <a 
         href="/cards/minor" 
-        class="inline-block bg-white text-purple-900 px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+        class="inline-block bg-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+        style="color: var(--primary);"
       >
         Ver Arcanos Menores
       </a>

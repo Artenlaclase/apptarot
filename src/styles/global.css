@@ -121,3 +121,42 @@ body {
 .status-error {
 	background: color-mix(in srgb, var(--danger) 12%, var(--surface));
 }
+
+.page-title {
+	color: var(--text);
+}
+
+.page-lead {
+	color: var(--text-muted);
+}
+
+.token-link {
+	color: var(--primary);
+}
+
+.token-link:hover {
+	color: var(--primary-hover);
+}
+
+.surface-card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 0.875rem;
+	box-shadow: var(--shadow-soft);
+}
+
+.surface-soft {
+	background: var(--surface-2);
+	border: 1px solid var(--border);
+	border-radius: 0.875rem;
+}
+
+.cta-panel {
+	background: color-mix(in srgb, var(--primary) 82%, #111111);
+	color: #ffffff;
+	border-radius: 0.875rem;
+}
+
+.cta-muted {
+	color: color-mix(in srgb, #ffffff 74%, var(--text-muted));
+}
