@@ -163,6 +163,10 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             <div id="interpretarFeedbackError" class="status-box status-error hidden items-center justify-center gap-3">
               <span id="interpretarFeedbackErrorMsg" style="color: var(--danger);">Error al generar la interpretación.</span>
             </div>
+
+            <div id="interpretarFeedbackWarn" class="status-box hidden items-center justify-center gap-3" style="background: color-mix(in srgb, var(--warning) 12%, var(--surface));">
+              <span id="interpretarFeedbackWarnMsg" style="color: var(--warning);">Aviso del plan de cuenta.</span>
+            </div>
           </section>
 
           <section id="cardMeaningPanel" class="app-surface rounded-2xl p-5 hidden xl:block" aria-live="polite">
@@ -608,11 +612,13 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     var elOk     = document.getElementById('interpretarFeedbackOk');
     var elErr    = document.getElementById('interpretarFeedbackError');
     var elErrMsg = document.getElementById('interpretarFeedbackErrorMsg');
+    var elWarn = document.getElementById('interpretarFeedbackWarn');
+    var elWarnMsg = document.getElementById('interpretarFeedbackWarnMsg');
 
     if (!wrapper) return;
 
     // ocultar todos los estados internos
-    [elLoad, elOk, elErr].forEach(function (el) {
+    [elLoad, elOk, elErr, elWarn].forEach(function (el) {
       if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     });
 
@@ -630,6 +636,9 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     } else if (state === 'error' && elErr) {
       elErr.classList.remove('hidden'); elErr.classList.add('flex');
       if (elErrMsg) elErrMsg.textContent = errorMsg || 'Error al generar la interpretación.';
+    } else if (state === 'warn' && elWarn) {
+      elWarn.classList.remove('hidden'); elWarn.classList.add('flex');
+      if (elWarnMsg) elWarnMsg.textContent = errorMsg || 'Aviso de cuenta.';
     }
   }
 
@@ -676,6 +685,10 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         setActionsDisabled(false);
 
         if (data.error) {
+          if (data.error.indexOf('iniciar sesion') >= 0) {
+            setInterpretarFeedback('error', data.error + ' Ve a Mi Perfil para iniciar sesión.');
+            return;
+          }
           setInterpretarFeedback('error', data.error);
           return;
         }
@@ -694,6 +707,11 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         }
 
         setInterpretarFeedback('ok');
+        if (data.warning) {
+          setTimeout(function () {
+            setInterpretarFeedback('warn', data.warning);
+          }, 1200);
+        }
       })
       .catch(function () {
         if (loading) loading.classList.add('hidden');

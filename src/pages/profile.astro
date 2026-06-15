@@ -1,0 +1,134 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getOrCreateUserProfile } from '../lib/auth-server';
+import { getPlanLabel, FREE_READING_LIMIT, isPremiumPlan } from '../lib/plans';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/auth/login?next=/profile');
+}
+
+const profile = await getOrCreateUserProfile(user.uid, user);
+const title = 'Mi perfil';
+const description = 'Gestiona tu cuenta, suscripcion y privacidad.';
+const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'active';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-5xl px-4 py-10 space-y-6">
+    <header class="surface-card p-6">
+      <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
+      <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
+      <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
+      <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <article class="surface-card p-6">
+        <h2 class="text-xl font-semibold page-title mb-3">Suscripción</h2>
+        <p class="page-lead mb-4">Desbloquea tiradas ilimitadas, videollamadas y chat personal.</p>
+        <div class="flex flex-wrap gap-3">
+          <button id="upgradeMonthly" class="btn-ui btn-ui-primary px-4 py-2" type="button">Premium mensual</button>
+          <button id="upgradeAnnual" class="btn-ui btn-ui-secondary px-4 py-2" type="button">Premium anual</button>
+          <button id="manageBilling" class="btn-ui btn-ui-neutral px-4 py-2" type="button">Gestionar facturación</button>
+        </div>
+      </article>
+
+      <article class="surface-card p-6">
+        <h2 class="text-xl font-semibold page-title mb-3">Seguridad y datos</h2>
+        <form id="passwordForm" class="space-y-3">
+          <label class="block text-sm font-semibold" for="newPassword">Nueva contraseña</label>
+          <input id="newPassword" type="password" minlength="8" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
+          <button type="submit" class="btn-ui btn-ui-primary px-4 py-2">Cambiar contraseña</button>
+        </form>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <a href="/api/user/export" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Exportar mis datos (GDPR)</a>
+          <a href="/account/readings" class="btn-ui btn-ui-neutral px-4 py-2 inline-block">Ver historial</a>
+          {canUsePremium && <a href="/premium/call" class="btn-ui btn-ui-primary px-4 py-2 inline-block">Videollamada</a>}
+          {canUsePremium && <a href="/premium/chat" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Chat personal</a>}
+        </div>
+      </article>
+    </section>
+
+    <p id="profileMsg" class="text-sm hidden" aria-live="polite"></p>
+  </main>
+
+  <script is:inline type="module">
+    import { updateCurrentUserPassword } from '/src/lib/auth-client.ts';
+
+    const profileMsg = document.getElementById('profileMsg');
+
+    function setMessage(text, isError = false) {
+      if (!profileMsg) return;
+      profileMsg.textContent = text;
+      profileMsg.style.color = isError ? 'var(--danger)' : 'var(--success)';
+      profileMsg.classList.remove('hidden');
+    }
+
+    async function startCheckout(billingCycle) {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billingCycle }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo iniciar Stripe Checkout.');
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    }
+
+    document.getElementById('upgradeMonthly')?.addEventListener('click', async () => {
+      try {
+        await startCheckout('monthly');
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Error iniciando checkout', true);
+      }
+    });
+
+    document.getElementById('upgradeAnnual')?.addEventListener('click', async () => {
+      try {
+        await startCheckout('annual');
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Error iniciando checkout', true);
+      }
+    });
+
+    document.getElementById('manageBilling')?.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/stripe/portal', { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'No se pudo abrir el portal de facturacion.');
+        }
+        window.location.href = data.url;
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Error al abrir el portal', true);
+      }
+    });
+
+    document.getElementById('passwordForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const passwordInput = document.getElementById('newPassword');
+      const newPassword = passwordInput?.value ?? '';
+
+      if (newPassword.length < 8) {
+        setMessage('La contraseña debe tener al menos 8 caracteres.', true);
+        return;
+      }
+
+      try {
+        await updateCurrentUserPassword(newPassword);
+        setMessage('Contraseña actualizada correctamente.');
+        if (passwordInput) passwordInput.value = '';
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'No se pudo cambiar la contraseña.', true);
+      }
+    });
+  </script>
+</Layout>

@@ -1,5 +1,10 @@
 export const prerender = false;
 
+import type { APIContext } from 'astro';
+import { verifySessionCookieFromRequest, getOrCreateUserProfile } from '../../lib/auth-server';
+import { adminDb } from '../../lib/firebase-admin';
+import { canSaveReading, FREE_READING_LIMIT } from '../../lib/plans';
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -14,7 +19,13 @@ interface CartaInput {
   valor?: string;
 }
 
-export async function POST({ request }: { request: Request }): Promise<Response> {
+export async function POST(context: APIContext): Promise<Response> {
+  const { request } = context;
+  const user = await verifySessionCookieFromRequest(context);
+  if (!user) {
+    return json({ error: 'Debes iniciar sesion para interpretar y guardar tiradas.' }, 401);
+  }
+
   let cartas: CartaInput[] = [];
 
   try {
@@ -87,5 +98,33 @@ export async function POST({ request }: { request: Request }): Promise<Response>
   const data = (await aiResponse.json()) as { choices: Array<{ message: { content: string } }> };
   const interpretacion = (data.choices[0]?.message?.content ?? '').trim();
 
-  return json({ interpretacion });
+  const profile = await getOrCreateUserProfile(user.uid, user);
+  const saveAllowed = canSaveReading(profile.plan, profile.readingCount);
+
+  let warning: string | null = null;
+  if (saveAllowed) {
+    const now = new Date().toISOString();
+    const readingRef = adminDb.collection('users').doc(user.uid).collection('readings').doc();
+
+    await readingRef.set({
+      uid: user.uid,
+      cards: cartas,
+      interpretation: interpretacion,
+      source: 'random-cards',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await adminDb.collection('users').doc(user.uid).set(
+      {
+        readingCount: (profile.readingCount ?? 0) + 1,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+  } else {
+    warning = `Has alcanzado el limite de ${FREE_READING_LIMIT} tiradas del plan gratuito. Actualiza a premium para guardado ilimitado.`;
+  }
+
+  return json({ interpretacion, warning });
 }

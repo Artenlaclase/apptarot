@@ -1,0 +1,61 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { adminDb } from '../../../lib/firebase-admin';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/auth/login');
+}
+
+const { id } = Astro.params;
+if (!id) {
+  return Astro.redirect('/account/readings');
+}
+
+const readingSnap = await adminDb
+  .collection('users')
+  .doc(user.uid)
+  .collection('readings')
+  .doc(id)
+  .get();
+
+if (!readingSnap.exists) {
+  return Astro.redirect('/account/readings');
+}
+
+const reading = readingSnap.data() as {
+  createdAt?: string;
+  cards?: Array<{ nombre: string; arcano: string; numero?: number; valor?: string }>;
+  interpretation?: string;
+};
+
+const title = 'Detalle de tirada';
+const description = 'Consulta el detalle completo de una lectura guardada.';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-4xl px-4 py-10 space-y-6">
+    <header>
+      <a href="/account/readings" class="token-link">← Volver al historial</a>
+      <h1 class="text-3xl font-bold page-title mt-2">Detalle de tirada</h1>
+      <p class="page-lead">Fecha: {reading.createdAt ? new Date(reading.createdAt).toLocaleString('es-ES') : 'Sin fecha'}</p>
+    </header>
+
+    <section class="surface-card p-6">
+      <h2 class="text-xl font-semibold page-title mb-4">Cartas</h2>
+      <ul class="space-y-2">
+        {(reading.cards || []).map((card) => (
+          <li class="app-surface-soft rounded-lg p-3">
+            <strong>{card.nombre}</strong>
+            <span class="page-lead"> · {card.arcano}{card.numero ? ` #${card.numero}` : ''}{card.valor ? ` ${card.valor}` : ''}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="surface-card p-6">
+      <h2 class="text-xl font-semibold page-title mb-4">Interpretación IA</h2>
+      <p class="leading-relaxed" style="color: var(--text);">{reading.interpretation || 'Sin interpretación'}</p>
+    </section>
+  </main>
+</Layout>

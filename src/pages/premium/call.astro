@@ -1,0 +1,34 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getOrCreateUserProfile } from '../../lib/auth-server';
+import { isPremiumPlan } from '../../lib/plans';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/auth/login?next=/premium/call');
+}
+
+const profile = await getOrCreateUserProfile(user.uid, user);
+if (!isPremiumPlan(profile.plan) || profile.planStatus !== 'active') {
+  return Astro.redirect('/profile?upgrade=1');
+}
+
+const title = 'Videollamada con tarotista';
+const description = 'Agenda una sesión personal de tarot por videollamada.';
+const calComUrl = import.meta.env.PUBLIC_CALCOM_BOOKING_URL || 'https://cal.com';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-4xl px-4 py-10 space-y-6">
+    <header class="surface-card p-6">
+      <h1 class="text-3xl font-bold page-title">Videollamada personal</h1>
+      <p class="page-lead mt-2">Funcionalidad exclusiva para cuentas premium activas.</p>
+    </header>
+
+    <section class="surface-card p-6">
+      <h2 class="text-xl font-semibold page-title mb-3">Agendar sesión</h2>
+      <p class="page-lead mb-4">Conecta tu agenda con Cal.com o Zoom para reservar una llamada en vivo.</p>
+      <a href={calComUrl} target="_blank" rel="noopener noreferrer" class="btn-ui btn-ui-primary px-4 py-2 inline-block">Abrir agenda de reservas</a>
+    </section>
+  </main>
+</Layout>

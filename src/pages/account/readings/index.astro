@@ -1,0 +1,109 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { adminDb } from '../../../lib/firebase-admin';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/auth/login?next=/account/readings');
+}
+
+const readingsSnapshot = await adminDb
+  .collection('users')
+  .doc(user.uid)
+  .collection('readings')
+  .orderBy('createdAt', 'desc')
+  .limit(200)
+  .get();
+
+const readings = readingsSnapshot.docs.map((doc) => ({
+  id: doc.id,
+  ...(doc.data() as {
+    createdAt?: string;
+    cards?: Array<{ nombre?: string }>;
+    interpretation?: string;
+  }),
+}));
+
+const title = 'Historial de tiradas';
+const description = 'Consulta y elimina tus tiradas pasadas.';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-5xl px-4 py-10">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold page-title">Historial de tiradas</h1>
+      <p class="page-lead mt-2">Cada lectura queda guardada con fecha y detalle.</p>
+    </header>
+
+    <section class="space-y-4">
+      {readings.length === 0 && (
+        <article class="surface-card p-5">
+          <p class="page-lead">Aún no tienes tiradas guardadas.</p>
+        </article>
+      )}
+
+      {readings.map((reading) => (
+        <article class="surface-card p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4" id={`reading-${reading.id}`}>
+          <div>
+            <p class="text-sm page-lead">{reading.createdAt ? new Date(reading.createdAt).toLocaleString('es-ES') : 'Sin fecha'}</p>
+            <h2 class="text-lg font-semibold page-title">
+              {Array.isArray(reading.cards)
+                ? reading.cards.map((card) => card.nombre).filter(Boolean).slice(0, 3).join(', ')
+                : 'Tirada'}
+            </h2>
+            <p class="text-sm page-lead">
+              {(reading.interpretation || '').slice(0, 140)}{(reading.interpretation || '').length > 140 ? '...' : ''}
+            </p>
+          </div>
+
+          <div class="flex gap-3">
+            <a href={`/account/readings/${reading.id}`} class="btn-ui btn-ui-primary px-4 py-2 inline-block">Ver detalle</a>
+            <button class="btn-ui btn-ui-neutral px-4 py-2 delete-reading-btn" data-reading-id={reading.id} type="button">Eliminar</button>
+          </div>
+        </article>
+      ))}
+    </section>
+
+    <p id="historyMsg" class="text-sm mt-4 hidden" aria-live="polite"></p>
+  </main>
+
+  <script is:inline>
+    const msg = document.getElementById('historyMsg');
+
+    function notify(text, isError = false) {
+      if (!msg) return;
+      msg.textContent = text;
+      msg.classList.remove('hidden');
+      msg.style.color = isError ? 'var(--danger)' : 'var(--success)';
+    }
+
+    document.querySelectorAll('.delete-reading-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const readingId = button.getAttribute('data-reading-id');
+        if (!readingId) return;
+
+        const ok = window.confirm('¿Seguro que deseas eliminar esta tirada?');
+        if (!ok) return;
+
+        try {
+          const response = await fetch('/api/readings/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ readingId }),
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'No se pudo eliminar la tirada');
+          }
+
+          const row = document.getElementById(`reading-${readingId}`);
+          row?.remove();
+          notify('Tirada eliminada correctamente.');
+        } catch (error) {
+          notify(error instanceof Error ? error.message : 'Error al eliminar.', true);
+        }
+      });
+    });
+  </script>
+</Layout>

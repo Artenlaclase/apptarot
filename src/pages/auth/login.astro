@@ -1,0 +1,100 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const title = 'Iniciar sesion';
+const description = 'Accede a tu cuenta para guardar tus tiradas y gestionar tu suscripcion.';
+const next = Astro.url.searchParams.get('next') || '/profile';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-xl px-4 py-10">
+    <section class="surface-card p-6 md:p-8">
+      <h1 class="text-3xl font-bold page-title mb-2">Iniciar sesion</h1>
+      <p class="page-lead mb-6">Usa email y contraseña o entra con Google.</p>
+
+      <form id="loginForm" class="space-y-4" novalidate>
+        <div>
+          <label class="block text-sm font-semibold mb-1" for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1" for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
+        </div>
+
+        <button id="submitBtn" class="btn-ui btn-ui-primary w-full py-2" type="submit">Entrar</button>
+      </form>
+
+      <button id="googleBtn" class="btn-ui btn-ui-secondary w-full py-2 mt-3" type="button">Continuar con Google</button>
+
+      <p id="errorMsg" class="text-sm mt-4 hidden" style="color: var(--danger);" aria-live="polite"></p>
+
+      <p class="text-sm mt-6 page-lead">
+        ¿No tienes cuenta?
+        <a href="/auth/register" class="token-link font-semibold">Crear cuenta</a>
+      </p>
+    </section>
+  </main>
+
+  <script is:inline define:vars={{ next }} type="module">
+    import {
+      loginWithEmail,
+      loginWithGoogle,
+      createServerSession,
+    } from '/src/lib/auth-client.ts';
+
+    const form = document.getElementById('loginForm');
+    const googleBtn = document.getElementById('googleBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function showError(message) {
+      if (!errorMsg) return;
+      errorMsg.textContent = message;
+      errorMsg.classList.remove('hidden');
+    }
+
+    function setBusy(isBusy) {
+      if (submitBtn) submitBtn.disabled = isBusy;
+      if (googleBtn) googleBtn.disabled = isBusy;
+    }
+
+    async function finalizeLogin() {
+      await createServerSession();
+      window.location.href = next;
+    }
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setBusy(true);
+      if (errorMsg) errorMsg.classList.add('hidden');
+
+      const email = document.getElementById('email')?.value ?? '';
+      const password = document.getElementById('password')?.value ?? '';
+
+      try {
+        await loginWithEmail(email, password);
+        await finalizeLogin();
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'No se pudo iniciar sesion.');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    googleBtn?.addEventListener('click', async () => {
+      setBusy(true);
+      if (errorMsg) errorMsg.classList.add('hidden');
+
+      try {
+        await loginWithGoogle();
+        await finalizeLogin();
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'No se pudo iniciar sesion con Google.');
+      } finally {
+        setBusy(false);
+      }
+    });
+  </script>
+</Layout>

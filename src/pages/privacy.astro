@@ -5,9 +5,48 @@ const description = 'Cómo tratamos tus datos en Tarot de Marsella.';
 ---
 
 <Layout {title} {description}>
-  <main class="container mx-auto px-4 py-12 prose">
+  <main class="container mx-auto px-4 py-12 prose max-w-4xl">
     <h1>{title}</h1>
-    <p>Este sitio no recopila datos personales sensibles. Si usas formularios de contacto, sólo se utiliza tu correo para responderte.</p>
-    <p>Si integramos terceros (por ejemplo, Firebase), seguiremos las políticas correspondientes y te informaremos aquí.</p>
+    <p>Última actualización: 15 de junio de 2026.</p>
+
+    <h2>Datos que tratamos</h2>
+    <ul>
+      <li>Datos de cuenta: email, UID y opcionalmente nombre/foto de Google.</li>
+      <li>Datos de uso: tiradas guardadas, cartas seleccionadas, fecha e interpretación generada por IA.</li>
+      <li>Datos de facturación: estado de suscripción y referencias técnicas de Stripe (no almacenamos datos completos de tarjeta).</li>
+      <li>Datos de servicios premium: metadatos de reserva de llamada o chat personal cuando el usuario utiliza funciones premium.</li>
+    </ul>
+
+    <h2>Finalidad del tratamiento</h2>
+    <ul>
+      <li>Autenticación y seguridad de la cuenta.</li>
+      <li>Persistencia del historial de lecturas solicitado por el usuario.</li>
+      <li>Prestación de planes premium y gestión de cobros.</li>
+      <li>Cumplimiento legal y prevención de fraude.</li>
+    </ul>
+
+    <h2>Base legal</h2>
+    <ul>
+      <li>Ejecución de contrato para cuentas registradas y suscripciones.</li>
+      <li>Consentimiento para proveedores externos de videollamada y comunicaciones.</li>
+      <li>Interés legítimo para seguridad y mejora del servicio.</li>
+    </ul>
+
+    <h2>Proveedores</h2>
+    <ul>
+      <li>Firebase Authentication y Firestore para autenticación y datos de usuario.</li>
+      <li>Stripe para cobros y suscripciones.</li>
+      <li>Proveedor de agenda/videollamada (Cal.com o Zoom) en funciones premium.</li>
+      <li>OpenAI para generar interpretación de tiradas.</li>
+    </ul>
+
+    <h2>Conservación</h2>
+    <p>Conservamos los datos mientras la cuenta esté activa o exista obligación legal. El usuario puede solicitar exportación y eliminación cuando sea aplicable.</p>
+
+    <h2>Derechos GDPR</h2>
+    <p>Desde el perfil de usuario se puede exportar información personal. También puedes solicitar acceso, rectificación o eliminación escribiendo al canal de soporte oficial.</p>
+
+    <h2>Seguridad</h2>
+    <p>Aplicamos controles de acceso por usuario, reglas de seguridad en Firestore y cookies de sesión seguras en servidor.</p>
   </main>
 </Layout>
