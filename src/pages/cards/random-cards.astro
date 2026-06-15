@@ -12,6 +12,15 @@ interface Card {
   valor?: string;
   arcano: 'mayor' | 'menor';
   imagem: string;
+  significado?: {
+    directo?: string;
+    invertido?: string;
+  };
+  simbolos?: {
+    principales?: string[];
+    interpretacion?: string;
+  };
+  keywords?: string[];
   imageLoaded?: boolean;
   imageError?: string;
 }
@@ -26,6 +35,15 @@ const allCards = querySnapshot.docs.map(doc => {
     valor: data.valor,
     arcano: data.arcano || 'mayor',
     imagem: data.imagem || '/images/placeholder-card.jpg',
+    significado: {
+      directo: data.significado?.directo || 'No disponible',
+      invertido: data.significado?.invertido || 'No disponible'
+    },
+    simbolos: {
+      principales: data.simbolos?.principales || [],
+      interpretacion: data.simbolos?.interpretacion || 'No disponible'
+    },
+    keywords: data.keywords || [],
     imageLoaded: false
   };
 });
@@ -175,6 +193,73 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         <div id="interpretacionTexto" class="text-gray-700 leading-relaxed text-base"></div>
       </div>
     </section>
+
+    <section
+      id="cardMeaningModal"
+      class="fixed inset-0 z-50 hidden"
+      aria-hidden="true"
+      role="dialog"
+      aria-labelledby="modalCardName"
+    >
+      <div id="cardMeaningBackdrop" class="absolute inset-0 bg-black/60"></div>
+      <div class="relative h-full w-full overflow-y-auto">
+        <div class="min-h-full flex items-center justify-center p-4">
+          <article class="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden">
+            <header class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-purple-50">
+              <h2 id="modalCardName" class="text-2xl font-bold text-purple-900"></h2>
+              <button
+                id="closeMeaningModalBtn"
+                type="button"
+                class="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                aria-label="Cerrar significado"
+              >
+                ×
+              </button>
+            </header>
+
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="md:col-span-1">
+                <img
+                  id="modalCardImage"
+                  src=""
+                  alt=""
+                  class="w-full rounded-lg border border-gray-200"
+                  loading="lazy"
+                />
+                <p id="modalCardMeta" class="mt-3 text-sm text-gray-600 text-center"></p>
+              </div>
+
+              <div class="md:col-span-2 space-y-4">
+                <div class="bg-purple-50 p-4 rounded-lg">
+                  <h3 class="font-semibold text-purple-800">Directo</h3>
+                  <p id="modalCardDirect" class="text-gray-700 mt-1"></p>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h3 class="font-semibold text-gray-700">Invertido</h3>
+                  <p id="modalCardInverted" class="text-gray-700 mt-1"></p>
+                </div>
+
+                <div>
+                  <h3 class="font-semibold text-purple-800">Símbolos clave</h3>
+                  <ul id="modalCardSymbols" class="mt-2 list-disc list-inside text-gray-700"></ul>
+                </div>
+
+                <div class="pt-2">
+                  <a
+                    id="modalDetailLink"
+                    href="/cards"
+                    class="inline-block bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Ir a ficha completa
+                  </a>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
   </main>
 </Layout>
 
@@ -182,12 +267,28 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
 <script is:inline>
 (function () {
+  var STORAGE_KEY = 'apptarot_random_reading_v1';
   var data = null;
+  var cardIndex = null;
+
   function getData() {
     if (data) return data;
     var el = document.getElementById('tarot-data');
     data = el ? JSON.parse(el.textContent) : { allCards: [], arcanosMayores: [], arcanosMenores: [] };
     return data;
+  }
+
+  function ensureCardIndex() {
+    if (cardIndex) return;
+    cardIndex = {};
+    getData().allCards.forEach(function (card) {
+      cardIndex[card.id] = card;
+    });
+  }
+
+  function getCardById(cardId) {
+    ensureCardIndex();
+    return cardIndex[cardId] || null;
   }
 
   var DEFAULT_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg';
@@ -218,36 +319,138 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     return card.numero ? String(card.numero) : '';
   }
 
-  function revealCard(el) {
-    if (el.dataset.revealed === '1') return;
-    el.dataset.revealed = '1';
-    el.style.cursor = 'default';
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
 
-    var card = JSON.parse(el.dataset.card);
+  function detailCardHtml(card, borderClass) {
     var imgSrc = buildSrc(card.imagem);
     var id = identifier(card);
     var label = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
+    var extraClass = borderClass ? (' ' + borderClass) : '';
+
+    return (
+      '<button type="button" class="carta-random-link carta-detail-trigger" data-card-id="' + card.id + '">' +
+        '<article class="carta-random-container' + extraClass + '">' +
+          '<div class="carta-random-image-wrapper">' +
+            '<img src="' + imgSrc + '" alt="Carta ' + escapeHtml(card.nombre) + '" loading="lazy" class="carta-random-image" ' +
+              'onerror="this.onerror=null;this.src=\'' + DEFAULT_IMAGE + '\'" />' +
+          '</div>' +
+          '<div class="carta-random-info">' +
+            '<h3 class="carta-random-nombre">' + escapeHtml(card.nombre) + '</h3>' +
+            '<div class="text-sm text-gray-600">' +
+              '<span class="carta-random-numero">' + escapeHtml(id) + '</span>' +
+              '<span class="block text-xs">' + label + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</article>' +
+      '</button>'
+    );
+  }
+
+  function saveReadingState(state) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn('No se pudo guardar la tirada', e);
+    }
+  }
+
+  function loadReadingState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn('No se pudo leer la tirada guardada', e);
+      return null;
+    }
+  }
+
+  function clearReadingState() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn('No se pudo limpiar la tirada guardada', e);
+    }
+  }
+
+  function collectCurrentState() {
+    var selectedIds = [];
+    var revealedIds = [];
+    var aclaracionIds = [];
+
+    document.querySelectorAll('#cardsContainer [data-card]').forEach(function (el) {
+      try {
+        var card = JSON.parse(el.dataset.card || '{}');
+        if (card.id) selectedIds.push(card.id);
+        if (el.dataset.revealed === '1' && card.id) revealedIds.push(card.id);
+      } catch (e) {}
+    });
+
+    document.querySelectorAll('#aclaracionContainer [data-card-id]').forEach(function (el) {
+      var id = el.dataset.cardId;
+      if (id && aclaracionIds.indexOf(id) === -1) aclaracionIds.push(id);
+    });
+
+    var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
+    var countEl = document.getElementById('cardCount');
+    var interpretation = document.getElementById('interpretacionTexto');
+
+    return {
+      mode: modeEl ? modeEl.value : 'mixta',
+      count: Math.min(13, Math.max(1, parseInt(countEl ? countEl.value : '3', 10) || 3)),
+      selectedIds: selectedIds,
+      revealedIds: revealedIds,
+      aclaracionIds: aclaracionIds,
+      interpretacionHtml: interpretation ? interpretation.innerHTML : ''
+    };
+  }
+
+  function persistCurrentState() {
+    saveReadingState(collectCurrentState());
+  }
+
+  function bindDetailTrigger(root) {
+    if (!root) return;
+    root.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var cardId = root.dataset.cardId;
+      if (!cardId) return;
+      openMeaningModal(cardId);
+    });
+  }
+
+  function renderRevealedCard(el, card, animate) {
+    el.classList.remove('flippable-card', 'flipping');
+    el.classList.add('revealed-card');
+    if (animate) {
+      el.classList.add('card-revealed');
+    } else {
+      el.classList.remove('card-revealed');
+    }
+    el.style.cursor = 'default';
+    el.innerHTML = detailCardHtml(card, '');
+    bindDetailTrigger(el.querySelector('.carta-detail-trigger'));
+  }
+
+  function revealCard(el, immediate) {
+    if (el.dataset.revealed === '1') return;
+    el.dataset.revealed = '1';
+
+    var card = JSON.parse(el.dataset.card);
+
+    if (immediate) {
+      renderRevealedCard(el, card, false);
+      return;
+    }
 
     el.classList.add('flipping');
     setTimeout(function () {
-      el.classList.remove('flippable-card', 'flipping');
-      el.classList.add('revealed-card', 'card-revealed');
-      el.innerHTML =
-        '<a href="/cards/' + card.id + '" class="carta-random-link">' +
-          '<article class="carta-random-container">' +
-            '<div class="carta-random-image-wrapper">' +
-              '<img src="' + imgSrc + '" alt="Carta ' + card.nombre + '" loading="lazy" class="carta-random-image" ' +
-                'onerror="this.onerror=null;this.src=\'' + DEFAULT_IMAGE + '\'" />' +
-            '</div>' +
-            '<div class="carta-random-info">' +
-              '<h3 class="carta-random-nombre">' + card.nombre + '</h3>' +
-              '<div class="text-sm text-gray-600">' +
-                '<span class="carta-random-numero">' + id + '</span>' +
-                '<span class="block text-xs">' + label + '</span>' +
-              '</div>' +
-            '</div>' +
-          '</article>' +
-        '</a>';
+      renderRevealedCard(el, card, true);
+      persistCurrentState();
     }, 300);
   }
 
@@ -275,6 +478,20 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     return div;
   }
 
+  function resetSecondarySections() {
+    var ac = document.getElementById('aclaracionContainer');
+    if (ac) ac.innerHTML = '';
+
+    var as_ = document.getElementById('aclaracionSection');
+    if (as_) as_.classList.add('hidden');
+
+    var interpSec = document.getElementById('interpretacionSection');
+    if (interpSec) interpSec.classList.add('hidden');
+
+    var interpTxt = document.getElementById('interpretacionTexto');
+    if (interpTxt) interpTxt.innerHTML = '';
+  }
+
   function barajar() {
     var d = getData();
     var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
@@ -288,12 +505,16 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     var container = document.getElementById('cardsContainer');
     if (!container) return;
     container.innerHTML = '';
+    resetSecondarySections();
+
     selected.forEach(function (card) {
       container.appendChild(makeCard(card));
     });
 
     var aclaracion = document.getElementById('aclaracionControls');
     if (aclaracion) aclaracion.classList.remove('hidden');
+
+    persistCurrentState();
   }
 
   function limpiar() {
@@ -304,40 +525,24 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           '<p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona &quot;Barajar Cartas&quot;</p>' +
         '</div>';
     }
-    var ac = document.getElementById('aclaracionContainer');
-    if (ac) ac.innerHTML = '';
-    var as_ = document.getElementById('aclaracionSection');
-    if (as_) as_.classList.add('hidden');
+    resetSecondarySections();
+
     var acCtrl = document.getElementById('aclaracionControls');
     if (acCtrl) acCtrl.classList.add('hidden');
-    var interpSec = document.getElementById('interpretacionSection');
-    if (interpSec) interpSec.classList.add('hidden');
-    var interpTxt = document.getElementById('interpretacionTexto');
-    if (interpTxt) interpTxt.innerHTML = '';
+
+    closeMeaningModal();
+    clearReadingState();
   }
 
   function makeAclaracionCard(card) {
     var div = document.createElement('div');
     div.className = 'carta-aclaracion-item';
-    var imgSrc = buildSrc(card.imagem);
-    var id = identifier(card);
-    var label = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
-    div.innerHTML =
-      '<a href="/cards/' + card.id + '" class="carta-random-link">' +
-        '<article class="carta-random-container border-amber-300">' +
-          '<div class="carta-random-image-wrapper">' +
-            '<img src="' + imgSrc + '" alt="Carta ' + card.nombre + '" loading="lazy" class="carta-random-image" ' +
-              'onerror="this.onerror=null;this.src=\'' + DEFAULT_IMAGE + '\'" />' +
-          '</div>' +
-          '<div class="carta-random-info">' +
-            '<h3 class="carta-random-nombre">' + card.nombre + '</h3>' +
-            '<div class="text-sm text-gray-600">' +
-              '<span class="carta-random-numero">' + id + '</span>' +
-              '<span class="block text-xs">' + label + '</span>' +
-            '</div>' +
-          '</div>' +
-        '</article>' +
-      '</a>';
+    div.innerHTML = detailCardHtml(card, ' border-amber-300');
+    var trigger = div.querySelector('.carta-detail-trigger');
+    if (trigger) {
+      trigger.dataset.cardId = card.id;
+      bindDetailTrigger(trigger);
+    }
     return div;
   }
 
@@ -350,12 +555,6 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     pendientes.forEach(function (el, i) {
       setTimeout(function () { revealCard(el); }, i * 180);
     });
-  }
-
-  function escapeHtml(str) {
-    var d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
   }
 
   function interpretar() {
@@ -399,6 +598,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           texto.innerHTML = lines.map(function (l) {
             return '<p class="mb-3 italic text-purple-900">' + escapeHtml(l) + '</p>';
           }).join('');
+          persistCurrentState();
         }
       })
       .catch(function () {
@@ -417,10 +617,143 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     var sec = document.getElementById('aclaracionSection');
     if (sec) sec.classList.remove('hidden');
     var cont = document.getElementById('aclaracionContainer');
-    if (cont) cont.appendChild(makeAclaracionCard(card));
+    if (cont) {
+      var cardEl = makeAclaracionCard(card);
+      var trigger = cardEl.querySelector('.carta-detail-trigger');
+      if (trigger) trigger.dataset.cardId = card.id;
+      cont.appendChild(cardEl);
+    }
 
     // quitar la carta usada del pool en memoria para no repetir
     d.arcanosMenores = d.arcanosMenores.filter(function (c) { return c.id !== card.id; });
+    persistCurrentState();
+  }
+
+  function openMeaningModal(cardId) {
+    var card = getCardById(cardId);
+    if (!card) return;
+
+    var modal = document.getElementById('cardMeaningModal');
+    var title = document.getElementById('modalCardName');
+    var image = document.getElementById('modalCardImage');
+    var meta = document.getElementById('modalCardMeta');
+    var direct = document.getElementById('modalCardDirect');
+    var inverted = document.getElementById('modalCardInverted');
+    var symbols = document.getElementById('modalCardSymbols');
+    var detailLink = document.getElementById('modalDetailLink');
+
+    if (title) title.textContent = card.nombre;
+    if (image) {
+      image.src = buildSrc(card.imagem);
+      image.alt = 'Carta ' + card.nombre;
+      image.onerror = function () {
+        this.onerror = null;
+        this.src = DEFAULT_IMAGE;
+      };
+    }
+
+    if (meta) {
+      var id = identifier(card);
+      var label = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
+      meta.textContent = (id ? (id + ' · ') : '') + label;
+    }
+
+    if (direct) direct.textContent = card.significado && card.significado.directo ? card.significado.directo : 'No disponible';
+    if (inverted) inverted.textContent = card.significado && card.significado.invertido ? card.significado.invertido : 'No disponible';
+
+    if (symbols) {
+      var symbolsList = (card.simbolos && card.simbolos.principales) ? card.simbolos.principales : [];
+      symbols.innerHTML = symbolsList.length
+        ? symbolsList.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('')
+        : '<li>No hay símbolos registrados.</li>';
+    }
+
+    if (detailLink) {
+      detailLink.href = '/cards/' + card.id + '?returnTo=' + encodeURIComponent('/cards/random-cards');
+    }
+
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overflow-hidden');
+    }
+  }
+
+  function closeMeaningModal() {
+    var modal = document.getElementById('cardMeaningModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  function setupMeaningModalEvents() {
+    var closeBtn = document.getElementById('closeMeaningModalBtn');
+    if (closeBtn) closeBtn.addEventListener('click', closeMeaningModal);
+
+    var backdrop = document.getElementById('cardMeaningBackdrop');
+    if (backdrop) backdrop.addEventListener('click', closeMeaningModal);
+
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') closeMeaningModal();
+    });
+  }
+
+  function restoreReadingState() {
+    var state = loadReadingState();
+    if (!state || !Array.isArray(state.selectedIds) || state.selectedIds.length === 0) return;
+
+    if (state.mode) {
+      var modeInput = document.querySelector('input[name="tiradaMode"][value="' + state.mode + '"]');
+      if (modeInput) modeInput.checked = true;
+    }
+
+    var countEl = document.getElementById('cardCount');
+    if (countEl && state.count) countEl.value = String(state.count);
+
+    var selectedCards = state.selectedIds.map(getCardById).filter(function (card) { return !!card; });
+    if (selectedCards.length === 0) {
+      clearReadingState();
+      return;
+    }
+
+    var container = document.getElementById('cardsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    selectedCards.forEach(function (card) {
+      var cardEl = makeCard(card);
+      container.appendChild(cardEl);
+      if (Array.isArray(state.revealedIds) && state.revealedIds.indexOf(card.id) >= 0) {
+        revealCard(cardEl, true);
+      }
+    });
+
+    var acCtrl = document.getElementById('aclaracionControls');
+    if (acCtrl) acCtrl.classList.remove('hidden');
+
+    var sec = document.getElementById('aclaracionSection');
+    var cont = document.getElementById('aclaracionContainer');
+    if (cont && Array.isArray(state.aclaracionIds) && state.aclaracionIds.length > 0) {
+      if (sec) sec.classList.remove('hidden');
+      state.aclaracionIds.forEach(function (id) {
+        var card = getCardById(id);
+        if (!card) return;
+        cont.appendChild(makeAclaracionCard(card));
+      });
+
+      var d = getData();
+      d.arcanosMenores = d.arcanosMenores.filter(function (c) {
+        return state.aclaracionIds.indexOf(c.id) === -1;
+      });
+    }
+
+    var interpSec = document.getElementById('interpretacionSection');
+    var interpTxt = document.getElementById('interpretacionTexto');
+    if (interpTxt && state.interpretacionHtml) {
+      interpTxt.innerHTML = state.interpretacionHtml;
+      if (interpSec) interpSec.classList.remove('hidden');
+    }
   }
 
   function init() {
@@ -438,6 +771,9 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
     var btnInterpretar = document.getElementById('interpretarBtn');
     if (btnInterpretar) btnInterpretar.addEventListener('click', interpretar);
+
+    setupMeaningModalEvents();
+    restoreReadingState();
   }
 
   if (document.readyState === 'loading') {
@@ -484,6 +820,10 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
   
   .carta-aclaracion-item .carta-random-container {
     @apply bg-amber-50 border-2 border-amber-300;
+  }
+
+  .carta-detail-trigger {
+    @apply w-full text-left bg-transparent p-0 border-0;
   }
   
   input[type="radio"]:checked + div {
