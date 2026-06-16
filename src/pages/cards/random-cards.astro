@@ -4,6 +4,8 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
+import { getOrCreateUserProfile } from '../../lib/auth-server';
+import { getDailyArcaneHint } from '../../lib/arcaneCalculator';
 
 interface Card {
   id: string;
@@ -56,6 +58,11 @@ console.log(`Cargadas ${allCards.length} cartas desde Firestore (${arcanosMayore
 
 const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
 const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
+const user = Astro.locals.user;
+const userProfile = user ? await getOrCreateUserProfile(user.uid, user) : null;
+const userArcaneNumber = userProfile?.personalArcaneNumber;
+const userArcaneName = userProfile?.personalArcaneName;
+const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) : null;
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -135,6 +142,22 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
       <aside class="xl:col-span-4">
         <div id="secondaryControlsColumn" class="xl:sticky xl:top-24 space-y-4 transition-all duration-300 ease-out">
+          <section class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out">
+            <h3 class="text-base font-semibold mb-2" style="color: var(--text);">Tu Arcano Personal Hoy</h3>
+            {userArcaneNumber && userArcaneName ? (
+              <>
+                <p class="text-sm font-semibold" style="color: var(--primary);">{userArcaneNumber}: {userArcaneName}</p>
+                <p class="text-sm mt-2" style="color: var(--text-muted);">{userArcaneHint}</p>
+                <a href="/profile" class="inline-block mt-3 text-sm underline" style="color: var(--primary);">Actualizar mi carta natal</a>
+              </>
+            ) : (
+              <>
+                <p class="text-sm" style="color: var(--text-muted);">Aún no has calculado tu Arcano Personal.</p>
+                <a href="/profile" class="inline-block mt-3 text-sm underline" style="color: var(--primary);">Calcular ahora en mi perfil</a>
+              </>
+            )}
+          </section>
+
           <section id="actionPanel" class="app-surface rounded-2xl p-5 hidden transition-all duration-300 ease-out">
             <div id="aclaracionControls" class="hidden">
               <div class="text-sm mb-4" style="color: var(--text-muted);">

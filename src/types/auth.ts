@@ -4,7 +4,14 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
+  fullName?: string;
   photoURL?: string;
+  birthDate?: string;
+  birthHour?: string;
+  personalArcaneNumber?: number;
+  personalArcaneName?: string;
+  personalArcaneMeaning?: string;
+  personalArcaneCalculatedAt?: string;
   plan: UserPlan;
   planStatus: 'active' | 'inactive' | 'past_due' | 'canceled';
   stripeCustomerId?: string;

@@ -13,14 +13,69 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
+    function optionalString(value) {
+      return value == null || value is string;
+    }
+
+    function optionalIntInRange(value, min, max) {
+      return value == null || (value is int && value >= min && value <= max);
+    }
+
+    function validArcaneName(value) {
+      return value == null || value in [
+        'El Mago',
+        'La Sacerdotisa',
+        'La Emperatriz',
+        'El Emperador',
+        'El Hierofante (El Papa)',
+        'Los Enamorados',
+        'El Carro',
+        'La Justicia',
+        'El Ermitaño',
+        'La Rueda de la Fortuna',
+        'La Fuerza',
+        'El Colgado',
+        'La Muerte',
+        'La Templanza',
+        'El Diablo',
+        'La Torre',
+        'La Estrella',
+        'La Luna',
+        'El Sol',
+        'El Juicio',
+        'El Mundo',
+        'El Loco'
+      ];
+    }
+
+    function validBirthDateFormat(value) {
+      return value == null || (value is string && value.matches('^\\d{2}\\/\\d{2}\\/\\d{4}$'));
+    }
+
+    function validBirthHourFormat(value) {
+      return value == null || (value is string && value.matches('^([01]\\d|2[0-3]):([0-5]\\d)$'));
+    }
+
+    function validUserDocument() {
+      return optionalString(request.resource.data.email)
+        && optionalString(request.resource.data.displayName)
+        && optionalString(request.resource.data.fullName)
+        && validBirthDateFormat(request.resource.data.birthDate)
+        && validBirthHourFormat(request.resource.data.birthHour)
+        && optionalIntInRange(request.resource.data.personalArcaneNumber, 1, 22)
+        && validArcaneName(request.resource.data.personalArcaneName)
+        && optionalString(request.resource.data.personalArcaneMeaning)
+        && optionalString(request.resource.data.personalArcaneCalculatedAt);
+    }
+
     match /cards/{cardId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      allow create: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && validUserDocument();
       allow delete: if false;
 
       match /readings/{readingId} {

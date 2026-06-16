@@ -1,0 +1,174 @@
+---
+interface Props {
+  idPrefix?: string;
+  includeFullName?: boolean;
+  initialFullName?: string;
+  initialBirthDate?: string;
+  initialBirthHour?: string;
+}
+
+const {
+  idPrefix = 'arcane',
+  includeFullName = true,
+  initialFullName = '',
+  initialBirthDate = '',
+  initialBirthHour = '',
+} = Astro.props;
+
+const fullNameId = `${idPrefix}-fullName`;
+const birthDateId = `${idPrefix}-birthDate`;
+const birthHourId = `${idPrefix}-birthHour`;
+const helperId = `${idPrefix}-helper`;
+const previewId = `${idPrefix}-preview`;
+const previewTextId = `${idPrefix}-previewText`;
+const previewHintId = `${idPrefix}-previewHint`;
+const numberHiddenId = `${idPrefix}-arcaneNumber`;
+const nameHiddenId = `${idPrefix}-arcaneName`;
+---
+
+<section id={`${idPrefix}-calculator`} class="space-y-4">
+  {includeFullName && (
+    <div>
+      <label class="block text-sm font-semibold mb-1" for={fullNameId}>Nombre completo</label>
+      <input
+        id={fullNameId}
+        name="fullName"
+        type="text"
+        value={initialFullName}
+        autocomplete="name"
+        required
+        placeholder="Ej. Ana Perez"
+        class="w-full rounded-lg border px-3 py-2"
+        style="border-color: var(--border); background: var(--surface);"
+      />
+      <p class="text-xs mt-1" style="color: var(--text-muted);">Incluye al menos nombre y apellido.</p>
+    </div>
+  )}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-semibold mb-1" for={birthDateId}>Fecha de nacimiento</label>
+      <input
+        id={birthDateId}
+        name="birthDate"
+        type="text"
+        inputmode="numeric"
+        value={initialBirthDate}
+        placeholder="DD/MM/AAAA"
+        autocomplete="bday"
+        required
+        aria-describedby={helperId}
+        class="w-full rounded-lg border px-3 py-2"
+        style="border-color: var(--border); background: var(--surface);"
+      />
+      <p id={helperId} class="text-xs mt-1" style="color: var(--text-muted);">
+        El Arcano se calcula sumando los dígitos de tu fecha hasta obtener un número entre 1 y 22.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold mb-1" for={birthHourId}>Hora de nacimiento (opcional)</label>
+      <input
+        id={birthHourId}
+        name="birthHour"
+        type="time"
+        value={initialBirthHour}
+        class="w-full rounded-lg border px-3 py-2"
+        style="border-color: var(--border); background: var(--surface);"
+      />
+      <p class="text-xs mt-1" style="color: var(--text-muted);">Se guarda para funcionalidades futuras de tirada personalizada.</p>
+    </div>
+  </div>
+
+  <input id={numberHiddenId} name="personalArcaneNumber" type="hidden" value="" />
+  <input id={nameHiddenId} name="personalArcaneName" type="hidden" value="" />
+
+  <div id={previewId} class="hidden rounded-xl px-4 py-3 transition-all duration-300" style="background: color-mix(in srgb, var(--primary) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));">
+    <p id={previewTextId} class="font-semibold" style="color: var(--text);"></p>
+    <p id={previewHintId} class="text-xs mt-1" style="color: var(--text-muted);">Este resultado se guardará en tu perfil.</p>
+  </div>
+</section>
+
+<script is:inline define:vars={{ idPrefix, includeFullName }} type="module">
+  import {
+    calculatePersonalArcane,
+    normalizeBirthDateInput,
+    validateBirthDate,
+    validateBirthHour,
+    validateFullName,
+  } from '/src/lib/arcaneCalculator.ts';
+
+  const fullNameInput = document.getElementById(`${idPrefix}-fullName`);
+  const birthDateInput = document.getElementById(`${idPrefix}-birthDate`);
+  const birthHourInput = document.getElementById(`${idPrefix}-birthHour`);
+  const preview = document.getElementById(`${idPrefix}-preview`);
+  const previewText = document.getElementById(`${idPrefix}-previewText`);
+  const numberHidden = document.getElementById(`${idPrefix}-arcaneNumber`);
+  const nameHidden = document.getElementById(`${idPrefix}-arcaneName`);
+
+  function setFieldValidity(element, validation) {
+    if (!element) return;
+    if (validation.valid) {
+      element.setCustomValidity('');
+    } else {
+      element.setCustomValidity(validation.message || 'Campo inválido.');
+    }
+  }
+
+  function updatePreview() {
+    const birthDate = birthDateInput ? birthDateInput.value : '';
+    const normalizedDate = normalizeBirthDateInput(birthDate);
+    const dateValidation = validateBirthDate(normalizedDate);
+    setFieldValidity(birthDateInput, dateValidation);
+
+    if (includeFullName && fullNameInput) {
+      setFieldValidity(fullNameInput, validateFullName(fullNameInput.value));
+    }
+
+    if (birthHourInput) {
+      setFieldValidity(birthHourInput, validateBirthHour(birthHourInput.value));
+    }
+
+    if (!dateValidation.valid) {
+      if (preview) preview.classList.add('hidden');
+      if (numberHidden) numberHidden.value = '';
+      if (nameHidden) nameHidden.value = '';
+      return;
+    }
+
+    const result = calculatePersonalArcane(normalizedDate);
+    if (numberHidden) numberHidden.value = String(result.number);
+    if (nameHidden) nameHidden.value = result.name;
+
+    if (preview && previewText) {
+      preview.classList.remove('hidden');
+      previewText.textContent = `Tu Arcano Personal sería ${result.number}: ${result.name}`;
+    }
+
+    const container = document.getElementById(`${idPrefix}-calculator`);
+    if (container) {
+      container.dispatchEvent(
+        new CustomEvent('arcanechange', {
+          detail: {
+            number: result.number,
+            name: result.name,
+            birthDate: normalizedDate,
+            fullName: fullNameInput ? fullNameInput.value.trim() : '',
+            birthHour: birthHourInput ? birthHourInput.value.trim() : '',
+            valid: true,
+          },
+          bubbles: true,
+        })
+      );
+    }
+  }
+
+  [fullNameInput, birthDateInput, birthHourInput].forEach((el) => {
+    el?.addEventListener('input', updatePreview);
+    el?.addEventListener('blur', updatePreview);
+  });
+
+  if (birthDateInput?.value) {
+    updatePreview();
+  }
+</script>

@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import { getOrCreateUserProfile } from '../lib/auth-server';
 import { getPlanLabel, FREE_READING_LIMIT, isPremiumPlan } from '../lib/plans';
+import PersonalArcaneCalculator from '../components/PersonalArcaneCalculator.astro';
 
 const user = Astro.locals.user;
 if (!user) {
@@ -12,6 +13,7 @@ const profile = await getOrCreateUserProfile(user.uid, user);
 const title = 'Mi perfil';
 const description = 'Gestiona tu cuenta, suscripcion y privacidad.';
 const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'active';
+const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.personalArcaneName);
 ---
 
 <Layout {title} {description}>
@@ -19,9 +21,45 @@ const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'act
     <header class="surface-card p-6">
       <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
       <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
+      {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
       <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
       <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
     </header>
+
+    <section class="surface-card p-6 space-y-4">
+      <div>
+        <h2 class="text-xl font-semibold page-title mb-2">Tu Arcano Personal</h2>
+        {hasPersonalArcane ? (
+          <>
+            <p class="page-lead">Arcano actual: <strong>{profile.personalArcaneNumber}: {profile.personalArcaneName}</strong></p>
+            {profile.personalArcaneMeaning && <p class="text-sm mt-1" style="color: var(--text-muted);">{profile.personalArcaneMeaning}</p>}
+          </>
+        ) : (
+          <p class="page-lead">Aun no tienes Arcano Personal guardado. Completa tus datos para generarlo.</p>
+        )}
+      </div>
+
+      <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);">
+        <summary class="cursor-pointer font-semibold" style="color: var(--text);">{hasPersonalArcane ? 'Recalcular Arcano Personal' : 'Calcular Arcano Personal'}</summary>
+        <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
+          Cambiar tu fecha de nacimiento actualizara tu carta natal y su interpretacion guardada.
+        </p>
+
+        <form id="arcaneForm" class="space-y-4" novalidate>
+          <PersonalArcaneCalculator
+            idPrefix="profileArcane"
+            includeFullName={true}
+            initialFullName={profile.fullName || profile.displayName || ''}
+            initialBirthDate={profile.birthDate || ''}
+            initialBirthHour={profile.birthHour || ''}
+          />
+
+          <div class="flex justify-end">
+            <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
+          </div>
+        </form>
+      </details>
+    </section>
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <article class="surface-card p-6">
@@ -56,6 +94,16 @@ const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'act
 
   <script is:inline type="module">
     import { updateCurrentUserPassword } from '/src/lib/auth-client.ts';
+    import { db, auth } from '/src/lib/firebase.ts';
+    import { doc, setDoc } from 'firebase/firestore';
+    import {
+      calculatePersonalArcane,
+      normalizeBirthDateInput,
+      validateBirthDate,
+      validateBirthHour,
+      validateFullName,
+      getDailyArcaneHint,
+    } from '/src/lib/arcaneCalculator.ts';
 
     const profileMsg = document.getElementById('profileMsg');
 
@@ -64,6 +112,13 @@ const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'act
       profileMsg.textContent = text;
       profileMsg.style.color = isError ? 'var(--danger)' : 'var(--success)';
       profileMsg.classList.remove('hidden');
+    }
+
+    function setArcaneBusy(isBusy) {
+      const btn = document.getElementById('saveArcaneBtn');
+      if (!btn) return;
+      btn.disabled = isBusy;
+      btn.textContent = isBusy ? 'Guardando...' : 'Guardar Arcano Personal';
     }
 
     async function startCheckout(billingCycle) {
@@ -128,6 +183,74 @@ const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'act
         if (passwordInput) passwordInput.value = '';
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'No se pudo cambiar la contraseña.', true);
+      }
+    });
+
+    document.getElementById('arcaneForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const fullName = document.getElementById('profileArcane-fullName')?.value?.trim() ?? '';
+      const rawBirthDate = document.getElementById('profileArcane-birthDate')?.value ?? '';
+      const birthHour = document.getElementById('profileArcane-birthHour')?.value?.trim() ?? '';
+
+      const birthDate = normalizeBirthDateInput(rawBirthDate);
+      const fullNameValidation = validateFullName(fullName);
+      const birthDateValidation = validateBirthDate(birthDate);
+      const birthHourValidation = validateBirthHour(birthHour);
+
+      if (!fullNameValidation.valid) {
+        setMessage(fullNameValidation.message || 'Nombre completo inválido.', true);
+        return;
+      }
+
+      if (!birthDateValidation.valid) {
+        setMessage(birthDateValidation.message || 'Fecha de nacimiento inválida.', true);
+        return;
+      }
+
+      if (!birthHourValidation.valid) {
+        setMessage(birthHourValidation.message || 'Hora inválida.', true);
+        return;
+      }
+
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        setMessage('No se encontró sesión de Firebase. Recarga la página e inténtalo de nuevo.', true);
+        return;
+      }
+
+      if (!window.confirm('¿Confirmas recalcular y guardar tu Arcano Personal con esta fecha?')) {
+        return;
+      }
+
+      setArcaneBusy(true);
+
+      try {
+        const arcane = calculatePersonalArcane(birthDate);
+        const meaning = getDailyArcaneHint(arcane.number);
+
+        await setDoc(
+          doc(db, 'users', firebaseUser.uid),
+          {
+            fullName,
+            displayName: fullName,
+            birthDate,
+            birthHour: birthHour || null,
+            personalArcaneNumber: arcane.number,
+            personalArcaneName: arcane.name,
+            personalArcaneMeaning: meaning,
+            personalArcaneCalculatedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+
+        setMessage(`Arcano actualizado: ${arcane.number} - ${arcane.name}. Recargando perfil...`);
+        setTimeout(() => window.location.reload(), 900);
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'No se pudo guardar el Arcano Personal.', true);
+      } finally {
+        setArcaneBusy(false);
       }
     });
   </script>
