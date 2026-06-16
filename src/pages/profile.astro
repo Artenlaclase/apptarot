@@ -176,29 +176,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
             </div>
           </form>
         </details>
-      ) : (
-        <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);">
-          <summary class="cursor-pointer font-semibold" style="color: var(--text);">Recalcular Arcano Personal</summary>
-          <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
-            Cambiar tu fecha de nacimiento actualizara tu carta natal y su interpretacion guardada.
-          </p>
-
-          <form id="arcaneForm" class="space-y-4" novalidate>
-            <PersonalArcaneCalculator
-              idPrefix="profileArcane"
-              includeFullName={true}
-              initialFirstName={profileNameParts.firstName}
-              initialLastName={profileNameParts.lastName}
-              initialBirthDate={profile.birthDate || ''}
-              initialBirthHour={profile.birthHour || ''}
-            />
-
-            <div class="flex justify-end">
-              <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
-            </div>
-          </form>
-        </details>
-      )}
+      ) : <></>}
     </section>
 
     <section class="surface-card p-6">

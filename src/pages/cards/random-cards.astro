@@ -208,7 +208,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
           <section id="interpretacionSection" class="app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out border" style="border-color: var(--primary);" aria-live="polite" aria-busy="false">
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-lg font-semibold" style="color: var(--text);">✨ Interpretación</h3>
-              <button type="button" id="closeInterpretacionBtn" class="text-2xl leading-none" style="color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 0;">×</button>
+              <button type="button" id="closeInterpretacionBtn" title="Mostrar/ocultar interpretación" class="text-xs font-semibold px-2 py-1 rounded transition-colors" style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;">▼ Ocultar</button>
             </div>
 
             <div id="interpretacionContent" class="hidden">
@@ -538,12 +538,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     var interpTxt = document.getElementById('interpretacionTexto');
     if (interpTxt) interpTxt.innerHTML = '';
 
-    // Desbloquear botón interpretar cuando se limpia
-    var btnInterp = document.getElementById('interpretarBtn');
-    if (btnInterp) {
-      btnInterp.disabled = false;
-      btnInterp.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
+    hasInterpretacion = false;
   }
   function barajar() {
     var d = getData();
@@ -652,11 +647,17 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       if (elErrMsg) elErrMsg.textContent = errorMsg || 'Error al generar la interpretación.';
     } else if (state === 'warn' && elWarn) {
       elWarn.classList.remove('hidden'); elWarn.classList.add('flex');
-      if (elWarnMsg) elWarnMsg.textContent = errorMsg || 'Aviso de cuenta.';
+      if (elWarnMsg) elWarnMsg.innerHTML = errorMsg || 'Aviso de cuenta.';
     }
   }
 
+  var hasInterpretacion = false;
+
   function interpretar() {
+    if (hasInterpretacion) {
+      setInterpretarFeedback('warn', '¿Deseas una nueva lectura? <a href="/premium/chat" style="color: var(--primary); font-weight: bold; text-decoration: underline;">Actualiza tu plan</a> para obtener interpretaciones ilimitadas, o bien <strong>baraja de nuevo</strong> para reiniciar la tirada.');
+      return;
+    }
     var cartasReveladas = [];
     document.querySelectorAll('[data-revealed="1"]').forEach(function (el) {
       if (el.dataset.card) {
@@ -714,13 +715,13 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
           persistCurrentState();
         }
 
-        setInterpretarFeedback('ok');
+        hasInterpretacion = true;
 
-        // Bloquear botón después de interpretar exitosamente
-        if (btn) {
-          btn.disabled = true;
-          btn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
+        // Actualizar texto del botón toggle
+        var closeBtn = document.getElementById('closeInterpretacionBtn');
+        if (closeBtn) closeBtn.textContent = '▼ Ocultar';
+
+        setInterpretarFeedback('ok');
 
         if (data.warning) {
           setTimeout(function () {
@@ -956,7 +957,10 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     if (btnCloseInterp) {
       btnCloseInterp.addEventListener('click', function () {
         var content = document.getElementById('interpretacionContent');
-        if (content) content.classList.add('hidden');
+        if (!content) return;
+        var isHidden = content.classList.contains('hidden');
+        content.classList.toggle('hidden');
+        btnCloseInterp.textContent = isHidden ? '▼ Ocultar' : '▶ Ver interpretación';
       });
     }
     var btnCopiarInterp = document.getElementById('copiarInterpretacionBtn');
