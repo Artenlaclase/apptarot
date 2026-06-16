@@ -942,21 +942,6 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       });
     }
 
-    var btnToggleInterp = document.getElementById('toggleInterpretacionBtn');
-    if (btnToggleInterp) {
-      btnToggleInterp.addEventListener('click', function () {
-        var expanded = btnToggleInterp.dataset.expanded === '1';
-        setInterpretationExpanded(!expanded);
-      });
-    }
-
-    var btnFocusToggle = document.getElementById('focusToggleBtn');
-    if (btnFocusToggle) {
-      btnFocusToggle.addEventListener('click', function () {
-        setFocusMode(!isFocusMode);
-      });
-    }
-
     var btnCloseInterp = document.getElementById('closeInterpretacionBtn');
     if (btnCloseInterp) {
       btnCloseInterp.addEventListener('click', function () {
