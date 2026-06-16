@@ -119,6 +119,26 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
     <p id={previewTextId} class="font-semibold" style="color: var(--text);"></p>
     <p id={previewHintId} class="text-xs mt-1" style="color: var(--text-muted);">Este resultado se guardará en tu perfil.</p>
   </div>
+
+  <div id={`${idPrefix}-breakdown`} class="hidden rounded-xl overflow-hidden transition-all duration-300" style="border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
+    <div class="px-4 py-2" style="background: color-mix(in srgb, var(--primary) 72%, #111111); color: #ffffff;">
+      <p class="text-sm font-semibold">El cálculo de tu arcano:</p>
+    </div>
+    <div class="overflow-x-auto" style="background: color-mix(in srgb, var(--surface) 94%, #ffffff);">
+      <table class="w-full text-sm">
+        <thead>
+          <tr style="background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--text);">
+            <th class="px-4 py-2 text-left font-semibold">Día</th>
+            <th class="px-4 py-2 text-left font-semibold">Mes</th>
+            <th class="px-4 py-2 text-left font-semibold">Año</th>
+            <th class="px-4 py-2 text-center font-semibold"> </th>
+            <th class="px-4 py-2 text-left font-semibold">Reducción</th>
+          </tr>
+        </thead>
+        <tbody id={`${idPrefix}-breakdown-body`}></tbody>
+      </table>
+    </div>
+  </div>
 </section>
 
 <script is:inline define:vars={{ idPrefix, includeFullName }} type="module">
@@ -178,6 +198,8 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
       if (preview) preview.classList.add('hidden');
       if (numberHidden) numberHidden.value = '';
       if (nameHidden) nameHidden.value = '';
+      const bd = document.getElementById(`${idPrefix}-breakdown`);
+      if (bd) bd.classList.add('hidden');
       return;
     }
 
@@ -189,6 +211,41 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
       preview.classList.remove('hidden');
       previewText.textContent = `Tu Arcano Personal sería ${result.number}: ${result.name}`;
     }
+
+    // --- Tabla de reducción ---
+    const breakdownEl = document.getElementById(`${idPrefix}-breakdown`);
+    const breakdownBody = document.getElementById(`${idPrefix}-breakdown-body`);
+    if (breakdownEl && breakdownBody) {
+      const parts = normalizedDate.split('/').map(Number);
+      const day = parts[0]; const month = parts[1]; let year = parts[2];
+      const dayLabel = String(day).padStart(2, '0');
+      const monthLabel = String(month).padStart(2, '0');
+      const steps = [];
+      let total = day + month + year;
+      steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+      while (total > 21) {
+        year = String(year).split('').reduce((s, c) => s + Number(c), 0);
+        total = day + month + year;
+        steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+      }
+      breakdownBody.innerHTML = steps.map((s, i) => {
+        const rowStyle = i < steps.length - 1
+          ? 'border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);'
+          : '';
+        const totalStyle = i === steps.length - 1
+          ? 'font-weight:700; color: var(--primary);'
+          : 'color: var(--text-muted);';
+        return `<tr style="${rowStyle}">
+          <td style="padding:0.55rem 1rem; color:var(--text);">${s.d}</td>
+          <td style="padding:0.55rem 1rem; color:var(--text);">${s.m}</td>
+          <td style="padding:0.55rem 1rem; color:var(--text);">${s.y}</td>
+          <td style="padding:0.55rem 0.5rem; text-align:center; color:var(--text-muted);">=</td>
+          <td style="padding:0.55rem 1rem; ${totalStyle}">${s.t}</td>
+        </tr>`;
+      }).join('');
+      breakdownEl.classList.remove('hidden');
+    }
+    // ---
 
     const container = document.getElementById(`${idPrefix}-calculator`);
     if (container) {

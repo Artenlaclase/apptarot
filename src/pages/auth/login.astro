@@ -60,6 +60,23 @@ const next = Astro.url.searchParams.get('next') || '/profile';
       if (googleBtn) googleBtn.disabled = isBusy;
     }
 
+    function translateAuthError(error) {
+      const code = error?.code ?? '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found')
+        return 'Email o contraseña incorrectos. Verifica tus datos e inténtalo de nuevo.';
+      if (code === 'auth/invalid-email')
+        return 'El formato del email no es válido.';
+      if (code === 'auth/user-disabled')
+        return 'Esta cuenta ha sido deshabilitada. Contacta al soporte.';
+      if (code === 'auth/too-many-requests')
+        return 'Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo.';
+      if (code === 'auth/network-request-failed')
+        return 'Error de conexión. Verifica tu red e inténtalo de nuevo.';
+      if (code === 'auth/popup-closed-by-user')
+        return 'Cerraste la ventana de Google antes de completar el inicio de sesión.';
+      return error instanceof Error ? error.message : 'No se pudo iniciar sesión.';
+    }
+
     async function finalizeLogin() {
       await createServerSession();
       window.location.href = next;
@@ -77,7 +94,7 @@ const next = Astro.url.searchParams.get('next') || '/profile';
         await loginWithEmail(email, password);
         await finalizeLogin();
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'No se pudo iniciar sesion.');
+        showError(translateAuthError(error));
       } finally {
         setBusy(false);
       }
@@ -91,7 +108,7 @@ const next = Astro.url.searchParams.get('next') || '/profile';
         await loginWithGoogle();
         await finalizeLogin();
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'No se pudo iniciar sesion con Google.');
+        showError(translateAuthError(error));
       } finally {
         setBusy(false);
       }
