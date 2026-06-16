@@ -279,7 +279,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           return;
         }
 
-        container.innerHTML = data.readings.map((reading: any) => {
+        container.innerHTML = data.readings.map((reading) => {
           const date = new Date(reading.createdAt).toLocaleDateString('es-ES', {
             year: 'numeric',
             month: 'short',

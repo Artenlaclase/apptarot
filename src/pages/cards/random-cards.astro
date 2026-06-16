@@ -205,13 +205,14 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
             </div>
           </section>
 
-          <section id="interpretacionSection" class="hidden app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out fixed bottom-6 right-6 max-w-sm shadow-2xl z-40 border" style="border-color: var(--primary); max-height: 70vh; overflow-y-auto;" aria-live="polite" aria-busy="false">
+          <section id="interpretacionSection" class="app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out border" style="border-color: var(--primary);" aria-live="polite" aria-busy="false">
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-lg font-semibold" style="color: var(--text);">✨ Interpretación</h3>
               <button type="button" id="closeInterpretacionBtn" class="text-2xl leading-none" style="color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 0;">×</button>
             </div>
 
-            <div id="interpretacionLoading" class="hidden text-center py-6">
+            <div id="interpretacionContent" class="hidden">
+              <div id="interpretacionLoading" class="hidden text-center py-6">
               <div class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 mb-3" style="border-color: var(--primary);"></div>
               <p style="color: var(--text-muted);">Consultando el oráculo...</p>
             </div>
@@ -523,6 +524,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     return div;
   }
 
+
   function resetSecondarySections() {
     var ac = document.getElementById('aclaracionContainer');
     if (ac) ac.innerHTML = '';
@@ -530,13 +532,19 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     var as_ = document.getElementById('aclaracionSection');
     if (as_) as_.classList.add('hidden');
 
-    var interpSec = document.getElementById('interpretacionSection');
-    if (interpSec) interpSec.classList.add('hidden');
+    var interpContent = document.getElementById('interpretacionContent');
+    if (interpContent) interpContent.classList.add('hidden');
 
     var interpTxt = document.getElementById('interpretacionTexto');
     if (interpTxt) interpTxt.innerHTML = '';
-  }
 
+    // Desbloquear botón interpretar cuando se limpia
+    var btnInterp = document.getElementById('interpretarBtn');
+    if (btnInterp) {
+      btnInterp.disabled = false;
+      btnInterp.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+  }
   function barajar() {
     var d = getData();
     var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
@@ -661,22 +669,21 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       return;
     }
 
-    var sec     = document.getElementById('interpretacionSection');
+    var content = document.getElementById('interpretacionContent');
     var loading = document.getElementById('interpretacionLoading');
     var texto   = document.getElementById('interpretacionTexto');
     var btn     = document.getElementById('interpretarBtn');
-    var toggle  = document.getElementById('toggleInterpretacionBtn');
 
     // Mostrar feedback inline de carga
     setInterpretarFeedback('loading');
     setActionsDisabled(true);
 
-    if (sec)     sec.classList.remove('hidden');
     if (loading) loading.classList.remove('hidden');
     if (texto)   texto.innerHTML = '';
-    if (toggle)  toggle.classList.add('hidden');
     if (btn)     { btn.textContent = 'Consultando...'; }
-    if (sec)     sec.setAttribute('aria-busy', 'true');
+
+    if (content) content.classList.remove('hidden');
+    if (content) content.setAttribute('aria-busy', 'true');
 
     fetch('/api/interpretar', {
       method: 'POST',
@@ -687,7 +694,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       .then(function (data) {
         if (loading) loading.classList.add('hidden');
         if (btn)     { btn.textContent = '✨ Interpretar Tirada'; }
-        if (sec)     sec.setAttribute('aria-busy', 'false');
+        if (content) content.setAttribute('aria-busy', 'false');
         setActionsDisabled(false);
 
         if (data.error) {
@@ -707,12 +714,14 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
           persistCurrentState();
         }
 
-        if (toggle) {
-          toggle.classList.remove('hidden');
-          setInterpretationExpanded(false);
+        setInterpretarFeedback('ok');
+
+        // Bloquear botón después de interpretar exitosamente
+        if (btn) {
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
-        setInterpretarFeedback('ok');
         if (data.warning) {
           setTimeout(function () {
             setInterpretarFeedback('warn', data.warning);
@@ -722,7 +731,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       .catch(function () {
         if (loading) loading.classList.add('hidden');
         if (btn)     { btn.textContent = '✨ Interpretar Tirada'; }
-        if (sec)     sec.setAttribute('aria-busy', 'false');
+        if (content) content.setAttribute('aria-busy', 'false');
         setActionsDisabled(false);
         setInterpretarFeedback('error', 'Error al contactar el servidor. Inténtalo de nuevo.');
       });
@@ -907,11 +916,11 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       });
     }
 
-    var interpSec = document.getElementById('interpretacionSection');
+    var interpContent = document.getElementById('interpretacionContent');
     var interpTxt = document.getElementById('interpretacionTexto');
     if (interpTxt && state.interpretacionHtml) {
       interpTxt.innerHTML = state.interpretacionHtml;
-      if (interpSec) interpSec.classList.remove('hidden');
+      if (interpContent) interpContent.classList.remove('hidden');
     }
 
     setHasActiveReading(true);
@@ -942,14 +951,14 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       });
     }
 
+
     var btnCloseInterp = document.getElementById('closeInterpretacionBtn');
     if (btnCloseInterp) {
       btnCloseInterp.addEventListener('click', function () {
-        var sec = document.getElementById('interpretacionSection');
-        if (sec) sec.classList.add('hidden');
+        var content = document.getElementById('interpretacionContent');
+        if (content) content.classList.add('hidden');
       });
     }
-
     var btnCopiarInterp = document.getElementById('copiarInterpretacionBtn');
     if (btnCopiarInterp) {
       btnCopiarInterp.addEventListener('click', function () {
