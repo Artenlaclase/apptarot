@@ -75,9 +75,14 @@ export const POST: APIRoute = async (context) => {
       updates.personalArcaneCalculatedAt = new Date().toISOString();
     }
 
-    await adminDb.collection('users').doc(user.uid).set(updates, { merge: true });
+    // Filtrar valores undefined antes de guardar
+    const safeUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([, v]) => v !== undefined)
+    );
 
-    return new Response(JSON.stringify({ ok: true, profile: updates }), {
+    await adminDb.collection('users').doc(user.uid).set(safeUpdates, { merge: true });
+
+    return new Response(JSON.stringify({ ok: true, profile: safeUpdates }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

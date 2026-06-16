@@ -141,12 +141,18 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
         // 2. Crear sesión de servidor
         await createServerSession();
 
-        // 3. Guardar datos del perfil via API (fire-and-forget)
-        fetch('/api/user/profile', {
+        // 3. Guardar datos del perfil via API (esperar respuesta)
+        const profileResponse = await fetch('/api/user/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ firstName, lastName, birthDate: normalizedBirthDate, birthHour }),
-        }).catch(() => {});
+        });
+
+        if (!profileResponse.ok) {
+          const profileError = await profileResponse.json();
+          console.warn('Perfil guardado con advertencia:', profileError);
+          // Continuar aunque falle — la sesión está lista
+        }
 
         // 4. Redirigir al perfil para ver y calcular el arcano
         window.location.href = '/profile';

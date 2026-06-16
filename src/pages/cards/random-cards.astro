@@ -1061,6 +1061,14 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
 
     setupMeaningModalEvents();
     setHasActiveReading(false);
+
+    // Limpiar estado de lectura anterior si es la primera carga de esta sesión
+    var sessionMarker = 'apptarot_reading_session_loaded';
+    if (!sessionStorage.getItem(sessionMarker)) {
+      clearReadingState();
+      sessionStorage.setItem(sessionMarker, '1');
+    }
+
     restoreReadingState();
   }
 

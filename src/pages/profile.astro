@@ -154,27 +154,51 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         <p class="text-sm" style="color: var(--text-muted);">Se calcula sumando día + mes + año. Si ese resultado queda en 21 o menos, ese número define el Arcano Mayor. Si da 22 o más, se reducen sus dígitos hasta llegar a un valor entre 1 y 21.</p>
       </div>
 
-      <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);">
-        <summary class="cursor-pointer font-semibold" style="color: var(--text);">{hasPersonalArcane ? 'Recalcular Arcano Personal' : 'Calcular Arcano Personal'}</summary>
-        <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
-          Cambiar tu fecha de nacimiento actualizara tu carta natal y su interpretacion guardada.
-        </p>
+      {!hasPersonalArcane ? (
+        <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);" open>
+          <summary class="cursor-pointer font-semibold" style="color: var(--text);">Calcular Arcano Personal</summary>
+          <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
+            Completa tu fecha de nacimiento para calcular y guardar tu carta natal.
+          </p>
 
-        <form id="arcaneForm" class="space-y-4" novalidate>
-          <PersonalArcaneCalculator
-            idPrefix="profileArcane"
-            includeFullName={true}
-            initialFirstName={profileNameParts.firstName}
-            initialLastName={profileNameParts.lastName}
-            initialBirthDate={profile.birthDate || ''}
-            initialBirthHour={profile.birthHour || ''}
-          />
+          <form id="arcaneForm" class="space-y-4" novalidate>
+            <PersonalArcaneCalculator
+              idPrefix="profileArcane"
+              includeFullName={true}
+              initialFirstName={profileNameParts.firstName}
+              initialLastName={profileNameParts.lastName}
+              initialBirthDate={profile.birthDate || ''}
+              initialBirthHour={profile.birthHour || ''}
+            />
 
-          <div class="flex justify-end">
-            <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
-          </div>
-        </form>
-      </details>
+            <div class="flex justify-end">
+              <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
+            </div>
+          </form>
+        </details>
+      ) : (
+        <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);">
+          <summary class="cursor-pointer font-semibold" style="color: var(--text);">Recalcular Arcano Personal</summary>
+          <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
+            Cambiar tu fecha de nacimiento actualizara tu carta natal y su interpretacion guardada.
+          </p>
+
+          <form id="arcaneForm" class="space-y-4" novalidate>
+            <PersonalArcaneCalculator
+              idPrefix="profileArcane"
+              includeFullName={true}
+              initialFirstName={profileNameParts.firstName}
+              initialLastName={profileNameParts.lastName}
+              initialBirthDate={profile.birthDate || ''}
+              initialBirthHour={profile.birthHour || ''}
+            />
+
+            <div class="flex justify-end">
+              <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
+            </div>
+          </form>
+        </details>
+      )}
     </section>
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
