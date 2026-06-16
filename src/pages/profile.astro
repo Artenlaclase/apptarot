@@ -15,6 +15,16 @@ interface ProfileArcaneCard {
   imagen?: string | null;
 }
 
+function splitFullName(fullName: string | undefined): { firstName: string; lastName: string } {
+  const clean = (fullName || '').trim().replace(/\s+/g, ' ');
+  if (!clean) return { firstName: '', lastName: '' };
+  const parts = clean.split(' ');
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' '),
+  };
+}
+
 function getProfileArcaneImage(card: ProfileArcaneCard | null): string {
   if (!card) return '/placeholder-card.jpg';
   if (typeof card.imagem === 'string' && card.imagem.trim()) return card.imagem;
@@ -48,6 +58,7 @@ const personalArcaneCard: ProfileArcaneCard | null = majorArcanaCards.find(
 
 const personalArcaneImage = getProfileArcaneImage(personalArcaneCard);
 const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.birthDate) : [];
+const profileNameParts = splitFullName(profile.fullName || profile.displayName);
 ---
 
 <Layout {title} {description}>
@@ -123,24 +134,6 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
         <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
         <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
 
-        <details class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--surface) 88%, #ffffff); border: 1px solid var(--border);">
-          <summary class="cursor-pointer font-semibold" style="color: var(--text);">Editar nombre</summary>
-          <p class="text-sm mt-3" style="color: var(--text-muted);">Este nombre se usa en tu perfil y para confirmar tu Arcano Personal.</p>
-          <form id="nameForm" class="mt-4 flex flex-col sm:flex-row gap-3 items-start sm:items-end" novalidate>
-            <div class="flex-1 w-full">
-              <label class="block text-sm font-semibold mb-1" for="profileFullName">Nombre completo</label>
-              <input
-                id="profileFullName"
-                type="text"
-                value={profile.fullName || profile.displayName || ''}
-                class="w-full rounded-lg border px-3 py-2"
-                style="border-color: var(--border); background: var(--surface);"
-              />
-            </div>
-            <button id="saveNameBtn" type="submit" class="btn-ui btn-ui-secondary px-4 py-2">Guardar nombre</button>
-          </form>
-        </details>
-
         <div class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
           <h2 class="text-xl font-semibold page-title mb-2">Resumen espiritual</h2>
           {hasPersonalArcane ? (
@@ -167,20 +160,12 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
           Cambiar tu fecha de nacimiento actualizara tu carta natal y su interpretacion guardada.
         </p>
 
-        <div class="rounded-xl px-4 py-3 mb-4" style="background: color-mix(in srgb, var(--primary) 6%, var(--surface)); border: 1px solid var(--border);">
-          <p class="text-sm" style="color: var(--text);">
-            Nombre usado para tu Arcano Personal:
-            <strong>{profile.fullName || profile.displayName || 'Sin nombre guardado'}</strong>
-          </p>
-          <p class="text-xs mt-1" style="color: var(--text-muted);">
-            Si no coincide con tu nombre actual, primero actualiza tu perfil y luego recalcula tu arcano.
-          </p>
-        </div>
-
         <form id="arcaneForm" class="space-y-4" novalidate>
           <PersonalArcaneCalculator
             idPrefix="profileArcane"
-            includeFullName={false}
+            includeFullName={true}
+            initialFirstName={profileNameParts.firstName}
+            initialLastName={profileNameParts.lastName}
             initialBirthDate={profile.birthDate || ''}
             initialBirthHour={profile.birthHour || ''}
           />
@@ -221,24 +206,18 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
     </section>
 
     <p id="profileMsg" class="text-sm hidden" aria-live="polite"></p>
-    <div id="profileStoredData" class="hidden" data-stored-full-name={profile.fullName || profile.displayName || ''}></div>
   </main>
 
   <script is:inline type="module">
     import { updateCurrentUserPassword } from '/src/lib/auth-client.ts';
-    import { db, auth } from '/src/lib/firebase.ts';
-    import { doc, setDoc } from 'firebase/firestore';
     import {
-      calculatePersonalArcane,
       normalizeBirthDateInput,
       validateBirthDate,
       validateBirthHour,
       validateFullName,
-      getDailyArcaneHint,
     } from '/src/lib/arcaneCalculator.ts';
 
     const profileMsg = document.getElementById('profileMsg');
-    const profileStoredData = document.getElementById('profileStoredData');
 
     function setMessage(text, isError = false) {
       if (!profileMsg) return;
@@ -252,13 +231,6 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
       if (!btn) return;
       btn.disabled = isBusy;
       btn.textContent = isBusy ? 'Guardando...' : 'Guardar Arcano Personal';
-    }
-
-    function setNameBusy(isBusy) {
-      const btn = document.getElementById('saveNameBtn');
-      if (!btn) return;
-      btn.disabled = isBusy;
-      btn.textContent = isBusy ? 'Guardando...' : 'Guardar nombre';
     }
 
     async function startCheckout(billingCycle) {
@@ -326,59 +298,22 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
       }
     });
 
-    document.getElementById('nameForm')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const nameInput = document.getElementById('profileFullName');
-      const fullName = nameInput?.value?.trim() ?? '';
-      const fullNameValidation = validateFullName(fullName);
-
-      if (!fullNameValidation.valid) {
-        setMessage(fullNameValidation.message || 'Nombre completo inválido.', true);
-        return;
-      }
-
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) {
-        setMessage('No se encontró sesión de Firebase. Recarga la página e inténtalo de nuevo.', true);
-        return;
-      }
-
-      setNameBusy(true);
-
-      try {
-        await setDoc(
-          doc(db, 'users', firebaseUser.uid),
-          {
-            fullName,
-            displayName: fullName,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-
-        setMessage('Nombre actualizado correctamente. Recargando perfil...');
-        setTimeout(() => window.location.reload(), 700);
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'No se pudo actualizar el nombre.', true);
-      } finally {
-        setNameBusy(false);
-      }
-    });
-
     document.getElementById('arcaneForm')?.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      const fullName = profileStoredData?.dataset.storedFullName?.trim() ?? '';
+      const firstName = document.getElementById('profileArcane-firstName')?.value?.trim() ?? '';
+      const lastName = document.getElementById('profileArcane-lastName')?.value?.trim() ?? '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
       const rawBirthDate = document.getElementById('profileArcane-birthDate')?.value ?? '';
       const birthHour = document.getElementById('profileArcane-birthHour')?.value?.trim() ?? '';
 
       const birthDate = normalizeBirthDateInput(rawBirthDate);
+      const fullNameValidation = validateFullName(fullName);
       const birthDateValidation = validateBirthDate(birthDate);
       const birthHourValidation = validateBirthHour(birthHour);
 
-      if (!fullName) {
-        setMessage('No hay un nombre guardado en tu perfil para asociar al Arcano Personal.', true);
+      if (!fullNameValidation.valid) {
+        setMessage(fullNameValidation.message || 'Nombre inválido.', true);
         return;
       }
 
@@ -392,12 +327,6 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
         return;
       }
 
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) {
-        setMessage('No se encontró sesión de Firebase. Recarga la página e inténtalo de nuevo.', true);
-        return;
-      }
-
       if (!window.confirm('¿Confirmas recalcular y guardar tu Arcano Personal con esta fecha?')) {
         return;
       }
@@ -405,26 +334,23 @@ const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.b
       setArcaneBusy(true);
 
       try {
-        const arcane = calculatePersonalArcane(birthDate);
-        const meaning = getDailyArcaneHint(arcane.number);
-
-        await setDoc(
-          doc(db, 'users', firebaseUser.uid),
-          {
-            fullName,
-            displayName: fullName,
+        const response = await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName,
+            lastName,
             birthDate,
-            birthHour: birthHour || null,
-            personalArcaneNumber: arcane.number,
-            personalArcaneName: arcane.name,
-            personalArcaneMeaning: meaning,
-            personalArcaneCalculatedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
+            birthHour,
+          }),
+        });
 
-        setMessage(`Arcano actualizado: ${arcane.number} - ${arcane.name}. Recargando perfil...`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'No se pudo guardar el Arcano Personal.');
+        }
+
+        setMessage('Arcano Personal actualizado. Recargando perfil...');
         setTimeout(() => window.location.reload(), 900);
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'No se pudo guardar el Arcano Personal.', true);
