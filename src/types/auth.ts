@@ -5,6 +5,12 @@ export interface UserProfile {
   email: string;
   displayName?: string;
   fullName?: string;
+  bio?: string;
+  hobbies?: string;
+  socialInstagram?: string;
+  socialX?: string;
+  socialTiktok?: string;
+  socialWebsite?: string;
   photoURL?: string;
   birthDate?: string;
   birthHour?: string;

@@ -27,6 +27,12 @@ export const POST: APIRoute = async (context) => {
       lastName?: string;
       birthDate?: string;
       birthHour?: string;
+      bio?: string;
+      hobbies?: string;
+      socialInstagram?: string;
+      socialX?: string;
+      socialTiktok?: string;
+      socialWebsite?: string;
     };
 
     const firstName = (body.firstName || '').trim();
@@ -34,6 +40,12 @@ export const POST: APIRoute = async (context) => {
     const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
     const birthDate = normalizeBirthDateInput(body.birthDate || '');
     const birthHour = (body.birthHour || '').trim();
+    const bio = (body.bio || '').trim();
+    const hobbies = (body.hobbies || '').trim();
+    const socialInstagram = (body.socialInstagram || '').trim();
+    const socialX = (body.socialX || '').trim();
+    const socialTiktok = (body.socialTiktok || '').trim();
+    const socialWebsite = (body.socialWebsite || '').trim();
 
     const fullNameValidation = validateFullName(fullName);
     if (!fullNameValidation.valid) {
@@ -46,6 +58,12 @@ export const POST: APIRoute = async (context) => {
     const updates: Record<string, unknown> = {
       fullName,
       displayName: fullName,
+      bio: bio || null,
+      hobbies: hobbies || null,
+      socialInstagram: socialInstagram || null,
+      socialX: socialX || null,
+      socialTiktok: socialTiktok || null,
+      socialWebsite: socialWebsite || null,
       updatedAt: new Date().toISOString(),
     };
 

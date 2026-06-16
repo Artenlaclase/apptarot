@@ -128,7 +128,13 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       </article>
 
       <header class="surface-card p-6">
-        <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
+        <div class="flex items-start justify-between gap-4">
+          <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
+          <a href="/profile/edit" class="btn-ui btn-ui-secondary px-3 py-2 inline-flex items-center gap-2" title="Editar perfil" aria-label="Editar perfil">
+            <span aria-hidden="true">✏️</span>
+            <span class="hidden sm:inline">Editar perfil</span>
+          </a>
+        </div>
         <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
         {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
         <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
@@ -201,19 +207,12 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       </article>
 
       <article class="surface-card p-6">
-        <h2 class="text-xl font-semibold page-title mb-3">Seguridad y datos</h2>
-        <form id="passwordForm" class="space-y-3">
-          <label class="block text-sm font-semibold" for="newPassword">Nueva contraseña</label>
-          <input id="newPassword" type="password" minlength="8" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
-          <button type="submit" class="btn-ui btn-ui-primary px-4 py-2">Cambiar contraseña</button>
-        </form>
-
-        <div class="mt-4 flex flex-wrap gap-3">
-          <a href="/api/user/export" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Exportar mis datos (GDPR)</a>
-          <a href="/account/readings" class="btn-ui btn-ui-neutral px-4 py-2 inline-block">Ver historial</a>
-          {canUsePremium && <a href="/premium/call" class="btn-ui btn-ui-primary px-4 py-2 inline-block">Videollamada</a>}
-          {canUsePremium && <a href="/premium/chat" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Chat personal</a>}
-        </div>
+        <h2 class="text-xl font-semibold page-title mb-3">Configuración de perfil</h2>
+        <p class="page-lead mb-4">Ahora la edición de contraseña, redes, pasatiempos, descripción y descarga de historial está en una sola pantalla.</p>
+        <a href="/profile/edit" class="btn-ui btn-ui-primary px-4 py-2 inline-flex items-center gap-2">
+          <span aria-hidden="true">⚙️</span>
+          <span>Abrir edición de perfil</span>
+        </a>
       </article>
     </section>
 
@@ -221,7 +220,6 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
   </main>
 
   <script is:inline type="module">
-    import { updateCurrentUserPassword } from '/src/lib/auth-client.ts';
     import {
       normalizeBirthDateInput,
       validateBirthDate,
@@ -334,25 +332,6 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         window.location.href = data.url;
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Error al abrir el portal', true);
-      }
-    });
-
-    document.getElementById('passwordForm')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const passwordInput = document.getElementById('newPassword');
-      const newPassword = passwordInput?.value ?? '';
-
-      if (newPassword.length < 8) {
-        setMessage('La contraseña debe tener al menos 8 caracteres.', true);
-        return;
-      }
-
-      try {
-        await updateCurrentUserPassword(newPassword);
-        setMessage('Contraseña actualizada correctamente.');
-        if (passwordInput) passwordInput.value = '';
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'No se pudo cambiar la contraseña.', true);
       }
     });
 
