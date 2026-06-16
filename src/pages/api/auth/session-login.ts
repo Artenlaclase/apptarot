@@ -19,7 +19,7 @@ function getSessionLoginErrorMessage(error: unknown): string {
     return 'Firebase Admin no esta disponible en el servidor. Revisa variables FIREBASE_ADMIN_*.';
   }
 
-  return 'No se pudo iniciar sesion en servidor. Revisa la configuracion de Firebase Admin.';
+  return 'No se pudo iniciar sesión en servidor. Revisa la configuracion de Firebase Admin.';
 }
 
 export const POST: APIRoute = async (context) => {

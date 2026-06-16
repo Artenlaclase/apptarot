@@ -23,7 +23,7 @@ export async function POST(context: APIContext): Promise<Response> {
   const { request } = context;
   const user = await verifySessionCookieFromRequest(context);
   if (!user) {
-    return json({ error: 'Debes iniciar sesion para interpretar y guardar tiradas.' }, 401);
+    return json({ error: 'Debes iniciar sesión para interpretar y guardar tiradas.' }, 401);
   }
 
   let cartas: CartaInput[] = [];

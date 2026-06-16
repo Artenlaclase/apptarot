@@ -699,7 +699,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
         setActionsDisabled(false);
 
         if (data.error) {
-          if (data.error.indexOf('iniciar sesion') >= 0) {
+          if (/iniciar sesi[oó]n/i.test(String(data.error))) {
             setInterpretarFeedback('error', data.error + ' Ve a Mi Perfil para iniciar sesión.');
             return;
           }

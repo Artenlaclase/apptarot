@@ -1,16 +1,24 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
-const title = 'Iniciar sesion';
-const description = 'Accede a tu cuenta para guardar tus tiradas y gestionar tu suscripcion.';
+const title = 'Iniciar sesión';
+const description = 'Accede a tu cuenta para guardar tus tiradas y gestionar tu suscripción.';
 const next = Astro.url.searchParams.get('next') || '/profile';
+const message = Astro.url.searchParams.get('message');
+const showLecturaMessage = message === 'lectura';
 ---
 
 <Layout {title} {description}>
   <main class="container mx-auto max-w-xl px-4 py-10">
     <section class="surface-card p-6 md:p-8">
-      <h1 class="text-3xl font-bold page-title mb-2">Iniciar sesion</h1>
+      <h1 class="text-3xl font-bold page-title mb-2">Iniciar sesión</h1>
       <p class="page-lead mb-6">Usa email y contraseña o entra con Google.</p>
+
+      {showLecturaMessage && (
+        <p class="rounded-lg px-4 py-3 mb-4 text-sm" style="background: color-mix(in srgb, var(--primary) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); color: var(--text);">
+          Para realizar una experiencia personalizada, debes iniciar sesión.
+        </p>
+      )}
 
       <form id="loginForm" class="space-y-4" novalidate>
         <div>
