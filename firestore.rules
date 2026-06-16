@@ -43,8 +43,7 @@ service cloud.firestore {
         'La Luna',
         'El Sol',
         'El Juicio',
-        'El Mundo',
-        'El Loco'
+        'El Mundo'
       ];
     }
 
@@ -62,7 +61,7 @@ service cloud.firestore {
         && optionalString(request.resource.data.fullName)
         && validBirthDateFormat(request.resource.data.birthDate)
         && validBirthHourFormat(request.resource.data.birthHour)
-        && optionalIntInRange(request.resource.data.personalArcaneNumber, 1, 22)
+        && optionalIntInRange(request.resource.data.personalArcaneNumber, 1, 21)
         && validArcaneName(request.resource.data.personalArcaneName)
         && optionalString(request.resource.data.personalArcaneMeaning)
         && optionalString(request.resource.data.personalArcaneCalculatedAt);

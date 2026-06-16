@@ -3,6 +3,24 @@ import Layout from '../layouts/Layout.astro';
 import { getOrCreateUserProfile } from '../lib/auth-server';
 import { getPlanLabel, FREE_READING_LIMIT, isPremiumPlan } from '../lib/plans';
 import PersonalArcaneCalculator from '../components/PersonalArcaneCalculator.astro';
+import { getPersonalArcaneBreakdown } from '../lib/arcaneCalculator';
+import { db } from '../lib/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import '../styles/cards.css';
+
+interface ProfileArcaneCard {
+  id: string;
+  numero?: string | number;
+  imagem?: string | null;
+  imagen?: string | null;
+}
+
+function getProfileArcaneImage(card: ProfileArcaneCard | null): string {
+  if (!card) return '/placeholder-card.jpg';
+  if (typeof card.imagem === 'string' && card.imagem.trim()) return card.imagem;
+  if (typeof card.imagen === 'string' && card.imagen.trim()) return card.imagen;
+  return '/placeholder-card.jpg';
+}
 
 const user = Astro.locals.user;
 if (!user) {
@@ -14,29 +32,133 @@ const title = 'Mi perfil';
 const description = 'Gestiona tu cuenta, suscripcion y privacidad.';
 const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'active';
 const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.personalArcaneName);
+const majorArcanaSnapshot = hasPersonalArcane
+  ? await getDocs(query(collection(db, 'cards'), where('arcano', '==', 'mayor')))
+  : null;
+const majorArcanaCards: ProfileArcaneCard[] = majorArcanaSnapshot
+  ? majorArcanaSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Omit<ProfileArcaneCard, 'id'>),
+    }))
+  : [];
+
+const personalArcaneCard: ProfileArcaneCard | null = majorArcanaCards.find(
+  (card) => Number(card.numero) === profile.personalArcaneNumber
+) ?? null;
+
+const personalArcaneImage = getProfileArcaneImage(personalArcaneCard);
+const arcaneBreakdown = profile.birthDate ? getPersonalArcaneBreakdown(profile.birthDate) : [];
 ---
 
 <Layout {title} {description}>
   <main class="container mx-auto max-w-5xl px-4 py-10 space-y-6">
-    <header class="surface-card p-6">
-      <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
-      <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
-      {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
-      <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
-      <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
-    </header>
+    <section class="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-5 items-start">
+      <article class="surface-card p-4 lg:sticky lg:top-24">
+        <h2 class="text-sm uppercase tracking-[0.2em] mb-3" style="color: var(--text-muted);">Carta Arcano Personal</h2>
+
+        {hasPersonalArcane && personalArcaneCard ? (
+          <a href={`/cards/${personalArcaneCard.id}`} class="carta-link max-w-none">
+            <article class="carta-item overflow-hidden">
+              <div class="carta-image-container min-h-[20rem]">
+                <img
+                  src={personalArcaneImage}
+                  alt={`Carta ${profile.personalArcaneName}`}
+                  loading="lazy"
+                  class="carta-image"
+                  onerror="this.onerror=null;this.src='/placeholder-card.jpg'"
+                />
+              </div>
+              <div class="carta-info">
+                <h3 class="carta-nombre">{profile.personalArcaneName}</h3>
+                <span class="carta-numero">Arcano {profile.personalArcaneNumber}</span>
+              </div>
+            </article>
+          </a>
+        ) : (
+          <div class="rounded-2xl p-5 text-center" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px dashed var(--border);">
+            <p class="font-semibold" style="color: var(--text);">Aún sin carta natal</p>
+            <p class="text-sm mt-2" style="color: var(--text-muted);">Completa tu fecha de nacimiento para ver aquí tu Arcano Personal.</p>
+          </div>
+        )}
+
+        {arcaneBreakdown.length > 0 && (
+          <div class="mt-4 rounded-2xl overflow-hidden" style="border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, #ffffff);">
+            <div class="px-4 py-3 border-b" style="border-color: var(--border);">
+              <p class="text-sm font-semibold" style="color: var(--text);">Reducción del cálculo</p>
+              <p class="text-xs mt-1" style="color: var(--text-muted);">Día + mes + año, reduciendo el año hasta llegar al Arcano final.</p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background: color-mix(in srgb, var(--primary) 16%, var(--surface)); color: var(--text);">
+                    <th class="px-3 py-2 text-left">Día</th>
+                    <th class="px-3 py-2 text-left">Mes</th>
+                    <th class="px-3 py-2 text-left">Año</th>
+                    <th class="px-3 py-2 text-center">=</th>
+                    <th class="px-3 py-2 text-left">Reducción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {arcaneBreakdown.map((step, index) => (
+                    <tr style={index < arcaneBreakdown.length - 1 ? 'border-bottom: 1px solid var(--border);' : ''}>
+                      <td class="px-3 py-3" style="color: var(--text);">{step.day}</td>
+                      <td class="px-3 py-3" style="color: var(--text);">{step.month}</td>
+                      <td class="px-3 py-3" style="color: var(--text);">{step.yearValue}</td>
+                      <td class="px-3 py-3 text-center" style="color: var(--text-muted);">=</td>
+                      <td class="px-3 py-3 font-semibold" style="color: var(--primary);">{step.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </article>
+
+      <header class="surface-card p-6">
+        <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
+        <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
+        {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
+        <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
+        <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
+
+        <details class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--surface) 88%, #ffffff); border: 1px solid var(--border);">
+          <summary class="cursor-pointer font-semibold" style="color: var(--text);">Editar nombre</summary>
+          <p class="text-sm mt-3" style="color: var(--text-muted);">Este nombre se usa en tu perfil y para confirmar tu Arcano Personal.</p>
+          <form id="nameForm" class="mt-4 flex flex-col sm:flex-row gap-3 items-start sm:items-end" novalidate>
+            <div class="flex-1 w-full">
+              <label class="block text-sm font-semibold mb-1" for="profileFullName">Nombre completo</label>
+              <input
+                id="profileFullName"
+                type="text"
+                value={profile.fullName || profile.displayName || ''}
+                class="w-full rounded-lg border px-3 py-2"
+                style="border-color: var(--border); background: var(--surface);"
+              />
+            </div>
+            <button id="saveNameBtn" type="submit" class="btn-ui btn-ui-secondary px-4 py-2">Guardar nombre</button>
+          </form>
+        </details>
+
+        <div class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
+          <h2 class="text-xl font-semibold page-title mb-2">Resumen espiritual</h2>
+          {hasPersonalArcane ? (
+            <>
+              <p class="page-lead">Arcano actual: <strong>{profile.personalArcaneNumber}: {profile.personalArcaneName}</strong></p>
+              {profile.personalArcaneMeaning && <p class="text-sm mt-2" style="color: var(--text-muted);">{profile.personalArcaneMeaning}</p>}
+            </>
+          ) : (
+            <p class="page-lead">Aun no tienes Arcano Personal guardado. Completa tus datos para generarlo.</p>
+          )}
+        </div>
+      </header>
+    </section>
 
     <section class="surface-card p-6 space-y-4">
       <div>
         <h2 class="text-xl font-semibold page-title mb-2">Tu Arcano Personal</h2>
-        {hasPersonalArcane ? (
-          <>
-            <p class="page-lead">Arcano actual: <strong>{profile.personalArcaneNumber}: {profile.personalArcaneName}</strong></p>
-            {profile.personalArcaneMeaning && <p class="text-sm mt-1" style="color: var(--text-muted);">{profile.personalArcaneMeaning}</p>}
-          </>
-        ) : (
-          <p class="page-lead">Aun no tienes Arcano Personal guardado. Completa tus datos para generarlo.</p>
-        )}
+        <p class="text-sm" style="color: var(--text-muted);">Se calcula sumando día + mes + año. Si ese resultado queda en 21 o menos, ese número define el Arcano Mayor. Si da 22 o más, se reducen sus dígitos hasta llegar a un valor entre 1 y 21.</p>
       </div>
 
       <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);">
@@ -45,11 +167,20 @@ const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.person
           Cambiar tu fecha de nacimiento actualizara tu carta natal y su interpretacion guardada.
         </p>
 
+        <div class="rounded-xl px-4 py-3 mb-4" style="background: color-mix(in srgb, var(--primary) 6%, var(--surface)); border: 1px solid var(--border);">
+          <p class="text-sm" style="color: var(--text);">
+            Nombre usado para tu Arcano Personal:
+            <strong>{profile.fullName || profile.displayName || 'Sin nombre guardado'}</strong>
+          </p>
+          <p class="text-xs mt-1" style="color: var(--text-muted);">
+            Si no coincide con tu nombre actual, primero actualiza tu perfil y luego recalcula tu arcano.
+          </p>
+        </div>
+
         <form id="arcaneForm" class="space-y-4" novalidate>
           <PersonalArcaneCalculator
             idPrefix="profileArcane"
-            includeFullName={true}
-            initialFullName={profile.fullName || profile.displayName || ''}
+            includeFullName={false}
             initialBirthDate={profile.birthDate || ''}
             initialBirthHour={profile.birthHour || ''}
           />
@@ -90,6 +221,7 @@ const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.person
     </section>
 
     <p id="profileMsg" class="text-sm hidden" aria-live="polite"></p>
+    <div id="profileStoredData" class="hidden" data-stored-full-name={profile.fullName || profile.displayName || ''}></div>
   </main>
 
   <script is:inline type="module">
@@ -106,6 +238,7 @@ const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.person
     } from '/src/lib/arcaneCalculator.ts';
 
     const profileMsg = document.getElementById('profileMsg');
+    const profileStoredData = document.getElementById('profileStoredData');
 
     function setMessage(text, isError = false) {
       if (!profileMsg) return;
@@ -119,6 +252,13 @@ const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.person
       if (!btn) return;
       btn.disabled = isBusy;
       btn.textContent = isBusy ? 'Guardando...' : 'Guardar Arcano Personal';
+    }
+
+    function setNameBusy(isBusy) {
+      const btn = document.getElementById('saveNameBtn');
+      if (!btn) return;
+      btn.disabled = isBusy;
+      btn.textContent = isBusy ? 'Guardando...' : 'Guardar nombre';
     }
 
     async function startCheckout(billingCycle) {
@@ -186,20 +326,59 @@ const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.person
       }
     });
 
+    document.getElementById('nameForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const nameInput = document.getElementById('profileFullName');
+      const fullName = nameInput?.value?.trim() ?? '';
+      const fullNameValidation = validateFullName(fullName);
+
+      if (!fullNameValidation.valid) {
+        setMessage(fullNameValidation.message || 'Nombre completo inválido.', true);
+        return;
+      }
+
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        setMessage('No se encontró sesión de Firebase. Recarga la página e inténtalo de nuevo.', true);
+        return;
+      }
+
+      setNameBusy(true);
+
+      try {
+        await setDoc(
+          doc(db, 'users', firebaseUser.uid),
+          {
+            fullName,
+            displayName: fullName,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+
+        setMessage('Nombre actualizado correctamente. Recargando perfil...');
+        setTimeout(() => window.location.reload(), 700);
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'No se pudo actualizar el nombre.', true);
+      } finally {
+        setNameBusy(false);
+      }
+    });
+
     document.getElementById('arcaneForm')?.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      const fullName = document.getElementById('profileArcane-fullName')?.value?.trim() ?? '';
+      const fullName = profileStoredData?.dataset.storedFullName?.trim() ?? '';
       const rawBirthDate = document.getElementById('profileArcane-birthDate')?.value ?? '';
       const birthHour = document.getElementById('profileArcane-birthHour')?.value?.trim() ?? '';
 
       const birthDate = normalizeBirthDateInput(rawBirthDate);
-      const fullNameValidation = validateFullName(fullName);
       const birthDateValidation = validateBirthDate(birthDate);
       const birthHourValidation = validateBirthHour(birthHour);
 
-      if (!fullNameValidation.valid) {
-        setMessage(fullNameValidation.message || 'Nombre completo inválido.', true);
+      if (!fullName) {
+        setMessage('No hay un nombre guardado en tu perfil para asociar al Arcano Personal.', true);
         return;
       }
 

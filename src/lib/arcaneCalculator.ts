@@ -20,7 +20,6 @@ const ARCANE_NAMES: Record<number, string> = {
   19: 'El Sol',
   20: 'El Juicio',
   21: 'El Mundo',
-  22: 'El Loco',
 };
 
 export interface ArcaneResult {
@@ -31,6 +30,35 @@ export interface ArcaneResult {
 export interface ArcaneValidationResult {
   valid: boolean;
   message?: string;
+}
+
+export interface ArcaneBreakdownStep {
+  day: string;
+  month: string;
+  yearValue: string;
+  total: number;
+}
+
+function reduceNumber(value: number): number {
+  let result = value;
+
+  while (result > 21) {
+    result = result
+      .toString()
+      .split('')
+      .map(Number)
+      .reduce((acc, curr) => acc + curr, 0);
+  }
+
+  return result;
+}
+
+function sumDigits(value: number): number {
+  return value
+    .toString()
+    .split('')
+    .map(Number)
+    .reduce((acc, curr) => acc + curr, 0);
 }
 
 export function getArcaneName(arcaneNumber: number): string {
@@ -123,22 +151,50 @@ export function calculatePersonalArcane(birthDateInput: string): ArcaneResult {
     throw new Error(validation.message || 'Fecha de nacimiento inválida.');
   }
 
-  const digits = birthDate.replace(/\D/g, '').split('').map(Number);
-  let sum = digits.reduce((acc, curr) => acc + curr, 0);
+  const [day, month, year] = birthDate.split('/').map(Number);
+  const initialSum = day + month + year;
+  const arcaneNumber = reduceNumber(initialSum);
 
-  while (sum > 22) {
-    sum = sum
-      .toString()
-      .split('')
-      .map(Number)
-      .reduce((a, b) => a + b, 0);
-  }
-
-  const arcaneNumber = sum === 0 ? 22 : sum;
   return {
     number: arcaneNumber,
     name: getArcaneName(arcaneNumber),
   };
+}
+
+export function getPersonalArcaneBreakdown(birthDateInput: string): ArcaneBreakdownStep[] {
+  const birthDate = normalizeBirthDateInput(birthDateInput);
+  const validation = validateBirthDate(birthDate);
+  if (!validation.valid) {
+    return [];
+  }
+
+  const [day, month, year] = birthDate.split('/').map(Number);
+  const dayLabel = String(day).padStart(2, '0');
+  const monthLabel = String(month).padStart(2, '0');
+  const steps: ArcaneBreakdownStep[] = [];
+
+  let currentYear = year;
+  let total = day + month + currentYear;
+
+  steps.push({
+    day: dayLabel,
+    month: monthLabel,
+    yearValue: String(currentYear),
+    total,
+  });
+
+  while (total > 21) {
+    currentYear = sumDigits(currentYear);
+    total = day + month + currentYear;
+    steps.push({
+      day: dayLabel,
+      month: monthLabel,
+      yearValue: String(currentYear),
+      total,
+    });
+  }
+
+  return steps;
 }
 
 export function getDailyArcaneHint(arcaneNumber: number): string {
@@ -164,7 +220,6 @@ export function getDailyArcaneHint(arcaneNumber: number): string {
     19: 'Exprésate con autenticidad: hoy brillas con fuerza.',
     20: 'Escucha el llamado interno y decide con propósito.',
     21: 'Un ciclo se completa: celebra y prepara el siguiente paso.',
-    22: 'Abraza lo inesperado y fluye con libertad consciente.',
   };
 
   return hints[arcaneNumber] ?? 'Conecta con tu arcano y observa su mensaje para hoy.';
