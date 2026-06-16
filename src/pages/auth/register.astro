@@ -10,10 +10,14 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
   <main class="container mx-auto max-w-xl px-4 py-10">
     <section class="surface-card p-6 md:p-8">
       <h1 class="text-3xl font-bold page-title mb-2">Crear cuenta</h1>
-      <p class="page-lead mb-6">Tu historial se guardará en tu perfil.</p>
+      <p class="page-lead mb-6">Completa tus datos para guardar tu historial, calcular tu Arcano Personal y dejar tu perfil listo desde el registro.</p>
 
       <form id="registerForm" class="space-y-4" novalidate>
-        <PersonalArcaneCalculator idPrefix="registerArcane" includeFullName={true} />
+        <div class="rounded-2xl p-4 md:p-5" style="background: color-mix(in srgb, var(--primary) 6%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
+          <h2 class="text-lg font-semibold mb-2" style="color: var(--text);">Datos para tu Arcano Personal</h2>
+          <p class="text-sm mb-4" style="color: var(--text-muted);">Usa tu nombre, apellido y fecha real de nacimiento para calcular y guardar tu carta natal desde el primer acceso.</p>
+          <PersonalArcaneCalculator idPrefix="registerArcane" includeFullName={true} />
+        </div>
 
         <div>
           <label class="block text-sm font-semibold mb-1" for="email">Email</label>
@@ -94,7 +98,9 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
       const email = document.getElementById('email')?.value ?? '';
       const password = document.getElementById('password')?.value ?? '';
       const password2 = document.getElementById('password2')?.value ?? '';
-      const fullName = document.getElementById('registerArcane-fullName')?.value?.trim() ?? '';
+      const firstName = document.getElementById('registerArcane-firstName')?.value?.trim() ?? '';
+      const lastName = document.getElementById('registerArcane-lastName')?.value?.trim() ?? '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
       const birthDateInput = document.getElementById('registerArcane-birthDate')?.value ?? '';
       const birthHour = document.getElementById('registerArcane-birthHour')?.value?.trim() ?? '';
 
