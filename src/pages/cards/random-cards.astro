@@ -65,9 +65,9 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       <p class="text-base md:text-xl" style="color: var(--text-muted);">Elige tu modalidad de tirada y número de cartas</p>
     </header>
 
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <div id="readingExperience" class="grid grid-cols-1 xl:grid-cols-12 gap-6 transition-all duration-500">
       <section class="xl:col-span-8 space-y-6">
-        <section class="app-surface rounded-2xl p-4 md:p-6">
+        <section id="modeControlsSection" class="app-surface rounded-2xl p-4 md:p-6 transition-all duration-500 ease-out">
           <div class="mb-6">
             <h3 class="text-lg font-semibold mb-3" style="color: var(--text);">Modalidad de tirada:</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -114,7 +114,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           </div>
         </section>
 
-        <section id="cardsContainer" class="app-surface rounded-2xl p-3 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 min-h-[16rem] md:min-h-[18rem]">
+        <section id="cardsContainer" class="app-surface rounded-2xl p-3 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 min-h-[16rem] md:min-h-[18rem] transition-all duration-500 ease-out">
           <div id="initialMessage" class="col-span-full text-center py-12">
             <p class="text-base md:text-xl" style="color: var(--text-muted);">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
           </div>
@@ -125,7 +125,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
           <p class="mt-2" style="color: var(--text-muted);">Cargando cartas...</p>
         </div>
 
-        <section id="aclaracionSection" class="hidden">
+        <section id="aclaracionSection" class="hidden focus-minimizable transition-all duration-300 ease-out">
           <div class="app-surface-soft rounded-xl p-4 md:p-6">
             <h3 class="text-lg md:text-xl font-semibold mb-4 text-center" style="color: var(--warning);">🔍 Cartas de Aclaración</h3>
             <div id="aclaracionContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
@@ -134,8 +134,8 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       </section>
 
       <aside class="xl:col-span-4">
-        <div class="xl:sticky xl:top-24 space-y-4">
-          <section id="actionPanel" class="app-surface rounded-2xl p-5 hidden">
+        <div id="secondaryControlsColumn" class="xl:sticky xl:top-24 space-y-4 transition-all duration-300 ease-out">
+          <section id="actionPanel" class="app-surface rounded-2xl p-5 hidden transition-all duration-300 ease-out">
             <div id="aclaracionControls" class="hidden">
               <div class="text-sm mb-4" style="color: var(--text-muted);">
                 <strong style="color: var(--text);">Acciones:</strong> Profundiza en tu tirada
@@ -149,7 +149,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             </div>
           </section>
 
-          <section id="interpretarFeedback" class="hidden">
+          <section id="interpretarFeedback" class="hidden focus-minimizable transition-all duration-300 ease-out">
             <div id="interpretarFeedbackLoading" class="status-box status-loading hidden items-center justify-center gap-3">
               <div class="flex-shrink-0 animate-spin rounded-full h-5 w-5 border-t-2 border-b-2" style="border-color: var(--primary);"></div>
               <span style="color: var(--text);">Generando interpretación...</span>
@@ -169,7 +169,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             </div>
           </section>
 
-          <section id="cardMeaningPanel" class="app-surface rounded-2xl p-5 hidden xl:block" aria-live="polite">
+          <section id="cardMeaningPanel" class="app-surface rounded-2xl p-5 hidden xl:block focus-minimizable transition-all duration-300 ease-out" aria-live="polite">
             <h3 class="text-base font-semibold mb-2" style="color: var(--text);">Significado de carta</h3>
             <p class="text-sm" style="color: var(--text-muted);">Haz clic en una carta revelada para ver su significado sin perder la tirada.</p>
 
@@ -182,7 +182,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
             </div>
           </section>
 
-          <section id="interpretacionSection" class="hidden app-surface-soft rounded-2xl p-5" aria-live="polite" aria-busy="false">
+          <section id="interpretacionSection" class="hidden app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out" aria-live="polite" aria-busy="false">
             <h3 class="text-lg font-semibold mb-3" style="color: var(--text);">✨ Interpretación de la Tirada</h3>
             <button type="button" id="toggleInterpretacionBtn" class="hidden text-sm underline mb-3" style="color: var(--primary);">Expandir resultado</button>
 
@@ -196,6 +196,18 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         </div>
       </aside>
     </div>
+
+    <button
+      id="focusToggleBtn"
+      type="button"
+      class="hidden fixed bottom-4 right-4 z-50 rounded-full px-4 py-3 shadow-xl text-sm font-semibold transition-all duration-300"
+      style="background: color-mix(in srgb, var(--primary) 88%, #111111); color: #ffffff; border: 1px solid color-mix(in srgb, #ffffff 20%, var(--primary));"
+      aria-label="Mostrar controles de tirada"
+      aria-expanded="false"
+    >
+      <span id="focusToggleIcon" aria-hidden="true">⚙️</span>
+      <span id="focusToggleText" class="ml-2 hidden sm:inline">Mostrar controles</span>
+    </button>
 
     <section
       id="cardMeaningModal"
@@ -273,6 +285,8 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
   var STORAGE_KEY = 'apptarot_random_reading_v1';
   var data = null;
   var cardIndex = null;
+  var isFocusMode = false;
+  var hasActiveReading = false;
 
   function getData() {
     if (data) return data;
@@ -454,6 +468,69 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     }
   }
 
+  function updateFocusToggleUi() {
+    var toggleBtn = document.getElementById('focusToggleBtn');
+    var toggleText = document.getElementById('focusToggleText');
+    var toggleIcon = document.getElementById('focusToggleIcon');
+    if (!toggleBtn || !toggleText || !toggleIcon) return;
+
+    if (!hasActiveReading) {
+      toggleBtn.classList.add('hidden');
+      return;
+    }
+
+    toggleBtn.classList.remove('hidden');
+    toggleBtn.setAttribute('aria-expanded', String(!isFocusMode));
+
+    if (isFocusMode) {
+      toggleText.textContent = 'Mostrar controles';
+      toggleIcon.textContent = '⚙️';
+      toggleBtn.setAttribute('aria-label', 'Mostrar controles de tirada');
+    } else {
+      toggleText.textContent = 'Ocultar controles';
+      toggleIcon.textContent = '✖️';
+      toggleBtn.setAttribute('aria-label', 'Ocultar controles de tirada');
+    }
+  }
+
+  function setFocusMode(enabled) {
+    isFocusMode = !!enabled;
+
+    var experience = document.getElementById('readingExperience');
+    var modeSection = document.getElementById('modeControlsSection');
+    var cards = document.getElementById('cardsContainer');
+    var secondary = document.getElementById('secondaryControlsColumn');
+    var actionPanel = document.getElementById('actionPanel');
+    var actionGrid = document.querySelector('#aclaracionControls .grid');
+
+    if (experience) experience.classList.toggle('cards-focus-active', isFocusMode);
+    if (secondary) secondary.classList.toggle('cards-focus-secondary', isFocusMode);
+    if (cards) cards.classList.toggle('cards-focus-grid', isFocusMode);
+
+    if (modeSection) {
+      modeSection.classList.toggle('focus-controls-hidden', isFocusMode);
+    }
+
+    if (actionPanel) {
+      actionPanel.classList.toggle('focus-action-panel', isFocusMode);
+    }
+
+    if (actionGrid) {
+      actionGrid.classList.toggle('focus-action-grid', isFocusMode);
+    }
+
+    updateFocusToggleUi();
+  }
+
+  function setHasActiveReading(active) {
+    hasActiveReading = !!active;
+    if (!hasActiveReading) {
+      setFocusMode(false);
+    } else {
+      updateFocusToggleUi();
+    }
+  }
+
   function renderRevealedCard(el, card, animate) {
     el.classList.remove('flippable-card', 'flipping');
     el.classList.add('revealed-card');
@@ -556,6 +633,8 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     var panel = document.getElementById('actionPanel');
     if (panel) panel.classList.remove('hidden');
 
+    setHasActiveReading(true);
+    setFocusMode(true);
     persistCurrentState();
   }
 
@@ -581,6 +660,7 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
     setInterpretarFeedback('hidden');
     closeMeaningModal();
     clearReadingState();
+    setHasActiveReading(false);
   }
 
   function makeAclaracionCard(card) {
@@ -912,6 +992,9 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
         setInterpretationExpanded(false);
       }
     }
+
+    setHasActiveReading(true);
+    setFocusMode(false);
   }
 
   function init() {
@@ -946,7 +1029,15 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
       });
     }
 
+    var btnFocusToggle = document.getElementById('focusToggleBtn');
+    if (btnFocusToggle) {
+      btnFocusToggle.addEventListener('click', function () {
+        setFocusMode(!isFocusMode);
+      });
+    }
+
     setupMeaningModalEvents();
+    setHasActiveReading(false);
     restoreReadingState();
   }
 
@@ -1000,6 +1091,69 @@ const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Mars
 
   .carta-detail-trigger {
     @apply w-full text-left bg-transparent p-0 border-0;
+  }
+
+  .focus-controls-hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .cards-focus-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .cards-focus-grid .carta-random-link {
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
+  .cards-focus-grid .carta-random-image-wrapper {
+    min-height: 340px;
+  }
+
+  .cards-focus-secondary .focus-minimizable {
+    opacity: 0.28;
+    transform: scale(0.98);
+    pointer-events: none;
+  }
+
+  .focus-action-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%);
+    z-index: 45;
+    width: min(960px, calc(100vw - 1.5rem));
+    border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+    background: color-mix(in srgb, var(--surface) 84%, #ffffff);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(10px);
+  }
+
+  .focus-action-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .cards-focus-grid {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .cards-focus-grid .carta-random-image-wrapper {
+      min-height: 250px;
+    }
+
+    .focus-action-grid {
+      grid-template-columns: 1fr !important;
+    }
   }
   
   .tirada-mode-option {

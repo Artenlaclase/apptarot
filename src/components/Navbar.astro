@@ -3,6 +3,8 @@
 // No necesitamos ningún return en este componente
 const user = Astro.locals.user;
 const lecturaHref = user ? '/cards/random-cards' : '/auth/login?next=%2Fcards%2Frandom-cards';
+const authOnlyClass = user ? '' : 'hidden';
+const guestOnlyClass = user ? 'hidden' : '';
 ---
 
 <nav class="app-nav shadow-lg">
@@ -17,8 +19,19 @@ const lecturaHref = user ? '/cards/random-cards' : '/auth/login?next=%2Fcards%2F
       <a href="/cards" class="app-nav-link transition-colors">Mazo Completo</a>
       <a href="/about" class="app-nav-link transition-colors">Acerca del Tarot</a>
       <a href={lecturaHref} class="app-nav-link transition-colors">Lectura</a>
-      {user && <a href="/profile" class="app-nav-link transition-colors">Mi Perfil</a>}
-      {user && <a href="/account/readings" class="app-nav-link transition-colors">Historial</a>}
+      <a href="/profile" data-auth-only class={`app-nav-link transition-colors ${authOnlyClass}`}>Mi Perfil</a>
+      <a href="/account/readings" data-auth-only class={`app-nav-link transition-colors ${authOnlyClass}`}>Historial</a>
+      <a href="/auth/login" data-guest-only class={`app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar Sesión</a>
+      <a href="/auth/register" data-guest-only class={`app-nav-link transition-colors ${guestOnlyClass}`}>Registro</a>
+      <button
+        type="button"
+        data-auth-only
+        data-logout-btn
+        class={`app-nav-link app-nav-logout-btn transition-colors ${authOnlyClass}`}
+        aria-label="Cerrar sesión"
+      >
+        Cerrar Sesión
+      </button>
       <!-- Social Links -->
       <div class="flex items-center space-x-3 app-nav-separator pl-6">
         <a href="https://www.facebook.com/tarotmarsellaterapeutico" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="app-nav-icon transition-colors">
@@ -55,8 +68,19 @@ const lecturaHref = user ? '/cards/random-cards' : '/auth/login?next=%2Fcards%2F
       <a href="/cards" class="block py-2 app-nav-link transition-colors">Mazo Completo</a>
       <a href="/about" class="block py-2 app-nav-link transition-colors">Acerca del Tarot</a>
       <a href={lecturaHref} class="block py-2 app-nav-link transition-colors">Lectura</a>
-      {user && <a href="/profile" class="block py-2 app-nav-link transition-colors">Mi Perfil</a>}
-      {user && <a href="/account/readings" class="block py-2 app-nav-link transition-colors">Historial</a>}
+      <a href="/profile" data-auth-only class={`block py-2 app-nav-link transition-colors ${authOnlyClass}`}>Mi Perfil</a>
+      <a href="/account/readings" data-auth-only class={`block py-2 app-nav-link transition-colors ${authOnlyClass}`}>Historial</a>
+      <a href="/auth/login" data-guest-only class={`block py-2 app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar Sesión</a>
+      <a href="/auth/register" data-guest-only class={`block py-2 app-nav-link transition-colors ${guestOnlyClass}`}>Registro</a>
+      <button
+        type="button"
+        data-auth-only
+        data-logout-btn
+        class={`block py-2 text-left app-nav-link app-nav-logout-btn transition-colors ${authOnlyClass}`}
+        aria-label="Cerrar sesión"
+      >
+        Cerrar Sesión
+      </button>
       <!-- Social Links -->
       <div class="flex items-center space-x-4 app-nav-separator pt-3 pb-1">
         <span class="text-sm app-nav-muted">Síguenos:</span>
@@ -77,16 +101,59 @@ const lecturaHref = user ? '/cards/random-cards' : '/auth/login?next=%2Fcards%2F
   </div>
 </nav>
 
-<script is:inline>
+<script>
+  import { auth } from '../lib/firebase';
+  import { onAuthStateChanged, signOut } from 'firebase/auth';
+
+  function syncAuthUI(isAuthenticated: boolean) {
+    document.querySelectorAll('[data-auth-only]').forEach((el) => {
+      el.classList.toggle('hidden', !isAuthenticated);
+    });
+
+    document.querySelectorAll('[data-guest-only]').forEach((el) => {
+      el.classList.toggle('hidden', isAuthenticated);
+    });
+  }
+
+  async function handleLogout(button: HTMLButtonElement) {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Cerrando...';
+
+    try {
+      await fetch('/api/auth/session-logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+      await signOut(auth);
+      syncAuthUI(false);
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      button.disabled = false;
+      button.textContent = originalText;
+      alert('No se pudo cerrar sesión. Inténtalo de nuevo.');
+    }
+  }
+
   document.getElementById('mobileMenuButton')?.addEventListener('click', () => {
     const button = document.getElementById('mobileMenuButton');
     const menu = document.getElementById('mobileMenu');
-    
+
     if (button && menu) {
       const isExpanded = button.getAttribute('aria-expanded') === 'true';
       button.setAttribute('aria-expanded', String(!isExpanded));
       menu.classList.toggle('hidden');
     }
+  });
+
+  document.querySelectorAll('[data-logout-btn]').forEach((btn) => {
+    if (!(btn instanceof HTMLButtonElement)) return;
+    btn.addEventListener('click', () => handleLogout(btn));
+  });
+
+  onAuthStateChanged(auth, (firebaseUser) => {
+    syncAuthUI(Boolean(firebaseUser));
   });
 </script>
 
@@ -105,6 +172,18 @@ const lecturaHref = user ? '/cards/random-cards' : '/auth/login?next=%2Fcards%2F
   .app-nav-link,
   .app-nav-icon {
     color: color-mix(in srgb, #ffffff 88%, var(--surface));
+  }
+
+  .app-nav-logout-btn {
+    border: 1px solid color-mix(in srgb, #ffffff 28%, var(--border));
+    border-radius: 9999px;
+    padding: 0.45rem 0.9rem;
+    line-height: 1;
+  }
+
+  .app-nav-logout-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
   }
 
   .app-nav-brand:hover,
