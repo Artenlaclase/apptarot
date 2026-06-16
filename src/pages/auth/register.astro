@@ -10,13 +10,13 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
   <main class="container mx-auto max-w-xl px-4 py-10">
     <section class="surface-card p-6 md:p-8">
       <h1 class="text-3xl font-bold page-title mb-2">Crear cuenta</h1>
-      <p class="page-lead mb-6">Completa tus datos para guardar tu historial, calcular tu Arcano Personal y dejar tu perfil listo desde el registro.</p>
+      <p class="page-lead mb-6">Completa tus datos para guardar tu historial y acceder a tu perfil. Una vez registrado podrás calcular tu Arcano Personal desde tu perfil.</p>
 
       <form id="registerForm" class="space-y-4" novalidate>
         <div class="rounded-2xl p-4 md:p-5" style="background: color-mix(in srgb, var(--primary) 6%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
-          <h2 class="text-lg font-semibold mb-2" style="color: var(--text);">Datos para tu Arcano Personal</h2>
-          <p class="text-sm mb-4" style="color: var(--text-muted);">Usa tu nombre, apellido y fecha real de nacimiento para calcular y guardar tu carta natal desde el primer acceso.</p>
-          <PersonalArcaneCalculator idPrefix="registerArcane" includeFullName={true} />
+          <h2 class="text-lg font-semibold mb-2" style="color: var(--text);">Tus datos personales</h2>
+          <p class="text-sm mb-4" style="color: var(--text-muted);">Nombre, apellido y fecha de nacimiento. Con estos datos podrás calcular tu Arcano Personal desde tu perfil.</p>
+          <PersonalArcaneCalculator idPrefix="registerArcane" includeFullName={true} showArcanePreview={false} />
         </div>
 
         <div>
@@ -37,8 +37,6 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
         <button id="submitBtn" class="btn-ui btn-ui-primary w-full py-2" type="submit">Crear cuenta</button>
       </form>
 
-      <div id="arcaneSuccess" class="hidden mt-4 rounded-xl px-4 py-3 transition-all duration-500" style="background: color-mix(in srgb, var(--success) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--success) 34%, var(--border));" aria-live="polite"></div>
-
       <p id="errorMsg" class="text-sm mt-4 hidden" style="color: var(--danger);" aria-live="polite"></p>
 
       <p class="text-sm mt-6 page-lead">
@@ -54,13 +52,112 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
       createServerSession,
     } from '/src/lib/auth-client.ts';
     import {
-      calculatePersonalArcane,
       normalizeBirthDateInput,
       validateBirthDate,
       validateBirthHour,
       validateFullName,
-      getDailyArcaneHint,
     } from '/src/lib/arcaneCalculator.ts';
+
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function showError(message) {
+      if (!errorMsg) return;
+      errorMsg.textContent = message;
+      errorMsg.classList.remove('hidden');
+      errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function setBusy(isBusy) {
+      if (submitBtn) {
+        submitBtn.disabled = isBusy;
+        submitBtn.textContent = isBusy ? 'Creando cuenta...' : 'Crear cuenta';
+      }
+    }
+
+    function translateAuthError(error) {
+      const code = error?.code ?? '';
+      if (code === 'auth/email-already-in-use')
+        return 'Este email ya está registrado. Si ya tienes cuenta, inicia sesión.';
+      if (code === 'auth/invalid-email')
+        return 'El formato del email no es válido.';
+      if (code === 'auth/weak-password')
+        return 'La contraseña debe tener al menos 6 caracteres.';
+      if (code === 'auth/network-request-failed')
+        return 'Error de conexión. Verifica tu red e inténtalo de nuevo.';
+      if (code === 'auth/too-many-requests')
+        return 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.';
+      return error instanceof Error ? error.message : 'No se pudo crear la cuenta.';
+    }
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setBusy(true);
+      if (errorMsg) errorMsg.classList.add('hidden');
+
+      const email = document.getElementById('email')?.value?.trim() ?? '';
+      const password = document.getElementById('password')?.value ?? '';
+      const password2 = document.getElementById('password2')?.value ?? '';
+      const firstName = document.getElementById('registerArcane-firstName')?.value?.trim() ?? '';
+      const lastName = document.getElementById('registerArcane-lastName')?.value?.trim() ?? '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+      const birthDateInput = document.getElementById('registerArcane-birthDate')?.value ?? '';
+      const birthHour = document.getElementById('registerArcane-birthHour')?.value?.trim() ?? '';
+
+      const normalizedBirthDate = normalizeBirthDateInput(birthDateInput);
+      const fullNameValidation = validateFullName(fullName);
+      const birthDateValidation = validateBirthDate(normalizedBirthDate);
+      const birthHourValidation = validateBirthHour(birthHour);
+
+      if (password !== password2) {
+        showError('Las contraseñas no coinciden.');
+        setBusy(false);
+        return;
+      }
+
+      if (!fullNameValidation.valid) {
+        showError(fullNameValidation.message || 'Nombre completo inválido.');
+        setBusy(false);
+        return;
+      }
+
+      if (!birthDateValidation.valid) {
+        showError(birthDateValidation.message || 'Fecha de nacimiento inválida.');
+        setBusy(false);
+        return;
+      }
+
+      if (!birthHourValidation.valid) {
+        showError(birthHourValidation.message || 'Hora de nacimiento inválida.');
+        setBusy(false);
+        return;
+      }
+
+      try {
+        // 1. Crear cuenta en Firebase Auth
+        await registerWithEmail(email, password);
+
+        // 2. Crear sesión de servidor
+        await createServerSession();
+
+        // 3. Guardar datos del perfil via API (fire-and-forget)
+        fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, birthDate: normalizedBirthDate, birthHour }),
+        }).catch(() => {});
+
+        // 4. Redirigir al perfil para ver y calcular el arcano
+        window.location.href = '/profile';
+
+      } catch (error) {
+        showError(translateAuthError(error));
+      } finally {
+        setBusy(false);
+      }
+    });
+  </script>
 
     const form = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');

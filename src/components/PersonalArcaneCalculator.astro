@@ -2,6 +2,7 @@
 interface Props {
   idPrefix?: string;
   includeFullName?: boolean;
+  showArcanePreview?: boolean;
   initialFirstName?: string;
   initialLastName?: string;
   initialBirthDate?: string;
@@ -11,6 +12,7 @@ interface Props {
 const {
   idPrefix = 'arcane',
   includeFullName = true,
+  showArcanePreview = true,
   initialFirstName = '',
   initialLastName = '',
   initialBirthDate = '',
@@ -115,33 +117,37 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
   <input id={nameHiddenId} name="personalArcaneName" type="hidden" value="" />
   <input id={fullNameHiddenId} name="fullName" type="hidden" value="" />
 
-  <div id={previewId} class="hidden rounded-xl px-4 py-3 transition-all duration-300" style="background: color-mix(in srgb, var(--primary) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));">
-    <p id={previewTextId} class="font-semibold" style="color: var(--text);"></p>
-    <p id={previewHintId} class="text-xs mt-1" style="color: var(--text-muted);">Este resultado se guardará en tu perfil.</p>
-  </div>
+  {showArcanePreview && (
+    <div id={previewId} class="hidden rounded-xl px-4 py-3 transition-all duration-300" style="background: color-mix(in srgb, var(--primary) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));">
+      <p id={previewTextId} class="font-semibold" style="color: var(--text);"></p>
+      <p id={previewHintId} class="text-xs mt-1" style="color: var(--text-muted);">Este resultado se guardará en tu perfil.</p>
+    </div>
+  )}
 
-  <div id={`${idPrefix}-breakdown`} class="hidden rounded-xl overflow-hidden transition-all duration-300" style="border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
-    <div class="px-4 py-2" style="background: color-mix(in srgb, var(--primary) 72%, #111111); color: #ffffff;">
-      <p class="text-sm font-semibold">El cálculo de tu arcano:</p>
+  {showArcanePreview && (
+    <div id={`${idPrefix}-breakdown`} class="hidden rounded-xl overflow-hidden transition-all duration-300" style="border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
+      <div class="px-4 py-2" style="background: color-mix(in srgb, var(--primary) 72%, #111111); color: #ffffff;">
+        <p class="text-sm font-semibold">El cálculo de tu arcano:</p>
+      </div>
+      <div class="overflow-x-auto" style="background: color-mix(in srgb, var(--surface) 94%, #ffffff);">
+        <table class="w-full text-sm">
+          <thead>
+            <tr style="background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--text);">
+              <th class="px-4 py-2 text-left font-semibold">Día</th>
+              <th class="px-4 py-2 text-left font-semibold">Mes</th>
+              <th class="px-4 py-2 text-left font-semibold">Año</th>
+              <th class="px-4 py-2 text-center font-semibold"> </th>
+              <th class="px-4 py-2 text-left font-semibold">Reducción</th>
+            </tr>
+          </thead>
+          <tbody id={`${idPrefix}-breakdown-body`}></tbody>
+        </table>
+      </div>
     </div>
-    <div class="overflow-x-auto" style="background: color-mix(in srgb, var(--surface) 94%, #ffffff);">
-      <table class="w-full text-sm">
-        <thead>
-          <tr style="background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--text);">
-            <th class="px-4 py-2 text-left font-semibold">Día</th>
-            <th class="px-4 py-2 text-left font-semibold">Mes</th>
-            <th class="px-4 py-2 text-left font-semibold">Año</th>
-            <th class="px-4 py-2 text-center font-semibold"> </th>
-            <th class="px-4 py-2 text-left font-semibold">Reducción</th>
-          </tr>
-        </thead>
-        <tbody id={`${idPrefix}-breakdown-body`}></tbody>
-      </table>
-    </div>
-  </div>
+  )}
 </section>
 
-<script is:inline define:vars={{ idPrefix, includeFullName }} type="module">
+<script is:inline define:vars={{ idPrefix, includeFullName, showArcanePreview }} type="module">
   import {
     calculatePersonalArcane,
     normalizeBirthDateInput,
@@ -202,6 +208,8 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
       if (bd) bd.classList.add('hidden');
       return;
     }
+
+    if (!showArcanePreview) return;
 
     const result = calculatePersonalArcane(normalizedDate);
     if (numberHidden) numberHidden.value = String(result.number);

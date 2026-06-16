@@ -56,15 +56,19 @@ export async function getOrCreateUserProfile(uid: string, fallback: { email?: st
     const profile: UserProfile = {
       uid,
       email: fallback.email ?? '',
-      displayName: fallback.name,
-      fullName: fallback.name,
+      displayName: fallback.name ?? null,
+      fullName: fallback.name ?? null,
       plan: 'free',
       planStatus: 'inactive',
       readingCount: 0,
       createdAt: now,
       updatedAt: now,
     };
-    await profileRef.set(profile, { merge: true });
+    // Strip undefined values — Firestore Admin does not accept them
+    const safeProfile = Object.fromEntries(
+      Object.entries(profile).filter(([, v]) => v !== undefined)
+    ) as UserProfile;
+    await profileRef.set(safeProfile, { merge: true });
     return profile;
   }
 
