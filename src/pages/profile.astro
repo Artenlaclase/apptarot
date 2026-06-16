@@ -201,6 +201,16 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       )}
     </section>
 
+    <section class="surface-card p-6">
+      <h2 class="text-xl font-semibold page-title mb-4">Últimas Tiradas Guardadas</h2>
+      <div id="recentReadingsContainer" class="space-y-3">
+        <p style="color: var(--text-muted);">Cargando historial...</p>
+      </div>
+      <div class="mt-4">
+        <a href="/account/readings" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Ver todas las tiradas</a>
+      </div>
+    </section>
+
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <article class="surface-card p-6">
         <h2 class="text-xl font-semibold page-title mb-3">Suscripción</h2>
@@ -249,6 +259,52 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       profileMsg.style.color = isError ? 'var(--danger)' : 'var(--success)';
       profileMsg.classList.remove('hidden');
     }
+
+    // Cargar tiradas recientes
+    async function loadRecentReadings() {
+      const container = document.getElementById('recentReadingsContainer');
+      if (!container) return;
+
+      try {
+        const response = await fetch('/api/readings/list?limit=3');
+        const data = await response.json();
+
+        if (!response.ok) {
+          container.innerHTML = '<p style="color: var(--text-muted);">No hay tiradas guardadas.</p>';
+          return;
+        }
+
+        if (!Array.isArray(data.readings) || data.readings.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-muted);">No hay tiradas guardadas.</p>';
+          return;
+        }
+
+        container.innerHTML = data.readings.map((reading: any) => {
+          const date = new Date(reading.createdAt).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          const preview = (reading.interpretation || '').substring(0, 120) + '...';
+          return `
+            <div class="rounded-lg p-3 border" style="border-color: var(--border); background: color-mix(in srgb, var(--primary) 4%, var(--surface));">
+              <div class="flex justify-between items-start mb-1">
+                <strong style="color: var(--text);">${reading.mode === 'mayores' ? 'Arcanos Mayores' : 'Tirada Mixta'}</strong>
+                <small style="color: var(--text-muted);">${date}</small>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.875rem;">${preview}</p>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading readings:', error);
+        container.innerHTML = '<p style="color: var(--text-muted);">Error cargando tiradas.</p>';
+      }
+    }
+
+    loadRecentReadings();
 
     function setArcaneBusy(isBusy) {
       const btn = document.getElementById('saveArcaneBtn');

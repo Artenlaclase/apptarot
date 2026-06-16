@@ -205,32 +205,27 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
             </div>
           </section>
 
-          <section id="interpretacionSection" class="hidden app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out" aria-live="polite" aria-busy="false">
-            <h3 class="text-lg font-semibold mb-3" style="color: var(--text);">✨ Interpretación de la Tirada</h3>
-            <button type="button" id="toggleInterpretacionBtn" class="hidden text-sm underline mb-3" style="color: var(--primary);">Expandir resultado</button>
+          <section id="interpretacionSection" class="hidden app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out fixed bottom-6 right-6 max-w-sm shadow-2xl z-40 border" style="border-color: var(--primary); max-height: 70vh; overflow-y-auto;" aria-live="polite" aria-busy="false">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold" style="color: var(--text);">✨ Interpretación</h3>
+              <button type="button" id="closeInterpretacionBtn" class="text-2xl leading-none" style="color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 0;">×</button>
+            </div>
 
             <div id="interpretacionLoading" class="hidden text-center py-6">
               <div class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 mb-3" style="border-color: var(--primary);"></div>
               <p style="color: var(--text-muted);">Consultando el oráculo...</p>
             </div>
 
-            <div id="interpretacionTexto" class="leading-relaxed text-base max-h-52 overflow-auto" style="color: var(--text);"></div>
+            <div id="interpretacionTexto" class="leading-relaxed text-sm mb-4" style="color: var(--text);"></div>
+            
+            <div class="flex gap-2">
+              <button type="button" id="guardarInterpretacionBtn" class="btn-ui btn-ui-primary px-4 py-2 flex-1 text-sm">💾 Guardar</button>
+              <button type="button" id="copiarInterpretacionBtn" class="btn-ui btn-ui-secondary px-4 py-2 flex-1 text-sm">📋 Copiar</button>
+            </div>
           </section>
         </div>
       </aside>
     </div>
-
-    <button
-      id="focusToggleBtn"
-      type="button"
-      class="hidden fixed bottom-4 right-4 z-50 rounded-full px-4 py-3 shadow-xl text-sm font-semibold transition-all duration-300"
-      style="background: color-mix(in srgb, var(--primary) 88%, #111111); color: #ffffff; border: 1px solid color-mix(in srgb, #ffffff 20%, var(--primary));"
-      aria-label="Mostrar controles de tirada"
-      aria-expanded="false"
-    >
-      <span id="focusToggleIcon" aria-hidden="true">⚙️</span>
-      <span id="focusToggleText" class="ml-2 hidden sm:inline">Mostrar controles</span>
-    </button>
 
     <section
       id="cardMeaningModal"
@@ -473,87 +468,6 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     });
   }
 
-  function setInterpretationExpanded(expanded) {
-    var texto = document.getElementById('interpretacionTexto');
-    var toggle = document.getElementById('toggleInterpretacionBtn');
-    if (!texto || !toggle) return;
-
-    if (expanded) {
-      texto.classList.remove('max-h-52');
-      texto.classList.add('max-h-[28rem]');
-      toggle.textContent = 'Contraer resultado';
-      toggle.dataset.expanded = '1';
-    } else {
-      texto.classList.remove('max-h-[28rem]');
-      texto.classList.add('max-h-52');
-      toggle.textContent = 'Expandir resultado';
-      toggle.dataset.expanded = '0';
-    }
-  }
-
-  function updateFocusToggleUi() {
-    var toggleBtn = document.getElementById('focusToggleBtn');
-    var toggleText = document.getElementById('focusToggleText');
-    var toggleIcon = document.getElementById('focusToggleIcon');
-    if (!toggleBtn || !toggleText || !toggleIcon) return;
-
-    if (!hasActiveReading) {
-      toggleBtn.classList.add('hidden');
-      return;
-    }
-
-    toggleBtn.classList.remove('hidden');
-    toggleBtn.setAttribute('aria-expanded', String(!isFocusMode));
-
-    if (isFocusMode) {
-      toggleText.textContent = 'Mostrar controles';
-      toggleIcon.textContent = '⚙️';
-      toggleBtn.setAttribute('aria-label', 'Mostrar controles de tirada');
-    } else {
-      toggleText.textContent = 'Ocultar controles';
-      toggleIcon.textContent = '✖️';
-      toggleBtn.setAttribute('aria-label', 'Ocultar controles de tirada');
-    }
-  }
-
-  function setFocusMode(enabled) {
-    isFocusMode = !!enabled;
-
-    var experience = document.getElementById('readingExperience');
-    var modeSection = document.getElementById('modeControlsSection');
-    var cards = document.getElementById('cardsContainer');
-    var secondary = document.getElementById('secondaryControlsColumn');
-    var actionPanel = document.getElementById('actionPanel');
-    var actionGrid = document.querySelector('#aclaracionControls .grid');
-
-    if (experience) experience.classList.toggle('cards-focus-active', isFocusMode);
-    if (secondary) secondary.classList.toggle('cards-focus-secondary', isFocusMode);
-    if (cards) cards.classList.toggle('cards-focus-grid', isFocusMode);
-
-    if (modeSection) {
-      modeSection.classList.toggle('focus-controls-hidden', isFocusMode);
-    }
-
-    if (actionPanel) {
-      actionPanel.classList.toggle('focus-action-panel', isFocusMode);
-    }
-
-    if (actionGrid) {
-      actionGrid.classList.toggle('focus-action-grid', isFocusMode);
-    }
-
-    updateFocusToggleUi();
-  }
-
-  function setHasActiveReading(active) {
-    hasActiveReading = !!active;
-    if (!hasActiveReading) {
-      setFocusMode(false);
-    } else {
-      updateFocusToggleUi();
-    }
-  }
-
   function renderRevealedCard(el, card, animate) {
     el.classList.remove('flippable-card', 'flipping');
     el.classList.add('revealed-card');
@@ -621,14 +535,6 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
 
     var interpTxt = document.getElementById('interpretacionTexto');
     if (interpTxt) interpTxt.innerHTML = '';
-
-    var toggleInterp = document.getElementById('toggleInterpretacionBtn');
-    if (toggleInterp) {
-      toggleInterp.classList.add('hidden');
-      toggleInterp.dataset.expanded = '0';
-    }
-
-    setInterpretationExpanded(false);
   }
 
   function barajar() {
@@ -656,8 +562,6 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     var panel = document.getElementById('actionPanel');
     if (panel) panel.classList.remove('hidden');
 
-    setHasActiveReading(true);
-    setFocusMode(true);
     persistCurrentState();
   }
 
@@ -683,7 +587,6 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
     setInterpretarFeedback('hidden');
     closeMeaningModal();
     clearReadingState();
-    setHasActiveReading(false);
   }
 
   function makeAclaracionCard(card) {
@@ -1006,14 +909,9 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
 
     var interpSec = document.getElementById('interpretacionSection');
     var interpTxt = document.getElementById('interpretacionTexto');
-    var toggleInterp = document.getElementById('toggleInterpretacionBtn');
     if (interpTxt && state.interpretacionHtml) {
       interpTxt.innerHTML = state.interpretacionHtml;
       if (interpSec) interpSec.classList.remove('hidden');
-      if (toggleInterp) {
-        toggleInterp.classList.remove('hidden');
-        setInterpretationExpanded(false);
-      }
     }
 
     setHasActiveReading(true);
@@ -1059,8 +957,94 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
       });
     }
 
+    var btnCloseInterp = document.getElementById('closeInterpretacionBtn');
+    if (btnCloseInterp) {
+      btnCloseInterp.addEventListener('click', function () {
+        var sec = document.getElementById('interpretacionSection');
+        if (sec) sec.classList.add('hidden');
+      });
+    }
+
+    var btnCopiarInterp = document.getElementById('copiarInterpretacionBtn');
+    if (btnCopiarInterp) {
+      btnCopiarInterp.addEventListener('click', function () {
+        var txt = document.getElementById('interpretacionTexto');
+        if (!txt || !txt.textContent) {
+          alert('No hay interpretación para copiar');
+          return;
+        }
+        var text = txt.textContent;
+        navigator.clipboard.writeText(text).then(function () {
+          var old = btnCopiarInterp.textContent;
+          btnCopiarInterp.textContent = '✓ Copiado';
+          setTimeout(function () { btnCopiarInterp.textContent = old; }, 1500);
+        }).catch(function () {
+          alert('No se pudo copiar al portapapeles');
+        });
+      });
+    }
+
+    var btnGuardarInterp = document.getElementById('guardarInterpretacionBtn');
+    if (btnGuardarInterp) {
+      btnGuardarInterp.addEventListener('click', function () {
+        var txt = document.getElementById('interpretacionTexto');
+        if (!txt || !txt.textContent) {
+          alert('No hay interpretación para guardar');
+          return;
+        }
+
+        var selectedIds = [];
+        document.querySelectorAll('#cardsContainer [data-card]').forEach(function (el) {
+          try {
+            var card = JSON.parse(el.dataset.card || '{}');
+            if (card.id && el.dataset.revealed === '1') selectedIds.push(card.id);
+          } catch (e) {}
+        });
+
+        if (selectedIds.length === 0) {
+          alert('Primero revela al menos una carta');
+          return;
+        }
+
+        var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
+        var mode = modeEl ? modeEl.value : 'mixta';
+        var interpretacion = txt.textContent;
+
+        btnGuardarInterp.disabled = true;
+        btnGuardarInterp.textContent = 'Guardando...';
+
+        fetch('/api/readings/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cards: selectedIds,
+            mode: mode,
+            interpretation: interpretacion,
+            date: new Date().toISOString()
+          })
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (data.ok) {
+              var old = btnGuardarInterp.textContent;
+              btnGuardarInterp.textContent = '✓ Guardado';
+              setTimeout(function () {
+                btnGuardarInterp.textContent = old;
+                btnGuardarInterp.disabled = false;
+              }, 1500);
+            } else {
+              throw new Error(data.error || 'Error desconocido');
+            }
+          })
+          .catch(function (err) {
+            alert('Error al guardar: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+            btnGuardarInterp.textContent = '💾 Guardar';
+            btnGuardarInterp.disabled = false;
+          });
+      });
+    }
+
     setupMeaningModalEvents();
-    setHasActiveReading(false);
 
     // Limpiar estado de lectura anterior si es la primera carga de esta sesión
     var sessionMarker = 'apptarot_reading_session_loaded';

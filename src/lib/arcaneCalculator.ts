@@ -173,23 +173,24 @@ export function getPersonalArcaneBreakdown(birthDateInput: string): ArcaneBreakd
   const monthLabel = String(month).padStart(2, '0');
   const steps: ArcaneBreakdownStep[] = [];
 
-  let currentYear = year;
-  let total = day + month + currentYear;
+  let total = day + month + year;
+  let yearDisplay = year;
 
+  // Primer paso: suma inicial
   steps.push({
     day: dayLabel,
     month: monthLabel,
-    yearValue: String(currentYear),
+    yearValue: String(yearDisplay),
     total,
   });
 
+  // Reducir hasta llegar a 1-21
   while (total > 21) {
-    currentYear = sumDigits(currentYear);
-    total = day + month + currentYear;
+    total = sumDigits(total);
     steps.push({
       day: dayLabel,
       month: monthLabel,
-      yearValue: String(currentYear),
+      yearValue: String(yearDisplay),
       total,
     });
   }
