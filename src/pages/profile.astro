@@ -127,75 +127,77 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         )}
       </article>
 
-      <header class="surface-card p-6">
-        <div class="flex items-start justify-between gap-4">
-          <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
-          <a href="/profile/edit" class="btn-ui btn-ui-secondary px-3 py-2 inline-flex items-center gap-2" title="Editar perfil" aria-label="Editar perfil">
-            <span aria-hidden="true">✏️</span>
-            <span class="hidden sm:inline">Editar perfil</span>
-          </a>
-        </div>
-        <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
-        {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
-        <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
-        <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
+      <div class="space-y-5">
+        <header class="surface-card p-6">
+          <div class="flex items-start justify-between gap-4">
+            <h1 class="text-3xl font-bold page-title">Mi perfil</h1>
+            <a href="/profile/edit" class="btn-ui btn-ui-secondary px-3 py-2 inline-flex items-center gap-2" title="Editar perfil" aria-label="Editar perfil">
+              <span aria-hidden="true">✏️</span>
+              <span class="hidden sm:inline">Editar perfil</span>
+            </a>
+          </div>
+          <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
+          {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
+          <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
+          <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
 
-        <div class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
-          <h2 class="text-xl font-semibold page-title mb-2">Resumen espiritual</h2>
-          {hasPersonalArcane ? (
-            <>
-              <p class="page-lead">Arcano actual: <strong>{profile.personalArcaneNumber}: {profile.personalArcaneName}</strong></p>
-              {profile.personalArcaneMeaning && <p class="text-sm mt-2" style="color: var(--text-muted);">{profile.personalArcaneMeaning}</p>}
-            </>
-          ) : (
-            <p class="page-lead">Aun no tienes Arcano Personal guardado. Completa tus datos para generarlo.</p>
-          )}
-        </div>
-      </header>
+          <div class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
+            <h2 class="text-xl font-semibold page-title mb-2">Resumen espiritual</h2>
+            {hasPersonalArcane ? (
+              <>
+                <p class="page-lead">Arcano actual: <strong>{profile.personalArcaneNumber}: {profile.personalArcaneName}</strong></p>
+                {profile.personalArcaneMeaning && <p class="text-sm mt-2" style="color: var(--text-muted);">{profile.personalArcaneMeaning}</p>}
+              </>
+            ) : (
+              <p class="page-lead">Aun no tienes Arcano Personal guardado. Completa tus datos para generarlo.</p>
+            )}
+          </div>
+        </header>
+
+        <section class="surface-card p-6 space-y-4">
+          <div>
+            <h2 class="text-xl font-semibold page-title mb-2">Tu Arcano Personal</h2>
+            <p class="text-sm" style="color: var(--text-muted);">Se calcula sumando día + mes + año. Si ese resultado queda en 21 o menos, ese número define el Arcano Mayor. Si da 22 o más, se reducen sus dígitos hasta llegar a un valor entre 1 y 21.</p>
+          </div>
+
+          {!hasPersonalArcane ? (
+            <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);" open>
+              <summary class="cursor-pointer font-semibold" style="color: var(--text);">Calcular Arcano Personal</summary>
+              <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
+                Completa tu fecha de nacimiento para calcular y guardar tu carta natal.
+              </p>
+
+              <form id="arcaneForm" class="space-y-4" novalidate>
+                <PersonalArcaneCalculator
+                  idPrefix="profileArcane"
+                  includeFullName={true}
+                  initialFirstName={profileNameParts.firstName}
+                  initialLastName={profileNameParts.lastName}
+                  initialBirthDate={profile.birthDate || ''}
+                  initialBirthHour={profile.birthHour || ''}
+                />
+
+                <div class="flex justify-end">
+                  <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
+                </div>
+              </form>
+            </details>
+          ) : <></>}
+        </section>
+
+        <section class="surface-card p-6">
+          <h2 class="text-xl font-semibold page-title mb-4">Últimas Tiradas Guardadas</h2>
+          <div id="recentReadingsContainer" class="space-y-3">
+            <p style="color: var(--text-muted);">Cargando historial...</p>
+          </div>
+          <div class="mt-4">
+            <a href="/account/readings" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Ver todas las tiradas</a>
+          </div>
+        </section>
+      </div>
     </section>
 
-    <section class="surface-card p-6 space-y-4">
-      <div>
-        <h2 class="text-xl font-semibold page-title mb-2">Tu Arcano Personal</h2>
-        <p class="text-sm" style="color: var(--text-muted);">Se calcula sumando día + mes + año. Si ese resultado queda en 21 o menos, ese número define el Arcano Mayor. Si da 22 o más, se reducen sus dígitos hasta llegar a un valor entre 1 y 21.</p>
-      </div>
-
-      {!hasPersonalArcane ? (
-        <details class="rounded-xl p-4" style="background: color-mix(in srgb, var(--primary) 7%, var(--surface)); border: 1px solid var(--border);" open>
-          <summary class="cursor-pointer font-semibold" style="color: var(--text);">Calcular Arcano Personal</summary>
-          <p class="text-sm mt-3 mb-4" style="color: var(--text-muted);">
-            Completa tu fecha de nacimiento para calcular y guardar tu carta natal.
-          </p>
-
-          <form id="arcaneForm" class="space-y-4" novalidate>
-            <PersonalArcaneCalculator
-              idPrefix="profileArcane"
-              includeFullName={true}
-              initialFirstName={profileNameParts.firstName}
-              initialLastName={profileNameParts.lastName}
-              initialBirthDate={profile.birthDate || ''}
-              initialBirthHour={profile.birthHour || ''}
-            />
-
-            <div class="flex justify-end">
-              <button id="saveArcaneBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar Arcano Personal</button>
-            </div>
-          </form>
-        </details>
-      ) : <></>}
-    </section>
-
-    <section class="surface-card p-6">
-      <h2 class="text-xl font-semibold page-title mb-4">Últimas Tiradas Guardadas</h2>
-      <div id="recentReadingsContainer" class="space-y-3">
-        <p style="color: var(--text-muted);">Cargando historial...</p>
-      </div>
-      <div class="mt-4">
-        <a href="/account/readings" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Ver todas las tiradas</a>
-      </div>
-    </section>
-
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <section>
       <article class="surface-card p-6">
         <h2 class="text-xl font-semibold page-title mb-3">Suscripción</h2>
         <p class="page-lead mb-4">Desbloquea tiradas ilimitadas, videollamadas y chat personal.</p>
@@ -204,15 +206,6 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           <button id="upgradeAnnual" class="btn-ui btn-ui-secondary px-4 py-2" type="button">Premium anual</button>
           <button id="manageBilling" class="btn-ui btn-ui-neutral px-4 py-2" type="button">Gestionar facturación</button>
         </div>
-      </article>
-
-      <article class="surface-card p-6">
-        <h2 class="text-xl font-semibold page-title mb-3">Configuración de perfil</h2>
-        <p class="page-lead mb-4">Ahora la edición de contraseña, redes, pasatiempos, descripción y descarga de historial está en una sola pantalla.</p>
-        <a href="/profile/edit" class="btn-ui btn-ui-primary px-4 py-2 inline-flex items-center gap-2">
-          <span aria-hidden="true">⚙️</span>
-          <span>Abrir edición de perfil</span>
-        </a>
       </article>
     </section>
 
