@@ -85,8 +85,8 @@ const showLecturaMessage = message === 'lectura';
       return error instanceof Error ? error.message : 'No se pudo iniciar sesión.';
     }
 
-    async function finalizeLogin() {
-      await createServerSession();
+    async function finalizeLogin(credential) {
+      await createServerSession(credential);
       window.location.href = next;
     }
 
@@ -99,8 +99,8 @@ const showLecturaMessage = message === 'lectura';
       const password = document.getElementById('password')?.value ?? '';
 
       try {
-        await loginWithEmail(email, password);
-        await finalizeLogin();
+        const credential = await loginWithEmail(email, password);
+        await finalizeLogin(credential);
       } catch (error) {
         showError(translateAuthError(error));
       } finally {
@@ -113,8 +113,8 @@ const showLecturaMessage = message === 'lectura';
       if (errorMsg) errorMsg.classList.add('hidden');
 
       try {
-        await loginWithGoogle();
-        await finalizeLogin();
+        const credential = await loginWithGoogle();
+        await finalizeLogin(credential);
       } catch (error) {
         showError(translateAuthError(error));
       } finally {

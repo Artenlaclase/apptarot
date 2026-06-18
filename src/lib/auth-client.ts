@@ -7,6 +7,8 @@ import {
   onAuthStateChanged,
   signOut,
   updatePassword,
+  type User,
+  type UserCredential,
 } from 'firebase/auth';
 import { app } from './firebase';
 
@@ -29,11 +31,15 @@ export async function loginWithGoogle() {
   return signInWithPopup(auth, googleProvider);
 }
 
-export async function createServerSession(): Promise<void> {
-  const user = auth.currentUser;
-  if (!user) throw new Error('No authenticated user');
+async function getFreshIdToken(user: User): Promise<string> {
+  return user.getIdToken(true);
+}
 
-  const idToken = await user.getIdToken(true);
+export async function createServerSession(user?: User | UserCredential | null): Promise<void> {
+  const resolvedUser = user && 'user' in user ? user.user : user ?? auth.currentUser;
+  if (!resolvedUser) throw new Error('No authenticated user');
+
+  const idToken = await getFreshIdToken(resolvedUser);
 
   const response = await fetch('/api/auth/session-login', {
     method: 'POST',

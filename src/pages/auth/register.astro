@@ -136,10 +136,10 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
 
       try {
         // 1. Crear cuenta en Firebase Auth
-        await registerWithEmail(email, password);
+        const credential = await registerWithEmail(email, password);
 
         // 2. Crear sesión de servidor
-        await createServerSession();
+        await createServerSession(credential);
 
         // 3. Guardar datos del perfil via API (esperar respuesta)
         const profileResponse = await fetch('/api/user/profile', {
