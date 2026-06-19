@@ -193,8 +193,11 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
           </section>
 
           <section id="cardMeaningPanel" class="app-surface rounded-2xl p-5 hidden xl:block focus-minimizable transition-all duration-300 ease-out" aria-live="polite">
-            <h3 class="text-base font-semibold mb-2" style="color: var(--text);">Significado de carta</h3>
-            <p class="text-sm" style="color: var(--text-muted);">Haz clic en una carta revelada para ver su significado sin perder la tirada.</p>
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-base font-semibold" style="color: var(--text);">Significado de carta</h3>
+              <button type="button" id="toggleMeaningBtn" title="Mostrar/ocultar significado" class="text-xs font-semibold px-2 py-1 rounded transition-colors" style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;">▼ Ocultar</button>
+            </div>
+            <p class="text-sm mb-4" style="color: var(--text-muted);">Haz clic en una carta revelada para ver su significado sin perder la tirada.</p>
 
             <div id="panelMeaningContent" class="hidden mt-4 space-y-3">
               <h4 id="panelCardName" class="text-lg font-semibold" style="color: var(--text);"></h4>
@@ -205,11 +208,13 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
             </div>
           </section>
 
-          <section id="interpretacionSection" class="app-surface-soft rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out border" style="border-color: var(--primary);" aria-live="polite" aria-busy="false">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-lg font-semibold" style="color: var(--text);">✨ Interpretación</h3>
+          <section id="interpretacionSection" class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out" aria-live="polite" aria-busy="false">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="text-base font-semibold" style="color: var(--text);">✨ Interpretación</h3>
               <button type="button" id="closeInterpretacionBtn" title="Mostrar/ocultar interpretación" class="text-xs font-semibold px-2 py-1 rounded transition-colors" style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;">▼ Ocultar</button>
             </div>
+
+            <p class="text-sm mb-4" style="color: var(--text-muted);">Consulta la lectura generada por IA sin perder la tirada.</p>
 
             <div id="interpretacionContent" class="hidden">
               <div id="interpretacionLoading" class="hidden text-center py-6">
@@ -761,6 +766,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
 
   function renderMeaningPanel(card) {
     var panel = document.getElementById('panelMeaningContent');
+    var toggleBtn = document.getElementById('toggleMeaningBtn');
     var name = document.getElementById('panelCardName');
     var meta = document.getElementById('panelCardMeta');
     var direct = document.getElementById('panelCardDirect');
@@ -769,6 +775,7 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
 
     if (!panel) return;
     panel.classList.remove('hidden');
+    if (toggleBtn) toggleBtn.textContent = '▼ Ocultar';
 
     if (name) name.textContent = card.nombre;
     if (meta) {
@@ -940,6 +947,17 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
 
     var btnRevelarTodas = document.getElementById('revelarTodasBtn');
     if (btnRevelarTodas) btnRevelarTodas.addEventListener('click', revelarTodas);
+
+    var btnToggleMeaning = document.getElementById('toggleMeaningBtn');
+    if (btnToggleMeaning) {
+      btnToggleMeaning.addEventListener('click', function () {
+        var content = document.getElementById('panelMeaningContent');
+        if (!content) return;
+        var isHidden = content.classList.contains('hidden');
+        content.classList.toggle('hidden');
+        btnToggleMeaning.textContent = isHidden ? '▼ Ocultar' : '▶ Ver significado';
+      });
+    }
 
     var btnInterpretar = document.getElementById('interpretarBtn');
     if (btnInterpretar) btnInterpretar.addEventListener('click', interpretar);
