@@ -160,23 +160,25 @@ const guestOnlyClass = user ? 'hidden' : '';
 
 <style>
   .app-nav {
-    background: color-mix(in srgb, var(--primary) 84%, #111111);
-    color: #ffffff;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    border-bottom: 1px solid var(--nav-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .app-nav-mobile {
-    background: color-mix(in srgb, var(--primary) 70%, #111111);
+    background: var(--nav-mobile-bg);
+    border-bottom: 1px solid var(--nav-border);
   }
 
   .app-nav-brand,
   .app-nav-link,
   .app-nav-icon {
-    color: color-mix(in srgb, #ffffff 88%, var(--surface));
+    color: var(--nav-text-muted);
   }
 
   .app-nav-logout-btn {
-    border: 1px solid color-mix(in srgb, #ffffff 28%, var(--border));
+    border: 1px solid var(--nav-border);
     border-radius: 9999px;
     padding: 0.45rem 0.9rem;
     line-height: 1;
@@ -190,16 +192,16 @@ const guestOnlyClass = user ? 'hidden' : '';
   .app-nav-brand:hover,
   .app-nav-link:hover,
   .app-nav-icon:hover {
-    color: #ffffff;
+    color: var(--nav-hover);
   }
 
   .app-nav-muted {
-    color: color-mix(in srgb, #ffffff 70%, var(--text-muted));
+    color: var(--nav-text-muted);
   }
 
   .app-nav-separator {
-    border-left: 1px solid color-mix(in srgb, #ffffff 22%, var(--border));
-    border-top: 1px solid color-mix(in srgb, #ffffff 22%, var(--border));
+    border-left: 1px solid var(--nav-border);
+    border-top: 1px solid var(--nav-border);
   }
 
   @media (min-width: 768px) {

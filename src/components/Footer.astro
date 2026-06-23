@@ -82,24 +82,25 @@ const lecturaHref = user ? '/cards/random-cards' : '/auth/login?next=%2Fcards%2F
 
 <style>
   .app-footer {
-    background: color-mix(in srgb, var(--primary) 84%, #111111);
-    color: #ffffff;
-    border-top: 1px solid color-mix(in srgb, #ffffff 16%, var(--border));
+    background: var(--footer-bg);
+    color: var(--footer-text);
+    border-top: 1px solid var(--footer-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .app-footer-link {
-    color: color-mix(in srgb, #ffffff 86%, var(--surface));
+    color: var(--footer-link);
   }
 
   .app-footer-link:hover {
-    color: #ffffff;
+    color: var(--footer-link-hover);
   }
 
   .app-footer-muted {
-    color: color-mix(in srgb, #ffffff 68%, var(--text-muted));
+    color: var(--footer-text-muted);
   }
 
   .app-footer-topline {
-    border-top: 1px solid color-mix(in srgb, #ffffff 20%, var(--border));
+    border-top: 1px solid var(--footer-border);
   }
 </style>
