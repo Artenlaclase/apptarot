@@ -1,7 +1,6 @@
 ---
 // src/pages/cards/minor.astro
-import { db } from '../../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { adminDb } from '../../lib/firebase-admin';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
 
@@ -24,10 +23,8 @@ const getValorOrderIndex = (valor: string): number => {
   return index === -1 ? 999 : index; // Si no encuentra el valor, lo pone al final
 };
 
-// Query básica sin filtros complejos mientras se construye el índice
-const q = collection(db, 'cards');
-
-const querySnapshot = await getDocs(q);
+// Query usando Admin SDK
+const querySnapshot = await adminDb.collection('cards').get();
 
 const processImageUrl = (url: string | undefined | null): string => {
   if (!url || typeof url !== 'string') return '/placeholder-card.jpg';

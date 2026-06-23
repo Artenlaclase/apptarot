@@ -1,18 +1,17 @@
 ---
 // src/pages/random-cards.astro
-import { db } from '../../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import Layout from '../../layouts/Layout.astro';
-import '../../styles/cards.css';
-import { getOrCreateUserProfile } from '../../lib/auth-server';
-import { getDailyArcaneHint } from '../../lib/arcaneCalculator';
+import { adminDb } from "../../lib/firebase-admin";
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/cards.css";
+import { getOrCreateUserProfile } from "../../lib/auth-server";
+import { getDailyArcaneHint } from "../../lib/arcaneCalculator";
 
 interface Card {
   id: string;
   nombre: string;
   numero?: number;
   valor?: string;
-  arcano: 'mayor' | 'menor';
+  arcano: "mayor" | "menor";
   imagem: string;
   significado?: {
     directo?: string;
@@ -27,78 +26,127 @@ interface Card {
   imageError?: string;
 }
 
-const querySnapshot = await getDocs(collection(db, 'cards'));
-const allCards = querySnapshot.docs.map(doc => {
+const querySnapshot = await adminDb.collection("cards").get();
+const allCards = querySnapshot.docs.map((doc) => {
   const data = doc.data();
   return {
     id: doc.id,
-    nombre: data.nombre || 'Sin nombre',
+    nombre: data.nombre || "Sin nombre",
     numero: data.numero,
     valor: data.valor,
-    arcano: data.arcano || 'mayor',
-    imagem: data.imagem || '/images/placeholder-card.jpg',
+    arcano: data.arcano || "mayor",
+    imagem: data.imagem || "/images/placeholder-card.jpg",
     significado: {
-      directo: data.significado?.directo || 'No disponible',
-      invertido: data.significado?.invertido || 'No disponible'
+      directo: data.significado?.directo || "No disponible",
+      invertido: data.significado?.invertido || "No disponible",
     },
     simbolos: {
       principales: data.simbolos?.principales || [],
-      interpretacion: data.simbolos?.interpretacion || 'No disponible'
+      interpretacion: data.simbolos?.interpretacion || "No disponible",
     },
     keywords: data.keywords || [],
-    imageLoaded: false
+    imageLoaded: false,
   };
 });
 
 // Separar arcanos mayores y menores
-const arcanosMayores = allCards.filter(card => card.arcano === 'mayor');
-const arcanosMenores = allCards.filter(card => card.arcano === 'menor');
+const arcanosMayores = allCards.filter((card) => card.arcano === "mayor");
+const arcanosMenores = allCards.filter((card) => card.arcano === "menor");
 
-console.log(`Cargadas ${allCards.length} cartas desde Firestore (${arcanosMayores.length} mayores, ${arcanosMenores.length} menores)`);
+console.log(
+  `Cargadas ${allCards.length} cartas desde Firestore (${arcanosMayores.length} mayores, ${arcanosMenores.length} menores)`,
+);
 
 const pageTitle = "Cartas Aleatorias - Tarot de Marsella";
-const pageDescription = "Genera una tirada aleatoria de cartas del Tarot de Marsella";
+const pageDescription =
+  "Genera una tirada aleatoria de cartas del Tarot de Marsella";
 const user = Astro.locals.user;
 const userProfile = user ? await getOrCreateUserProfile(user.uid, user) : null;
 const userArcaneNumber = userProfile?.personalArcaneNumber;
 const userArcaneName = userProfile?.personalArcaneName;
-const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) : null;
+const userArcaneHint = userArcaneNumber
+  ? getDailyArcaneHint(userArcaneNumber)
+  : null;
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
   <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
     <header class="text-center mb-8 md:mb-12">
-      <h1 class="text-3xl md:text-4xl font-bold mb-3 md:mb-4" style="color: var(--text);">Tirada de Cartas Aleatorias</h1>
-      <p class="text-base md:text-xl" style="color: var(--text-muted);">Elige tu modalidad de tirada y número de cartas</p>
+      <h1
+        class="text-3xl md:text-4xl font-bold mb-3 md:mb-4"
+        style="color: var(--text);"
+      >
+        Tirada de Cartas Aleatorias
+      </h1>
+      <p class="text-base md:text-xl" style="color: var(--text-muted);">
+        Elige tu modalidad de tirada y número de cartas
+      </p>
     </header>
 
-    <div id="readingExperience" class="grid grid-cols-1 xl:grid-cols-12 gap-6 transition-all duration-500">
+    <div
+      id="readingExperience"
+      class="grid grid-cols-1 xl:grid-cols-12 gap-6 transition-all duration-500"
+    >
       <section class="xl:col-span-8 space-y-6">
-        <section id="modeControlsSection" class="app-surface rounded-2xl p-4 md:p-6 transition-all duration-500 ease-out">
+        <section
+          id="modeControlsSection"
+          class="app-surface rounded-2xl p-4 md:p-6 transition-all duration-500 ease-out"
+        >
           <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-3" style="color: var(--text);">Modalidad de tirada:</h3>
+            <h3 class="text-lg font-semibold mb-3" style="color: var(--text);">
+              Modalidad de tirada:
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <label class="tirada-mode-option flex items-center p-3 rounded-lg cursor-pointer transition-colors">
-                <input type="radio" name="tiradaMode" value="mayores" class="mr-3">
+              <label
+                class="tirada-mode-option flex items-center p-3 rounded-lg cursor-pointer transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="tiradaMode"
+                  value="mayores"
+                  class="mr-3"
+                />
                 <div>
-                  <div class="font-medium" style="color: var(--text);">Solo Arcanos Mayores</div>
-                  <div class="text-sm" style="color: var(--text-muted);">22 cartas principales</div>
+                  <div class="font-medium" style="color: var(--text);">
+                    Solo Arcanos Mayores
+                  </div>
+                  <div class="text-sm" style="color: var(--text-muted);">
+                    22 cartas principales
+                  </div>
                 </div>
               </label>
 
-              <label class="tirada-mode-option flex items-center p-3 rounded-lg cursor-pointer transition-colors">
-                <input type="radio" name="tiradaMode" value="mixta" class="mr-3" checked>
+              <label
+                class="tirada-mode-option flex items-center p-3 rounded-lg cursor-pointer transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="tiradaMode"
+                  value="mixta"
+                  class="mr-3"
+                  checked
+                />
                 <div>
-                  <div class="font-medium" style="color: var(--text);">Tirada Mixta</div>
-                  <div class="text-sm" style="color: var(--text-muted);">Mayores y menores mezclados</div>
+                  <div class="font-medium" style="color: var(--text);">
+                    Tirada Mixta
+                  </div>
+                  <div class="text-sm" style="color: var(--text-muted);">
+                    Mayores y menores mezclados
+                  </div>
                 </div>
               </label>
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-3 md:gap-4 items-end justify-center">
+          <div
+            class="flex flex-col sm:flex-row gap-3 md:gap-4 items-end justify-center"
+          >
             <div class="flex-1 w-full sm:w-auto">
-              <label for="cardCount" class="block text-sm font-medium mb-1" style="color: var(--text-muted);">
+              <label
+                for="cardCount"
+                class="block text-sm font-medium mb-1"
+                style="color: var(--text-muted);"
+              >
                 Número de cartas:
               </label>
               <input
@@ -112,1106 +160,1490 @@ const userArcaneHint = userArcaneNumber ? getDailyArcaneHint(userArcaneNumber) :
                 style="border: 1px solid var(--border); background: var(--surface); color: var(--text);"
               />
             </div>
-            <button type="button" id="generateBtn" class="btn-ui btn-ui-primary px-6 py-3">
+            <button
+              type="button"
+              id="generateBtn"
+              class="btn-ui btn-ui-primary px-6 py-3"
+            >
               Barajar Cartas
             </button>
-            <button type="button" id="resetBtn" class="btn-ui btn-ui-neutral px-6 py-3">
+            <button
+              type="button"
+              id="resetBtn"
+              class="btn-ui btn-ui-neutral px-6 py-3"
+            >
               Limpiar
             </button>
           </div>
         </section>
 
-        <section id="cardsContainer" class="app-surface rounded-2xl p-3 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 min-h-[16rem] md:min-h-[18rem] transition-all duration-500 ease-out">
+        <section
+          id="cardsContainer"
+          class="app-surface rounded-2xl p-3 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 min-h-[16rem] md:min-h-[18rem] transition-all duration-500 ease-out"
+        >
           <div id="initialMessage" class="col-span-full text-center py-12">
-            <p class="text-base md:text-xl" style="color: var(--text-muted);">Selecciona tu modalidad de tirada y presiona "Barajar Cartas"</p>
+            <p class="text-base md:text-xl" style="color: var(--text-muted);">
+              Selecciona tu modalidad de tirada y presiona "Barajar Cartas"
+            </p>
           </div>
         </section>
 
         <div id="loadingIndicator" class="hidden text-center py-6">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style="border-color: var(--primary);"></div>
-          <p class="mt-2" style="color: var(--text-muted);">Cargando cartas...</p>
+          <div
+            class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2"
+            style="border-color: var(--primary);"
+          >
+          </div>
+          <p class="mt-2" style="color: var(--text-muted);">
+            Cargando cartas...
+          </p>
         </div>
 
-        <section id="aclaracionSection" class="hidden focus-minimizable transition-all duration-300 ease-out">
+        <section
+          id="aclaracionSection"
+          class="hidden focus-minimizable transition-all duration-300 ease-out"
+        >
           <div class="app-surface-soft rounded-xl p-4 md:p-6">
-            <h3 class="text-lg md:text-xl font-semibold mb-4 text-center" style="color: var(--warning);">🔍 Cartas de Aclaración</h3>
-            <div id="aclaracionContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            <h3
+              class="text-lg md:text-xl font-semibold mb-4 text-center"
+              style="color: var(--warning);"
+            >
+              🔍 Cartas de Aclaración
+            </h3>
+            <div
+              id="aclaracionContainer"
+              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+            >
+            </div>
           </div>
         </section>
       </section>
 
       <aside class="xl:col-span-4">
-        <div id="secondaryControlsColumn" class="xl:sticky xl:top-24 space-y-4 transition-all duration-300 ease-out">
-          <section class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out">
-            <h3 class="text-base font-semibold mb-2" style="color: var(--text);">Tu Arcano Personal Hoy</h3>
-            {userArcaneNumber && userArcaneName ? (
-              <>
-                <p class="text-sm font-semibold" style="color: var(--primary);">{userArcaneNumber}: {userArcaneName}</p>
-                <p class="text-sm mt-2" style="color: var(--text-muted);">{userArcaneHint}</p>
-                <a href="/profile" class="inline-block mt-3 text-sm underline" style="color: var(--primary);">Actualizar mi carta natal</a>
-              </>
-            ) : (
-              <>
-                <p class="text-sm" style="color: var(--text-muted);">Aún no has calculado tu Arcano Personal.</p>
-                <a href="/profile" class="inline-block mt-3 text-sm underline" style="color: var(--primary);">Calcular ahora en mi perfil</a>
-              </>
-            )}
+        <div
+          id="secondaryControlsColumn"
+          class="xl:sticky xl:top-24 space-y-4 transition-all duration-300 ease-out"
+        >
+          <section
+            class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out"
+          >
+            <h3
+              class="text-base font-semibold mb-2"
+              style="color: var(--text);"
+            >
+              Tu Arcano Personal
+            </h3>
+            {
+              userArcaneNumber && userArcaneName ? (
+                <>
+                  <p
+                    class="text-sm font-semibold"
+                    style="color: var(--primary);"
+                  >
+                    {userArcaneNumber}: {userArcaneName}
+                  </p>
+                  <p class="text-sm mt-2" style="color: var(--text-muted);">
+                    {userArcaneHint}
+                  </p>
+                  <a
+                    href="/profile"
+                    class="inline-block mt-3 text-sm underline"
+                    style="color: var(--primary);"
+                  >
+                    Actualizar mi carta natal
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p class="text-sm" style="color: var(--text-muted);">
+                    Aún no has calculado tu Arcano Personal.
+                  </p>
+                  <a
+                    href="/profile"
+                    class="inline-block mt-3 text-sm underline"
+                    style="color: var(--primary);"
+                  >
+                    Calcular ahora en mi perfil
+                  </a>
+                </>
+              )
+            }
           </section>
 
-          <section id="actionPanel" class="app-surface rounded-2xl p-5 hidden transition-all duration-300 ease-out">
+          <section
+            id="actionPanel"
+            class="app-surface rounded-2xl p-5 hidden transition-all duration-300 ease-out"
+          >
             <div id="aclaracionControls" class="hidden">
               <div class="text-sm mb-4" style="color: var(--text-muted);">
-                <strong style="color: var(--text);">Acciones:</strong> Profundiza en tu tirada
+                <strong style="color: var(--text);">Acciones:</strong> Profundiza
+                en tu tirada
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
-                <button type="button" id="revelarTodasBtn" class="btn-ui btn-ui-secondary px-4 py-2">🃏 Revelar Todas</button>
-                <button type="button" id="aclaracionBtn" class="btn-ui btn-ui-warning px-4 py-2">Sacar Carta de Aclaración</button>
-                <button type="button" id="interpretarBtn" class="btn-ui btn-ui-primary px-4 py-2">✨ Interpretar Tirada</button>
+                <button
+                  type="button"
+                  id="revelarTodasBtn"
+                  class="btn-ui btn-ui-secondary px-4 py-2"
+                  >🃏 Revelar Todas</button
+                >
+                <button
+                  type="button"
+                  id="aclaracionBtn"
+                  class="btn-ui btn-ui-warning px-4 py-2"
+                  >Sacar Carta de Aclaración</button
+                >
+                <button
+                  type="button"
+                  id="interpretarBtn"
+                  class="btn-ui btn-ui-primary px-4 py-2"
+                  >✨ Interpretar Tirada</button
+                >
               </div>
             </div>
           </section>
 
-          <section id="interpretarFeedback" class="hidden focus-minimizable transition-all duration-300 ease-out">
-            <div id="interpretarFeedbackLoading" class="status-box status-loading hidden items-center justify-center gap-3">
-              <div class="flex-shrink-0 animate-spin rounded-full h-5 w-5 border-t-2 border-b-2" style="border-color: var(--primary);"></div>
-              <span style="color: var(--text);">Generando interpretación...</span>
+          <section
+            id="interpretarFeedback"
+            class="hidden focus-minimizable transition-all duration-300 ease-out"
+          >
+            <div
+              id="interpretarFeedbackLoading"
+              class="status-box status-loading hidden items-center justify-center gap-3"
+            >
+              <div
+                class="flex-shrink-0 animate-spin rounded-full h-5 w-5 border-t-2 border-b-2"
+                style="border-color: var(--primary);"
+              >
+              </div>
+              <span style="color: var(--text);"
+                >Generando interpretación...</span
+              >
             </div>
 
-            <div id="interpretarFeedbackOk" class="status-box status-success hidden items-center justify-center gap-3">
+            <div
+              id="interpretarFeedbackOk"
+              class="status-box status-success hidden items-center justify-center gap-3"
+            >
               <span style="color: var(--success);">✓ Interpretación lista</span>
-              <button type="button" id="interpretarScrollBtn" class="text-sm underline" style="color: var(--text);">Ver resultado</button>
+              <button
+                type="button"
+                id="interpretarScrollBtn"
+                class="text-sm underline"
+                style="color: var(--text);">Ver resultado</button
+              >
             </div>
 
-            <div id="interpretarFeedbackError" class="status-box status-error hidden items-center justify-center gap-3">
-              <span id="interpretarFeedbackErrorMsg" style="color: var(--danger);">Error al generar la interpretación.</span>
+            <div
+              id="interpretarFeedbackError"
+              class="status-box status-error hidden items-center justify-center gap-3"
+            >
+              <span
+                id="interpretarFeedbackErrorMsg"
+                style="color: var(--danger);"
+                >Error al generar la interpretación.</span
+              >
             </div>
 
-            <div id="interpretarFeedbackWarn" class="status-box hidden items-center justify-center gap-3" style="background: color-mix(in srgb, var(--warning) 12%, var(--surface));">
-              <span id="interpretarFeedbackWarnMsg" style="color: var(--warning);">Aviso del plan de cuenta.</span>
+            <div
+              id="interpretarFeedbackWarn"
+              class="status-box hidden items-center justify-center gap-3"
+              style="background: color-mix(in srgb, var(--warning) 12%, var(--surface));"
+            >
+              <span
+                id="interpretarFeedbackWarnMsg"
+                style="color: var(--warning);">Aviso del plan de cuenta.</span
+              >
             </div>
           </section>
 
-          <section id="cardMeaningPanel" class="app-surface rounded-2xl p-5 hidden xl:block focus-minimizable transition-all duration-300 ease-out" aria-live="polite">
+          <section
+            id="cardMeaningPanel"
+            class="app-surface rounded-2xl p-5 hidden xl:block focus-minimizable transition-all duration-300 ease-out"
+            aria-live="polite"
+          >
             <div class="flex items-center justify-between gap-3 mb-2">
-              <h3 class="text-base font-semibold" style="color: var(--text);">Significado de carta</h3>
-              <button type="button" id="toggleMeaningBtn" title="Mostrar/ocultar significado" class="text-xs font-semibold px-2 py-1 rounded transition-colors" style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;">▼ Ocultar</button>
+              <h3 class="text-base font-semibold" style="color: var(--text);">
+                Significado de carta
+              </h3>
+              <button
+                type="button"
+                id="toggleMeaningBtn"
+                title="Mostrar/ocultar significado"
+                class="text-xs font-semibold px-2 py-1 rounded transition-colors"
+                style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;"
+                >▼ Ocultar</button
+              >
             </div>
-            <p class="text-sm mb-4" style="color: var(--text-muted);">Haz clic en una carta revelada para ver su significado sin perder la tirada.</p>
+            <p class="text-sm mb-4" style="color: var(--text-muted);">
+              Haz clic en una carta revelada para ver su significado sin perder
+              la tirada.
+            </p>
 
             <div id="panelMeaningContent" class="hidden mt-4 space-y-3">
-              <h4 id="panelCardName" class="text-lg font-semibold" style="color: var(--text);"></h4>
-              <p id="panelCardMeta" class="text-xs" style="color: var(--text-muted);"></p>
-              <p id="panelCardDirect" class="text-sm" style="color: var(--text);"></p>
-              <p id="panelCardInverted" class="text-sm" style="color: var(--text-muted);"></p>
-              <a id="panelDetailLink" href="/cards" class="inline-block text-sm underline" style="color: var(--primary);">Abrir ficha completa</a>
+              <h4
+                id="panelCardName"
+                class="text-lg font-semibold"
+                style="color: var(--text);"
+              >
+              </h4>
+              <p
+                id="panelCardMeta"
+                class="text-xs"
+                style="color: var(--text-muted);"
+              >
+              </p>
+              <p
+                id="panelCardDirect"
+                class="text-sm"
+                style="color: var(--text);"
+              >
+              </p>
+              <p
+                id="panelCardInverted"
+                class="text-sm"
+                style="color: var(--text-muted);"
+              >
+              </p>
+              <a
+                id="panelDetailLink"
+                href="/cards"
+                class="inline-block text-sm underline"
+                style="color: var(--primary);">Abrir ficha completa</a
+              >
             </div>
           </section>
 
-          <section id="interpretacionSection" class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out" aria-live="polite" aria-busy="false">
+          <section
+            id="interpretacionSection"
+            class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out"
+            aria-live="polite"
+            aria-busy="false"
+          >
             <div class="flex items-center justify-between gap-3 mb-2">
-              <h3 class="text-base font-semibold" style="color: var(--text);">✨ Interpretación</h3>
-              <button type="button" id="closeInterpretacionBtn" title="Mostrar/ocultar interpretación" class="text-xs font-semibold px-2 py-1 rounded transition-colors" style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;">▼ Ocultar</button>
+              <h3 class="text-base font-semibold" style="color: var(--text);">
+                ✨ Interpretación
+              </h3>
+              <button
+                type="button"
+                id="closeInterpretacionBtn"
+                title="Mostrar/ocultar interpretación"
+                class="text-xs font-semibold px-2 py-1 rounded transition-colors"
+                style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;"
+                >▼ Ocultar</button
+              >
             </div>
 
-            <p class="text-sm mb-4" style="color: var(--text-muted);">Consulta la lectura generada por IA sin perder la tirada.</p>
+            <p class="text-sm mb-4" style="color: var(--text-muted);">
+              Consulta la lectura generada por IA sin perder la tirada.
+            </p>
 
             <div id="interpretacionContent" class="hidden">
               <div id="interpretacionLoading" class="hidden text-center py-6">
-              <div class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 mb-3" style="border-color: var(--primary);"></div>
-              <p style="color: var(--text-muted);">Consultando el oráculo...</p>
-            </div>
+                <div
+                  class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 mb-3"
+                  style="border-color: var(--primary);"
+                >
+                </div>
+                <p style="color: var(--text-muted);">
+                  Consultando el oráculo...
+                </p>
+              </div>
 
-            <div id="interpretacionTexto" class="leading-relaxed text-sm mb-4" style="color: var(--text);"></div>
-            
-            <div class="flex gap-2">
-              <button type="button" id="guardarInterpretacionBtn" class="btn-ui btn-ui-primary px-4 py-2 flex-1 text-sm">💾 Guardar</button>
-              <button type="button" id="copiarInterpretacionBtn" class="btn-ui btn-ui-secondary px-4 py-2 flex-1 text-sm">📋 Copiar</button>
+              <div
+                id="interpretacionTexto"
+                class="leading-relaxed text-sm mb-4"
+                style="color: var(--text);"
+              >
+              </div>
+
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  id="guardarInterpretacionBtn"
+                  class="btn-ui btn-ui-primary px-4 py-2 flex-1 text-sm"
+                  >💾 Guardar</button
+                >
+                <button
+                  type="button"
+                  id="copiarInterpretacionBtn"
+                  class="btn-ui btn-ui-secondary px-4 py-2 flex-1 text-sm"
+                  >📋 Copiar</button
+                >
+              </div>
             </div>
           </section>
         </div>
       </aside>
-    </div>
 
-    <section
-      id="cardMeaningModal"
-      class="fixed inset-0 z-50 hidden"
-      aria-hidden="true"
-      role="dialog"
-      aria-labelledby="modalCardName"
-    >
-      <div id="cardMeaningBackdrop" class="absolute inset-0 bg-black/60"></div>
-      <div class="relative h-full w-full overflow-y-auto">
-        <div class="min-h-full flex items-center justify-center p-4">
-          <article class="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden">
-            <header class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-purple-50">
-              <h2 id="modalCardName" class="text-2xl font-bold text-purple-900"></h2>
-              <button
-                id="closeMeaningModalBtn"
-                type="button"
-                class="text-gray-500 hover:text-gray-700 text-2xl leading-none"
-                aria-label="Cerrar significado"
-              >
-                ×
-              </button>
-            </header>
-
-            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div class="md:col-span-1">
-                <img
-                  id="modalCardImage"
-                  src=""
-                  alt=""
-                  class="w-full rounded-lg border border-gray-200"
-                  loading="lazy"
-                />
-                <p id="modalCardMeta" class="mt-3 text-sm text-gray-600 text-center"></p>
-              </div>
-
-              <div class="md:col-span-2 space-y-4">
-                <div class="bg-purple-50 p-4 rounded-lg">
-                  <h3 class="font-semibold text-purple-800">Directo</h3>
-                  <p id="modalCardDirect" class="text-gray-700 mt-1"></p>
-                </div>
-
-                <div class="bg-gray-50 p-4 rounded-lg">
-                  <h3 class="font-semibold text-gray-700">Invertido</h3>
-                  <p id="modalCardInverted" class="text-gray-700 mt-1"></p>
-                </div>
-
-                <div>
-                  <h3 class="font-semibold text-purple-800">Símbolos clave</h3>
-                  <ul id="modalCardSymbols" class="mt-2 list-disc list-inside text-gray-700"></ul>
-                </div>
-
-                <div class="pt-2">
-                  <a
-                    id="modalDetailLink"
-                    href="/cards"
-                    class="inline-block bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-lg transition-colors"
-                  >
-                    Ir a ficha completa
-                  </a>
-                </div>
-              </div>
-            </div>
-          </article>
+      <section
+        id="cardMeaningModal"
+        class="fixed inset-0 z-50 hidden"
+        aria-hidden="true"
+        role="dialog"
+        aria-labelledby="modalCardName"
+      >
+        <div id="cardMeaningBackdrop" class="absolute inset-0 bg-black/60">
         </div>
-      </div>
-    </section>
+        <div class="relative h-full w-full overflow-y-auto">
+          <div class="min-h-full flex items-center justify-center p-4">
+            <article
+              class="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden"
+            >
+              <header
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-purple-50"
+              >
+                <h2
+                  id="modalCardName"
+                  class="text-2xl font-bold text-purple-900"
+                >
+                </h2>
+                <button
+                  id="closeMeaningModalBtn"
+                  type="button"
+                  class="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                  aria-label="Cerrar significado"
+                >
+                  ×
+                </button>
+              </header>
+
+              <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1">
+                  <img
+                    id="modalCardImage"
+                    src=""
+                    alt=""
+                    class="w-full rounded-lg border border-gray-200"
+                    loading="lazy"
+                  />
+                  <p
+                    id="modalCardMeta"
+                    class="mt-3 text-sm text-gray-600 text-center"
+                  >
+                  </p>
+                </div>
+
+                <div class="md:col-span-2 space-y-4">
+                  <div class="bg-purple-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-purple-800">Directo</h3>
+                    <p id="modalCardDirect" class="text-gray-700 mt-1"></p>
+                  </div>
+
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-700">Invertido</h3>
+                    <p id="modalCardInverted" class="text-gray-700 mt-1"></p>
+                  </div>
+
+                  <div>
+                    <h3 class="font-semibold text-purple-800">
+                      Símbolos clave
+                    </h3>
+                    <ul
+                      id="modalCardSymbols"
+                      class="mt-2 list-disc list-inside text-gray-700"
+                    >
+                    </ul>
+                  </div>
+
+                  <div class="pt-2">
+                    <a
+                      id="modalDetailLink"
+                      href="/cards"
+                      class="inline-block bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-lg transition-colors"
+                    >
+                      Ir a ficha completa
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
-</Layout>
 
-<script id="tarot-data" type="application/json" set:html={JSON.stringify({ allCards, arcanosMayores, arcanosMenores })}></script>
+  <script
+    id="tarot-data"
+    type="application/json"
+    set:html={JSON.stringify({ allCards, arcanosMayores, arcanosMenores })}
+  />
 
-<script is:inline>
-(function () {
-  var STORAGE_KEY = 'apptarot_random_reading_v1';
-  var data = null;
-  var cardIndex = null;
-  var isFocusMode = false;
-  var hasActiveReading = false;
+  <script is:inline>
+    (function () {
+      var STORAGE_KEY = "apptarot_random_reading_v1";
+      var data = null;
+      var cardIndex = null;
+      var isFocusMode = false;
+      var hasActiveReading = false;
 
-  function getData() {
-    if (data) return data;
-    var el = document.getElementById('tarot-data');
-    data = el ? JSON.parse(el.textContent) : { allCards: [], arcanosMayores: [], arcanosMenores: [] };
-    return data;
-  }
+      function getData() {
+        if (data) return data;
+        var el = document.getElementById("tarot-data");
+        data = el
+          ? JSON.parse(el.textContent)
+          : { allCards: [], arcanosMayores: [], arcanosMenores: [] };
+        return data;
+      }
 
-  function ensureCardIndex() {
-    if (cardIndex) return;
-    cardIndex = {};
-    getData().allCards.forEach(function (card) {
-      cardIndex[card.id] = card;
-    });
-  }
+      function ensureCardIndex() {
+        if (cardIndex) return;
+        cardIndex = {};
+        getData().allCards.forEach(function (card) {
+          cardIndex[card.id] = card;
+        });
+      }
 
-  function getCardById(cardId) {
-    ensureCardIndex();
-    return cardIndex[cardId] || null;
-  }
+      function getCardById(cardId) {
+        ensureCardIndex();
+        return cardIndex[cardId] || null;
+      }
 
-  var DEFAULT_IMAGE = 'https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg';
+      var DEFAULT_IMAGE =
+        "https://res.cloudinary.com/die8wz4ag/image/upload/v1747796437/a22_mbkkkq.jpg";
 
-  function shuffle(arr) {
-    var a = arr.slice();
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
-    }
-    return a;
-  }
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = a[i];
+          a[i] = a[j];
+          a[j] = tmp;
+        }
+        return a;
+      }
 
-  function fixUrl(url) {
-    if (!url || typeof url !== 'string') return DEFAULT_IMAGE;
-    var c = url.trim();
-    return (c.startsWith('http') || c.startsWith('/')) ? c : DEFAULT_IMAGE;
-  }
+      function fixUrl(url) {
+        if (!url || typeof url !== "string") return DEFAULT_IMAGE;
+        var c = url.trim();
+        return c.startsWith("http") || c.startsWith("/") ? c : DEFAULT_IMAGE;
+      }
 
-  function buildSrc(url) {
-    var clean = fixUrl(url);
-    if (!clean.includes('res.cloudinary.com')) return clean;
-    return clean.replace('/upload/', '/upload/w_380,f_auto,q_auto/');
-  }
+      function buildSrc(url) {
+        var clean = fixUrl(url);
+        if (!clean.includes("res.cloudinary.com")) return clean;
+        return clean.replace("/upload/", "/upload/w_380,f_auto,q_auto/");
+      }
 
-  function identifier(card) {
-    if (card.arcano === 'menor' && card.valor) return card.valor;
-    return card.numero ? String(card.numero) : '';
-  }
+      function identifier(card) {
+        if (card.arcano === "menor" && card.valor) return card.valor;
+        return card.numero ? String(card.numero) : "";
+      }
 
-  function escapeHtml(str) {
-    var d = document.createElement('div');
-    d.textContent = str || '';
-    return d.innerHTML;
-  }
+      function escapeHtml(str) {
+        var d = document.createElement("div");
+        d.textContent = str || "";
+        return d.innerHTML;
+      }
 
-  function detailCardHtml(card, borderClass) {
-    var imgSrc = buildSrc(card.imagem);
-    var id = identifier(card);
-    var label = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
-    var extraClass = borderClass ? (' ' + borderClass) : '';
+      function detailCardHtml(card, borderClass) {
+        var imgSrc = buildSrc(card.imagem);
+        var id = identifier(card);
+        var label = card.arcano === "mayor" ? "Arcano Mayor" : "Arcano Menor";
+        var extraClass = borderClass ? " " + borderClass : "";
 
-    return (
-      '<button type="button" class="carta-random-link carta-detail-trigger" data-card-id="' + card.id + '">' +
-        '<article class="carta-random-container' + extraClass + '">' +
+        return (
+          '<button type="button" class="carta-random-link carta-detail-trigger" data-card-id="' +
+          card.id +
+          '">' +
+          '<article class="carta-random-container' +
+          extraClass +
+          '">' +
           '<div class="carta-random-image-wrapper">' +
-            '<img src="' + imgSrc + '" alt="Carta ' + escapeHtml(card.nombre) + '" loading="lazy" class="carta-random-image" ' +
-              'onerror="this.onerror=null;this.src=\'' + DEFAULT_IMAGE + '\'" />' +
-          '</div>' +
+          '<img src="' +
+          imgSrc +
+          '" alt="Carta ' +
+          escapeHtml(card.nombre) +
+          '" loading="lazy" class="carta-random-image" ' +
+          "onerror=\"this.onerror=null;this.src='" +
+          DEFAULT_IMAGE +
+          "'\" />" +
+          "</div>" +
           '<div class="carta-random-info">' +
-            '<h3 class="carta-random-nombre">' + escapeHtml(card.nombre) + '</h3>' +
-            '<div class="text-sm text-gray-600">' +
-              '<span class="carta-random-numero">' + escapeHtml(id) + '</span>' +
-              '<span class="block text-xs">' + label + '</span>' +
-            '</div>' +
-          '</div>' +
-        '</article>' +
-      '</button>'
-    );
-  }
-
-  function saveReadingState(state) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (e) {
-      console.warn('No se pudo guardar la tirada', e);
-    }
-  }
-
-  function loadReadingState() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      console.warn('No se pudo leer la tirada guardada', e);
-      return null;
-    }
-  }
-
-  function clearReadingState() {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      console.warn('No se pudo limpiar la tirada guardada', e);
-    }
-  }
-
-  function collectCurrentState() {
-    var selectedIds = [];
-    var revealedIds = [];
-    var aclaracionIds = [];
-
-    document.querySelectorAll('#cardsContainer [data-card]').forEach(function (el) {
-      try {
-        var card = JSON.parse(el.dataset.card || '{}');
-        if (card.id) selectedIds.push(card.id);
-        if (el.dataset.revealed === '1' && card.id) revealedIds.push(card.id);
-      } catch (e) {}
-    });
-
-    document.querySelectorAll('#aclaracionContainer [data-card-id]').forEach(function (el) {
-      var id = el.dataset.cardId;
-      if (id && aclaracionIds.indexOf(id) === -1) aclaracionIds.push(id);
-    });
-
-    var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
-    var countEl = document.getElementById('cardCount');
-    var interpretation = document.getElementById('interpretacionTexto');
-
-    return {
-      mode: modeEl ? modeEl.value : 'mixta',
-      count: Math.min(13, Math.max(1, parseInt(countEl ? countEl.value : '3', 10) || 3)),
-      selectedIds: selectedIds,
-      revealedIds: revealedIds,
-      aclaracionIds: aclaracionIds,
-      interpretacionHtml: interpretation ? interpretation.innerHTML : ''
-    };
-  }
-
-  function persistCurrentState() {
-    saveReadingState(collectCurrentState());
-  }
-
-  function bindDetailTrigger(root) {
-    if (!root) return;
-    root.addEventListener('click', function (ev) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      var cardId = root.dataset.cardId;
-      if (!cardId) return;
-      openMeaning(cardId);
-    });
-  }
-
-  function setActionsDisabled(disabled) {
-    ['generateBtn', 'resetBtn', 'aclaracionBtn', 'revelarTodasBtn', 'interpretarBtn'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.disabled = !!disabled;
-      el.classList.toggle('opacity-60', !!disabled);
-      el.classList.toggle('cursor-not-allowed', !!disabled);
-    });
-  }
-
-  function renderRevealedCard(el, card, animate) {
-    el.classList.remove('flippable-card', 'flipping');
-    el.classList.add('revealed-card');
-    if (animate) {
-      el.classList.add('card-revealed');
-    } else {
-      el.classList.remove('card-revealed');
-    }
-    el.style.cursor = 'default';
-    el.innerHTML = detailCardHtml(card, '');
-    bindDetailTrigger(el.querySelector('.carta-detail-trigger'));
-  }
-
-  function revealCard(el, immediate) {
-    if (el.dataset.revealed === '1') return;
-    el.dataset.revealed = '1';
-
-    var card = JSON.parse(el.dataset.card);
-
-    if (immediate) {
-      renderRevealedCard(el, card, false);
-      return;
-    }
-
-    el.classList.add('flipping');
-    setTimeout(function () {
-      renderRevealedCard(el, card, true);
-      persistCurrentState();
-    }, 300);
-  }
-
-  function makeCard(card) {
-    var div = document.createElement('div');
-    div.className = 'carta-random-item flippable-card';
-    div.style.cursor = 'pointer';
-    div.dataset.card = JSON.stringify(card);
-    div.dataset.revealed = '0';
-    div.innerHTML =
-      '<div class="carta-random-container">' +
-        '<div class="carta-random-image-wrapper">' +
-          '<img src="/cardback.jpg" alt="Carta boca abajo" loading="lazy" class="carta-random-image" ' +
-            'onerror="this.onerror=null;this.src=\'' + DEFAULT_IMAGE + '\'" />' +
-        '</div>' +
-        '<div class="carta-random-info">' +
-          '<h3 class="carta-random-nombre">\u00bf?</h3>' +
+          '<h3 class="carta-random-nombre">' +
+          escapeHtml(card.nombre) +
+          "</h3>" +
           '<div class="text-sm text-gray-600">' +
-            '<span class="carta-random-numero">Haz clic para revelar</span>' +
-            '<span class="block text-xs">Carta oculta</span>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    div.addEventListener('click', function () { revealCard(div); });
-    return div;
-  }
-
-
-  function resetSecondarySections() {
-    var ac = document.getElementById('aclaracionContainer');
-    if (ac) ac.innerHTML = '';
-
-    var as_ = document.getElementById('aclaracionSection');
-    if (as_) as_.classList.add('hidden');
-
-    var interpContent = document.getElementById('interpretacionContent');
-    if (interpContent) interpContent.classList.add('hidden');
-
-    var interpTxt = document.getElementById('interpretacionTexto');
-    if (interpTxt) interpTxt.innerHTML = '';
-
-    hasInterpretacion = false;
-  }
-  function barajar() {
-    var d = getData();
-    var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
-    var mode = modeEl ? modeEl.value : 'mixta';
-    var countEl = document.getElementById('cardCount');
-    var count = Math.min(13, Math.max(1, parseInt(countEl ? countEl.value : '3') || 3));
-
-    var pool = mode === 'mayores' ? d.arcanosMayores : d.allCards;
-    var selected = shuffle(pool).slice(0, Math.min(count, pool.length));
-
-    var container = document.getElementById('cardsContainer');
-    if (!container) return;
-    container.innerHTML = '';
-    resetSecondarySections();
-
-    selected.forEach(function (card) {
-      container.appendChild(makeCard(card));
-    });
-
-    var aclaracion = document.getElementById('aclaracionControls');
-    if (aclaracion) aclaracion.classList.remove('hidden');
-
-    var panel = document.getElementById('actionPanel');
-    if (panel) panel.classList.remove('hidden');
-
-    persistCurrentState();
-  }
-
-  function limpiar() {
-    var container = document.getElementById('cardsContainer');
-    if (container) {
-      container.innerHTML =
-        '<div id="initialMessage" class="col-span-full text-center py-12">' +
-          '<p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona &quot;Barajar Cartas&quot;</p>' +
-        '</div>';
-    }
-    resetSecondarySections();
-
-    var acCtrl = document.getElementById('aclaracionControls');
-    if (acCtrl) acCtrl.classList.add('hidden');
-
-    var panel = document.getElementById('actionPanel');
-    if (panel) panel.classList.add('hidden');
-
-    var panelMeaning = document.getElementById('panelMeaningContent');
-    if (panelMeaning) panelMeaning.classList.add('hidden');
-
-    setInterpretarFeedback('hidden');
-    closeMeaningModal();
-    clearReadingState();
-  }
-
-  function makeAclaracionCard(card) {
-    var div = document.createElement('div');
-    div.className = 'carta-aclaracion-item';
-    div.innerHTML = detailCardHtml(card, ' border-amber-300');
-    var trigger = div.querySelector('.carta-detail-trigger');
-    if (trigger) {
-      trigger.dataset.cardId = card.id;
-      bindDetailTrigger(trigger);
-    }
-    return div;
-  }
-
-  function revelarTodas() {
-    var pendientes = [];
-    document.querySelectorAll('.flippable-card[data-revealed="0"]').forEach(function (el) {
-      pendientes.push(el);
-    });
-    if (pendientes.length === 0) return;
-    pendientes.forEach(function (el, i) {
-      setTimeout(function () { revealCard(el); }, i * 180);
-    });
-  }
-
-  function setInterpretarFeedback(state, errorMsg) {
-    var wrapper  = document.getElementById('interpretarFeedback');
-    var elLoad   = document.getElementById('interpretarFeedbackLoading');
-    var elOk     = document.getElementById('interpretarFeedbackOk');
-    var elErr    = document.getElementById('interpretarFeedbackError');
-    var elErrMsg = document.getElementById('interpretarFeedbackErrorMsg');
-    var elWarn = document.getElementById('interpretarFeedbackWarn');
-    var elWarnMsg = document.getElementById('interpretarFeedbackWarnMsg');
-
-    if (!wrapper) return;
-
-    // ocultar todos los estados internos
-    [elLoad, elOk, elErr, elWarn].forEach(function (el) {
-      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
-    });
-
-    if (state === 'hidden') {
-      wrapper.classList.add('hidden');
-      return;
-    }
-
-    wrapper.classList.remove('hidden');
-
-    if (state === 'loading' && elLoad) {
-      elLoad.classList.remove('hidden'); elLoad.classList.add('flex');
-    } else if (state === 'ok' && elOk) {
-      elOk.classList.remove('hidden'); elOk.classList.add('flex');
-    } else if (state === 'error' && elErr) {
-      elErr.classList.remove('hidden'); elErr.classList.add('flex');
-      if (elErrMsg) elErrMsg.textContent = errorMsg || 'Error al generar la interpretación.';
-    } else if (state === 'warn' && elWarn) {
-      elWarn.classList.remove('hidden'); elWarn.classList.add('flex');
-      if (elWarnMsg) elWarnMsg.innerHTML = errorMsg || 'Aviso de cuenta.';
-    }
-  }
-
-  var hasInterpretacion = false;
-
-  function interpretar() {
-    if (hasInterpretacion) {
-      setInterpretarFeedback('warn', '¿Deseas una nueva lectura? <a href="/premium/chat" style="color: var(--primary); font-weight: bold; text-decoration: underline;">Actualiza tu plan</a> para obtener interpretaciones ilimitadas, o bien <strong>baraja de nuevo</strong> para reiniciar la tirada.');
-      return;
-    }
-    var cartasReveladas = [];
-    document.querySelectorAll('[data-revealed="1"]').forEach(function (el) {
-      if (el.dataset.card) {
-        try { cartasReveladas.push(JSON.parse(el.dataset.card)); } catch (e) {}
+          '<span class="carta-random-numero">' +
+          escapeHtml(id) +
+          "</span>" +
+          '<span class="block text-xs">' +
+          label +
+          "</span>" +
+          "</div>" +
+          "</div>" +
+          "</article>" +
+          "</button>"
+        );
       }
-    });
 
-    if (cartasReveladas.length === 0) {
-      alert('Primero revela al menos una carta haciendo clic sobre ella.');
-      return;
-    }
-
-    var content = document.getElementById('interpretacionContent');
-    var loading = document.getElementById('interpretacionLoading');
-    var texto   = document.getElementById('interpretacionTexto');
-    var btn     = document.getElementById('interpretarBtn');
-
-    // Mostrar feedback inline de carga
-    setInterpretarFeedback('loading');
-    setActionsDisabled(true);
-
-    if (loading) loading.classList.remove('hidden');
-    if (texto)   texto.innerHTML = '';
-    if (btn)     { btn.textContent = 'Consultando...'; }
-
-    if (content) content.classList.remove('hidden');
-    if (content) content.setAttribute('aria-busy', 'true');
-
-    fetch('/api/interpretar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cartas: cartasReveladas })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (loading) loading.classList.add('hidden');
-        if (btn)     { btn.textContent = '✨ Interpretar Tirada'; }
-        if (content) content.setAttribute('aria-busy', 'false');
-        setActionsDisabled(false);
-
-        if (data.error) {
-          if (/iniciar sesi[oó]n/i.test(String(data.error))) {
-            setInterpretarFeedback('error', data.error + ' Ve a Mi Perfil para iniciar sesión.');
-            return;
-          }
-          setInterpretarFeedback('error', data.error);
-          return;
+      function saveReadingState(state) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          console.warn("No se pudo guardar la tirada", e);
         }
-
-        if (texto) {
-          var lines = (data.interpretacion || '').split('\n').filter(function (l) { return l.trim(); });
-          texto.innerHTML = lines.map(function (l) {
-            return '<p class="mb-3 italic">' + escapeHtml(l) + '</p>';
-          }).join('');
-          persistCurrentState();
-        }
-
-        hasInterpretacion = true;
-
-        // Actualizar texto del botón toggle
-        var closeBtn = document.getElementById('closeInterpretacionBtn');
-        if (closeBtn) closeBtn.textContent = '▼ Ocultar';
-
-        setInterpretarFeedback('ok');
-
-        if (data.warning) {
-          setTimeout(function () {
-            setInterpretarFeedback('warn', data.warning);
-          }, 1200);
-        }
-      })
-      .catch(function () {
-        if (loading) loading.classList.add('hidden');
-        if (btn)     { btn.textContent = '✨ Interpretar Tirada'; }
-        if (content) content.setAttribute('aria-busy', 'false');
-        setActionsDisabled(false);
-        setInterpretarFeedback('error', 'Error al contactar el servidor. Inténtalo de nuevo.');
-      });
-  }
-
-  function aclaracion() {
-    var d = getData();
-    var menores = shuffle(d.arcanosMenores);
-    var card = menores[0];
-    if (!card) { alert('No hay más arcanos menores disponibles'); return; }
-
-    var sec = document.getElementById('aclaracionSection');
-    if (sec) sec.classList.remove('hidden');
-    var cont = document.getElementById('aclaracionContainer');
-    if (cont) {
-      var cardEl = makeAclaracionCard(card);
-      var trigger = cardEl.querySelector('.carta-detail-trigger');
-      if (trigger) trigger.dataset.cardId = card.id;
-      cont.appendChild(cardEl);
-    }
-
-    // quitar la carta usada del pool en memoria para no repetir
-    d.arcanosMenores = d.arcanosMenores.filter(function (c) { return c.id !== card.id; });
-    persistCurrentState();
-  }
-
-  function renderMeaningPanel(card) {
-    var panel = document.getElementById('panelMeaningContent');
-    var toggleBtn = document.getElementById('toggleMeaningBtn');
-    var name = document.getElementById('panelCardName');
-    var meta = document.getElementById('panelCardMeta');
-    var direct = document.getElementById('panelCardDirect');
-    var inverted = document.getElementById('panelCardInverted');
-    var link = document.getElementById('panelDetailLink');
-
-    if (!panel) return;
-    panel.classList.remove('hidden');
-    if (toggleBtn) toggleBtn.textContent = '▼ Ocultar';
-
-    if (name) name.textContent = card.nombre;
-    if (meta) {
-      var id = identifier(card);
-      var label = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
-      meta.textContent = (id ? (id + ' · ') : '') + label;
-    }
-    if (direct) direct.innerHTML = '<strong>Directo:</strong> ' + escapeHtml(card.significado && card.significado.directo ? card.significado.directo : 'No disponible');
-    if (inverted) inverted.innerHTML = '<strong>Invertido:</strong> ' + escapeHtml(card.significado && card.significado.invertido ? card.significado.invertido : 'No disponible');
-    if (link) link.href = '/cards/' + card.id + '?returnTo=' + encodeURIComponent('/cards/random-cards');
-  }
-
-  function openMeaning(cardId) {
-    var card = getCardById(cardId);
-    if (!card) return;
-
-    var sidePanel = document.getElementById('cardMeaningPanel');
-    var canUsePanel = sidePanel && window.matchMedia('(min-width: 1280px)').matches;
-    if (canUsePanel) {
-      renderMeaningPanel(card);
-      return;
-    }
-
-    openMeaningModal(cardId);
-  }
-
-  function openMeaningModal(cardId) {
-    var card = getCardById(cardId);
-    if (!card) return;
-
-    var modal = document.getElementById('cardMeaningModal');
-    var title = document.getElementById('modalCardName');
-    var image = document.getElementById('modalCardImage');
-    var meta = document.getElementById('modalCardMeta');
-    var direct = document.getElementById('modalCardDirect');
-    var inverted = document.getElementById('modalCardInverted');
-    var symbols = document.getElementById('modalCardSymbols');
-    var detailLink = document.getElementById('modalDetailLink');
-
-    if (title) title.textContent = card.nombre;
-    if (image) {
-      image.src = buildSrc(card.imagem);
-      image.alt = 'Carta ' + card.nombre;
-      image.onerror = function () {
-        this.onerror = null;
-        this.src = DEFAULT_IMAGE;
-      };
-    }
-
-    if (meta) {
-      var id = identifier(card);
-      var label = card.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
-      meta.textContent = (id ? (id + ' · ') : '') + label;
-    }
-
-    if (direct) direct.textContent = card.significado && card.significado.directo ? card.significado.directo : 'No disponible';
-    if (inverted) inverted.textContent = card.significado && card.significado.invertido ? card.significado.invertido : 'No disponible';
-
-    if (symbols) {
-      var symbolsList = (card.simbolos && card.simbolos.principales) ? card.simbolos.principales : [];
-      symbols.innerHTML = symbolsList.length
-        ? symbolsList.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('')
-        : '<li>No hay símbolos registrados.</li>';
-    }
-
-    if (detailLink) {
-      detailLink.href = '/cards/' + card.id + '?returnTo=' + encodeURIComponent('/cards/random-cards');
-    }
-
-    if (modal) {
-      modal.classList.remove('hidden');
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('overflow-hidden');
-    }
-  }
-
-  function closeMeaningModal() {
-    var modal = document.getElementById('cardMeaningModal');
-    if (!modal) return;
-    modal.classList.add('hidden');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('overflow-hidden');
-  }
-
-  function setupMeaningModalEvents() {
-    var closeBtn = document.getElementById('closeMeaningModalBtn');
-    if (closeBtn) closeBtn.addEventListener('click', closeMeaningModal);
-
-    var backdrop = document.getElementById('cardMeaningBackdrop');
-    if (backdrop) backdrop.addEventListener('click', closeMeaningModal);
-
-    document.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape') closeMeaningModal();
-    });
-  }
-
-  function restoreReadingState() {
-    var state = loadReadingState();
-    if (!state || !Array.isArray(state.selectedIds) || state.selectedIds.length === 0) return;
-
-    if (state.mode) {
-      var modeInput = document.querySelector('input[name="tiradaMode"][value="' + state.mode + '"]');
-      if (modeInput) modeInput.checked = true;
-    }
-
-    var countEl = document.getElementById('cardCount');
-    if (countEl && state.count) countEl.value = String(state.count);
-
-    var selectedCards = state.selectedIds.map(getCardById).filter(function (card) { return !!card; });
-    if (selectedCards.length === 0) {
-      clearReadingState();
-      return;
-    }
-
-    var container = document.getElementById('cardsContainer');
-    if (!container) return;
-    container.innerHTML = '';
-
-    selectedCards.forEach(function (card) {
-      var cardEl = makeCard(card);
-      container.appendChild(cardEl);
-      if (Array.isArray(state.revealedIds) && state.revealedIds.indexOf(card.id) >= 0) {
-        revealCard(cardEl, true);
       }
-    });
 
-    var acCtrl = document.getElementById('aclaracionControls');
-    if (acCtrl) acCtrl.classList.remove('hidden');
-
-    var panel = document.getElementById('actionPanel');
-    if (panel) panel.classList.remove('hidden');
-
-    var sec = document.getElementById('aclaracionSection');
-    var cont = document.getElementById('aclaracionContainer');
-    if (cont && Array.isArray(state.aclaracionIds) && state.aclaracionIds.length > 0) {
-      if (sec) sec.classList.remove('hidden');
-      state.aclaracionIds.forEach(function (id) {
-        var card = getCardById(id);
-        if (!card) return;
-        cont.appendChild(makeAclaracionCard(card));
-      });
-
-      var d = getData();
-      d.arcanosMenores = d.arcanosMenores.filter(function (c) {
-        return state.aclaracionIds.indexOf(c.id) === -1;
-      });
-    }
-
-    var interpContent = document.getElementById('interpretacionContent');
-    var interpTxt = document.getElementById('interpretacionTexto');
-    if (interpTxt && state.interpretacionHtml) {
-      interpTxt.innerHTML = state.interpretacionHtml;
-      if (interpContent) interpContent.classList.remove('hidden');
-    }
-
-    setHasActiveReading(true);
-    setFocusMode(false);
-  }
-
-  function init() {
-    var btnBarajar = document.getElementById('generateBtn');
-    if (btnBarajar) btnBarajar.addEventListener('click', barajar);
-
-    var btnLimpiar = document.getElementById('resetBtn');
-    if (btnLimpiar) btnLimpiar.addEventListener('click', limpiar);
-
-    var btnAclaracion = document.getElementById('aclaracionBtn');
-    if (btnAclaracion) btnAclaracion.addEventListener('click', aclaracion);
-
-    var btnRevelarTodas = document.getElementById('revelarTodasBtn');
-    if (btnRevelarTodas) btnRevelarTodas.addEventListener('click', revelarTodas);
-
-    var btnToggleMeaning = document.getElementById('toggleMeaningBtn');
-    if (btnToggleMeaning) {
-      btnToggleMeaning.addEventListener('click', function () {
-        var content = document.getElementById('panelMeaningContent');
-        if (!content) return;
-        var isHidden = content.classList.contains('hidden');
-        content.classList.toggle('hidden');
-        btnToggleMeaning.textContent = isHidden ? '▼ Ocultar' : '▶ Ver significado';
-      });
-    }
-
-    var btnInterpretar = document.getElementById('interpretarBtn');
-    if (btnInterpretar) btnInterpretar.addEventListener('click', interpretar);
-
-    var btnScrollInterp = document.getElementById('interpretarScrollBtn');
-    if (btnScrollInterp) {
-      btnScrollInterp.addEventListener('click', function () {
-        var sec = document.getElementById('interpretacionSection');
-        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
-
-
-    var btnCloseInterp = document.getElementById('closeInterpretacionBtn');
-    if (btnCloseInterp) {
-      btnCloseInterp.addEventListener('click', function () {
-        var content = document.getElementById('interpretacionContent');
-        if (!content) return;
-        var isHidden = content.classList.contains('hidden');
-        content.classList.toggle('hidden');
-        btnCloseInterp.textContent = isHidden ? '▼ Ocultar' : '▶ Ver interpretación';
-      });
-    }
-    var btnCopiarInterp = document.getElementById('copiarInterpretacionBtn');
-    if (btnCopiarInterp) {
-      btnCopiarInterp.addEventListener('click', function () {
-        var txt = document.getElementById('interpretacionTexto');
-        if (!txt || !txt.textContent) {
-          alert('No hay interpretación para copiar');
-          return;
+      function loadReadingState() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          console.warn("No se pudo leer la tirada guardada", e);
+          return null;
         }
-        var text = txt.textContent;
-        navigator.clipboard.writeText(text).then(function () {
-          var old = btnCopiarInterp.textContent;
-          btnCopiarInterp.textContent = '✓ Copiado';
-          setTimeout(function () { btnCopiarInterp.textContent = old; }, 1500);
-        }).catch(function () {
-          alert('No se pudo copiar al portapapeles');
-        });
-      });
-    }
+      }
 
-    var btnGuardarInterp = document.getElementById('guardarInterpretacionBtn');
-    if (btnGuardarInterp) {
-      btnGuardarInterp.addEventListener('click', function () {
-        var txt = document.getElementById('interpretacionTexto');
-        if (!txt || !txt.textContent) {
-          alert('No hay interpretación para guardar');
-          return;
+      function clearReadingState() {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {
+          console.warn("No se pudo limpiar la tirada guardada", e);
         }
+      }
 
+      function collectCurrentState() {
         var selectedIds = [];
-        document.querySelectorAll('#cardsContainer [data-card]').forEach(function (el) {
-          try {
-            var card = JSON.parse(el.dataset.card || '{}');
-            if (card.id && el.dataset.revealed === '1') selectedIds.push(card.id);
-          } catch (e) {}
-        });
+        var revealedIds = [];
+        var aclaracionIds = [];
 
-        if (selectedIds.length === 0) {
-          alert('Primero revela al menos una carta');
-          return;
-        }
+        document
+          .querySelectorAll("#cardsContainer [data-card]")
+          .forEach(function (el) {
+            try {
+              var card = JSON.parse(el.dataset.card || "{}");
+              if (card.id) selectedIds.push(card.id);
+              if (el.dataset.revealed === "1" && card.id)
+                revealedIds.push(card.id);
+            } catch (e) {}
+          });
+
+        document
+          .querySelectorAll("#aclaracionContainer [data-card-id]")
+          .forEach(function (el) {
+            var id = el.dataset.cardId;
+            if (id && aclaracionIds.indexOf(id) === -1) aclaracionIds.push(id);
+          });
 
         var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
-        var mode = modeEl ? modeEl.value : 'mixta';
-        var interpretacion = txt.textContent;
+        var countEl = document.getElementById("cardCount");
+        var interpretation = document.getElementById("interpretacionTexto");
 
-        btnGuardarInterp.disabled = true;
-        btnGuardarInterp.textContent = 'Guardando...';
+        return {
+          mode: modeEl ? modeEl.value : "mixta",
+          count: Math.min(
+            13,
+            Math.max(1, parseInt(countEl ? countEl.value : "3", 10) || 3),
+          ),
+          selectedIds: selectedIds,
+          revealedIds: revealedIds,
+          aclaracionIds: aclaracionIds,
+          interpretacionHtml: interpretation ? interpretation.innerHTML : "",
+        };
+      }
 
-        fetch('/api/readings/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            cards: selectedIds,
-            mode: mode,
-            interpretation: interpretacion,
-            date: new Date().toISOString()
-          })
+      function persistCurrentState() {
+        saveReadingState(collectCurrentState());
+      }
+
+      function bindDetailTrigger(root) {
+        if (!root) return;
+        root.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var cardId = root.dataset.cardId;
+          if (!cardId) return;
+          openMeaning(cardId);
+        });
+      }
+
+      function setActionsDisabled(disabled) {
+        [
+          "generateBtn",
+          "resetBtn",
+          "aclaracionBtn",
+          "revelarTodasBtn",
+          "interpretarBtn",
+        ].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.disabled = !!disabled;
+          el.classList.toggle("opacity-60", !!disabled);
+          el.classList.toggle("cursor-not-allowed", !!disabled);
+        });
+      }
+
+      function renderRevealedCard(el, card, animate) {
+        el.classList.remove("flippable-card", "flipping");
+        el.classList.add("revealed-card");
+        if (animate) {
+          el.classList.add("card-revealed");
+        } else {
+          el.classList.remove("card-revealed");
+        }
+        el.style.cursor = "default";
+        el.innerHTML = detailCardHtml(card, "");
+        bindDetailTrigger(el.querySelector(".carta-detail-trigger"));
+      }
+
+      function revealCard(el, immediate) {
+        if (el.dataset.revealed === "1") return;
+        el.dataset.revealed = "1";
+
+        var card = JSON.parse(el.dataset.card);
+
+        if (immediate) {
+          renderRevealedCard(el, card, false);
+          return;
+        }
+
+        el.classList.add("flipping");
+        setTimeout(function () {
+          renderRevealedCard(el, card, true);
+          persistCurrentState();
+        }, 300);
+      }
+
+      function makeCard(card) {
+        var div = document.createElement("div");
+        div.className = "carta-random-item flippable-card";
+        div.style.cursor = "pointer";
+        div.dataset.card = JSON.stringify(card);
+        div.dataset.revealed = "0";
+        div.innerHTML =
+          '<div class="carta-random-container">' +
+          '<div class="carta-random-image-wrapper">' +
+          '<img src="/cardback.jpg" alt="Carta boca abajo" loading="lazy" class="carta-random-image" ' +
+          "onerror=\"this.onerror=null;this.src='" +
+          DEFAULT_IMAGE +
+          "'\" />" +
+          "</div>" +
+          '<div class="carta-random-info">' +
+          '<h3 class="carta-random-nombre">\u00bf?</h3>' +
+          '<div class="text-sm text-gray-600">' +
+          '<span class="carta-random-numero">Haz clic para revelar</span>' +
+          '<span class="block text-xs">Carta oculta</span>' +
+          "</div>" +
+          "</div>" +
+          "</div>";
+        div.addEventListener("click", function () {
+          revealCard(div);
+        });
+        return div;
+      }
+
+      function resetSecondarySections() {
+        var ac = document.getElementById("aclaracionContainer");
+        if (ac) ac.innerHTML = "";
+
+        var as_ = document.getElementById("aclaracionSection");
+        if (as_) as_.classList.add("hidden");
+
+        var interpContent = document.getElementById("interpretacionContent");
+        if (interpContent) interpContent.classList.add("hidden");
+
+        var interpTxt = document.getElementById("interpretacionTexto");
+        if (interpTxt) interpTxt.innerHTML = "";
+
+        hasInterpretacion = false;
+      }
+      function barajar() {
+        var d = getData();
+        var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
+        var mode = modeEl ? modeEl.value : "mixta";
+        var countEl = document.getElementById("cardCount");
+        var count = Math.min(
+          13,
+          Math.max(1, parseInt(countEl ? countEl.value : "3") || 3),
+        );
+
+        var pool = mode === "mayores" ? d.arcanosMayores : d.allCards;
+        var selected = shuffle(pool).slice(0, Math.min(count, pool.length));
+
+        var container = document.getElementById("cardsContainer");
+        if (!container) return;
+        container.innerHTML = "";
+        resetSecondarySections();
+
+        selected.forEach(function (card) {
+          container.appendChild(makeCard(card));
+        });
+
+        var aclaracion = document.getElementById("aclaracionControls");
+        if (aclaracion) aclaracion.classList.remove("hidden");
+
+        var panel = document.getElementById("actionPanel");
+        if (panel) panel.classList.remove("hidden");
+
+        persistCurrentState();
+      }
+
+      function limpiar() {
+        var container = document.getElementById("cardsContainer");
+        if (container) {
+          container.innerHTML =
+            '<div id="initialMessage" class="col-span-full text-center py-12">' +
+            '<p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona &quot;Barajar Cartas&quot;</p>' +
+            "</div>";
+        }
+        resetSecondarySections();
+
+        var acCtrl = document.getElementById("aclaracionControls");
+        if (acCtrl) acCtrl.classList.add("hidden");
+
+        var panel = document.getElementById("actionPanel");
+        if (panel) panel.classList.add("hidden");
+
+        var panelMeaning = document.getElementById("panelMeaningContent");
+        if (panelMeaning) panelMeaning.classList.add("hidden");
+
+        setInterpretarFeedback("hidden");
+        closeMeaningModal();
+        clearReadingState();
+      }
+
+      function makeAclaracionCard(card) {
+        var div = document.createElement("div");
+        div.className = "carta-aclaracion-item";
+        div.innerHTML = detailCardHtml(card, " border-amber-300");
+        var trigger = div.querySelector(".carta-detail-trigger");
+        if (trigger) {
+          trigger.dataset.cardId = card.id;
+          bindDetailTrigger(trigger);
+        }
+        return div;
+      }
+
+      function revelarTodas() {
+        var pendientes = [];
+        document
+          .querySelectorAll('.flippable-card[data-revealed="0"]')
+          .forEach(function (el) {
+            pendientes.push(el);
+          });
+        if (pendientes.length === 0) return;
+        pendientes.forEach(function (el, i) {
+          setTimeout(function () {
+            revealCard(el);
+          }, i * 180);
+        });
+      }
+
+      function setInterpretarFeedback(state, errorMsg) {
+        var wrapper = document.getElementById("interpretarFeedback");
+        var elLoad = document.getElementById("interpretarFeedbackLoading");
+        var elOk = document.getElementById("interpretarFeedbackOk");
+        var elErr = document.getElementById("interpretarFeedbackError");
+        var elErrMsg = document.getElementById("interpretarFeedbackErrorMsg");
+        var elWarn = document.getElementById("interpretarFeedbackWarn");
+        var elWarnMsg = document.getElementById("interpretarFeedbackWarnMsg");
+
+        if (!wrapper) return;
+
+        // ocultar todos los estados internos
+        [elLoad, elOk, elErr, elWarn].forEach(function (el) {
+          if (el) {
+            el.classList.add("hidden");
+            el.classList.remove("flex");
+          }
+        });
+
+        if (state === "hidden") {
+          wrapper.classList.add("hidden");
+          return;
+        }
+
+        wrapper.classList.remove("hidden");
+
+        if (state === "loading" && elLoad) {
+          elLoad.classList.remove("hidden");
+          elLoad.classList.add("flex");
+        } else if (state === "ok" && elOk) {
+          elOk.classList.remove("hidden");
+          elOk.classList.add("flex");
+        } else if (state === "error" && elErr) {
+          elErr.classList.remove("hidden");
+          elErr.classList.add("flex");
+          if (elErrMsg)
+            elErrMsg.textContent =
+              errorMsg || "Error al generar la interpretación.";
+        } else if (state === "warn" && elWarn) {
+          elWarn.classList.remove("hidden");
+          elWarn.classList.add("flex");
+          if (elWarnMsg) elWarnMsg.innerHTML = errorMsg || "Aviso de cuenta.";
+        }
+      }
+
+      var hasInterpretacion = false;
+
+      function interpretar() {
+        if (hasInterpretacion) {
+          setInterpretarFeedback(
+            "warn",
+            '¿Deseas una nueva lectura? <a href="/premium/chat" style="color: var(--primary); font-weight: bold; text-decoration: underline;">Actualiza tu plan</a> para obtener interpretaciones ilimitadas, o bien <strong>baraja de nuevo</strong> para reiniciar la tirada.',
+          );
+          return;
+        }
+        var cartasReveladas = [];
+        document.querySelectorAll('[data-revealed="1"]').forEach(function (el) {
+          if (el.dataset.card) {
+            try {
+              cartasReveladas.push(JSON.parse(el.dataset.card));
+            } catch (e) {}
+          }
+        });
+
+        if (cartasReveladas.length === 0) {
+          alert("Primero revela al menos una carta haciendo clic sobre ella.");
+          return;
+        }
+
+        var content = document.getElementById("interpretacionContent");
+        var loading = document.getElementById("interpretacionLoading");
+        var texto = document.getElementById("interpretacionTexto");
+        var btn = document.getElementById("interpretarBtn");
+
+        // Mostrar feedback inline de carga
+        setInterpretarFeedback("loading");
+        setActionsDisabled(true);
+
+        if (loading) loading.classList.remove("hidden");
+        if (texto) texto.innerHTML = "";
+        if (btn) {
+          btn.textContent = "Consultando...";
+        }
+
+        if (content) content.classList.remove("hidden");
+        if (content) content.setAttribute("aria-busy", "true");
+
+        fetch("/api/interpretar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartas: cartasReveladas }),
         })
-          .then(function (res) { return res.json(); })
+          .then(function (res) {
+            return res.json();
+          })
           .then(function (data) {
-            if (data.ok) {
-              var old = btnGuardarInterp.textContent;
-              btnGuardarInterp.textContent = '✓ Guardado';
+            if (loading) loading.classList.add("hidden");
+            if (btn) {
+              btn.textContent = "✨ Interpretar Tirada";
+            }
+            if (content) content.setAttribute("aria-busy", "false");
+            setActionsDisabled(false);
+
+            if (data.error) {
+              if (/iniciar sesi[oó]n/i.test(String(data.error))) {
+                setInterpretarFeedback(
+                  "error",
+                  data.error + " Ve a Mi Perfil para iniciar sesión.",
+                );
+                return;
+              }
+              setInterpretarFeedback("error", data.error);
+              return;
+            }
+
+            if (texto) {
+              var lines = (data.interpretacion || "")
+                .split("\n")
+                .filter(function (l) {
+                  return l.trim();
+                });
+              texto.innerHTML = lines
+                .map(function (l) {
+                  return '<p class="mb-3 italic">' + escapeHtml(l) + "</p>";
+                })
+                .join("");
+              persistCurrentState();
+            }
+
+            hasInterpretacion = true;
+
+            // Actualizar texto del botón toggle
+            var closeBtn = document.getElementById("closeInterpretacionBtn");
+            if (closeBtn) closeBtn.textContent = "▼ Ocultar";
+
+            setInterpretarFeedback("ok");
+
+            if (data.warning) {
               setTimeout(function () {
-                btnGuardarInterp.textContent = old;
-                btnGuardarInterp.disabled = false;
-              }, 1500);
-            } else {
-              throw new Error(data.error || 'Error desconocido');
+                setInterpretarFeedback("warn", data.warning);
+              }, 1200);
             }
           })
-          .catch(function (err) {
-            alert('Error al guardar: ' + (err instanceof Error ? err.message : 'Error desconocido'));
-            btnGuardarInterp.textContent = '💾 Guardar';
-            btnGuardarInterp.disabled = false;
+          .catch(function () {
+            if (loading) loading.classList.add("hidden");
+            if (btn) {
+              btn.textContent = "✨ Interpretar Tirada";
+            }
+            if (content) content.setAttribute("aria-busy", "false");
+            setActionsDisabled(false);
+            setInterpretarFeedback(
+              "error",
+              "Error al contactar el servidor. Inténtalo de nuevo.",
+            );
           });
-      });
+      }
+
+      function aclaracion() {
+        var d = getData();
+        var menores = shuffle(d.arcanosMenores);
+        var card = menores[0];
+        if (!card) {
+          alert("No hay más arcanos menores disponibles");
+          return;
+        }
+
+        var sec = document.getElementById("aclaracionSection");
+        if (sec) sec.classList.remove("hidden");
+        var cont = document.getElementById("aclaracionContainer");
+        if (cont) {
+          var cardEl = makeAclaracionCard(card);
+          var trigger = cardEl.querySelector(".carta-detail-trigger");
+          if (trigger) trigger.dataset.cardId = card.id;
+          cont.appendChild(cardEl);
+        }
+
+        // quitar la carta usada del pool en memoria para no repetir
+        d.arcanosMenores = d.arcanosMenores.filter(function (c) {
+          return c.id !== card.id;
+        });
+        persistCurrentState();
+      }
+
+      function renderMeaningPanel(card) {
+        var panel = document.getElementById("panelMeaningContent");
+        var toggleBtn = document.getElementById("toggleMeaningBtn");
+        var name = document.getElementById("panelCardName");
+        var meta = document.getElementById("panelCardMeta");
+        var direct = document.getElementById("panelCardDirect");
+        var inverted = document.getElementById("panelCardInverted");
+        var link = document.getElementById("panelDetailLink");
+
+        if (!panel) return;
+        panel.classList.remove("hidden");
+        if (toggleBtn) toggleBtn.textContent = "▼ Ocultar";
+
+        if (name) name.textContent = card.nombre;
+        if (meta) {
+          var id = identifier(card);
+          var label = card.arcano === "mayor" ? "Arcano Mayor" : "Arcano Menor";
+          meta.textContent = (id ? id + " · " : "") + label;
+        }
+        if (direct)
+          direct.innerHTML =
+            "<strong>Directo:</strong> " +
+            escapeHtml(
+              card.significado && card.significado.directo
+                ? card.significado.directo
+                : "No disponible",
+            );
+        if (inverted)
+          inverted.innerHTML =
+            "<strong>Invertido:</strong> " +
+            escapeHtml(
+              card.significado && card.significado.invertido
+                ? card.significado.invertido
+                : "No disponible",
+            );
+        if (link)
+          link.href =
+            "/cards/" +
+            card.id +
+            "?returnTo=" +
+            encodeURIComponent("/cards/random-cards");
+      }
+
+      function openMeaning(cardId) {
+        var card = getCardById(cardId);
+        if (!card) return;
+
+        var sidePanel = document.getElementById("cardMeaningPanel");
+        var canUsePanel =
+          sidePanel && window.matchMedia("(min-width: 1280px)").matches;
+        if (canUsePanel) {
+          renderMeaningPanel(card);
+          return;
+        }
+
+        openMeaningModal(cardId);
+      }
+
+      function openMeaningModal(cardId) {
+        var card = getCardById(cardId);
+        if (!card) return;
+
+        var modal = document.getElementById("cardMeaningModal");
+        var title = document.getElementById("modalCardName");
+        var image = document.getElementById("modalCardImage");
+        var meta = document.getElementById("modalCardMeta");
+        var direct = document.getElementById("modalCardDirect");
+        var inverted = document.getElementById("modalCardInverted");
+        var symbols = document.getElementById("modalCardSymbols");
+        var detailLink = document.getElementById("modalDetailLink");
+
+        if (title) title.textContent = card.nombre;
+        if (image) {
+          image.src = buildSrc(card.imagem);
+          image.alt = "Carta " + card.nombre;
+          image.onerror = function () {
+            this.onerror = null;
+            this.src = DEFAULT_IMAGE;
+          };
+        }
+
+        if (meta) {
+          var id = identifier(card);
+          var label = card.arcano === "mayor" ? "Arcano Mayor" : "Arcano Menor";
+          meta.textContent = (id ? id + " · " : "") + label;
+        }
+
+        if (direct)
+          direct.textContent =
+            card.significado && card.significado.directo
+              ? card.significado.directo
+              : "No disponible";
+        if (inverted)
+          inverted.textContent =
+            card.significado && card.significado.invertido
+              ? card.significado.invertido
+              : "No disponible";
+
+        if (symbols) {
+          var symbolsList =
+            card.simbolos && card.simbolos.principales
+              ? card.simbolos.principales
+              : [];
+          symbols.innerHTML = symbolsList.length
+            ? symbolsList
+                .map(function (s) {
+                  return "<li>" + escapeHtml(s) + "</li>";
+                })
+                .join("")
+            : "<li>No hay símbolos registrados.</li>";
+        }
+
+        if (detailLink) {
+          detailLink.href =
+            "/cards/" +
+            card.id +
+            "?returnTo=" +
+            encodeURIComponent("/cards/random-cards");
+        }
+
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("overflow-hidden");
+        }
+      }
+
+      function closeMeaningModal() {
+        var modal = document.getElementById("cardMeaningModal");
+        if (!modal) return;
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("overflow-hidden");
+      }
+
+      function setupMeaningModalEvents() {
+        var closeBtn = document.getElementById("closeMeaningModalBtn");
+        if (closeBtn) closeBtn.addEventListener("click", closeMeaningModal);
+
+        var backdrop = document.getElementById("cardMeaningBackdrop");
+        if (backdrop) backdrop.addEventListener("click", closeMeaningModal);
+
+        document.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape") closeMeaningModal();
+        });
+      }
+
+      function restoreReadingState() {
+        var state = loadReadingState();
+        if (
+          !state ||
+          !Array.isArray(state.selectedIds) ||
+          state.selectedIds.length === 0
+        )
+          return;
+
+        if (state.mode) {
+          var modeInput = document.querySelector(
+            'input[name="tiradaMode"][value="' + state.mode + '"]',
+          );
+          if (modeInput) modeInput.checked = true;
+        }
+
+        var countEl = document.getElementById("cardCount");
+        if (countEl && state.count) countEl.value = String(state.count);
+
+        var selectedCards = state.selectedIds
+          .map(getCardById)
+          .filter(function (card) {
+            return !!card;
+          });
+        if (selectedCards.length === 0) {
+          clearReadingState();
+          return;
+        }
+
+        var container = document.getElementById("cardsContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        selectedCards.forEach(function (card) {
+          var cardEl = makeCard(card);
+          container.appendChild(cardEl);
+          if (
+            Array.isArray(state.revealedIds) &&
+            state.revealedIds.indexOf(card.id) >= 0
+          ) {
+            revealCard(cardEl, true);
+          }
+        });
+
+        var acCtrl = document.getElementById("aclaracionControls");
+        if (acCtrl) acCtrl.classList.remove("hidden");
+
+        var panel = document.getElementById("actionPanel");
+        if (panel) panel.classList.remove("hidden");
+
+        var sec = document.getElementById("aclaracionSection");
+        var cont = document.getElementById("aclaracionContainer");
+        if (
+          cont &&
+          Array.isArray(state.aclaracionIds) &&
+          state.aclaracionIds.length > 0
+        ) {
+          if (sec) sec.classList.remove("hidden");
+          state.aclaracionIds.forEach(function (id) {
+            var card = getCardById(id);
+            if (!card) return;
+            cont.appendChild(makeAclaracionCard(card));
+          });
+
+          var d = getData();
+          d.arcanosMenores = d.arcanosMenores.filter(function (c) {
+            return state.aclaracionIds.indexOf(c.id) === -1;
+          });
+        }
+
+        var interpContent = document.getElementById("interpretacionContent");
+        var interpTxt = document.getElementById("interpretacionTexto");
+        if (interpTxt && state.interpretacionHtml) {
+          interpTxt.innerHTML = state.interpretacionHtml;
+          if (interpContent) interpContent.classList.remove("hidden");
+        }
+
+        setHasActiveReading(true);
+        setFocusMode(false);
+      }
+
+      function init() {
+        var btnBarajar = document.getElementById("generateBtn");
+        if (btnBarajar) btnBarajar.addEventListener("click", barajar);
+
+        var btnLimpiar = document.getElementById("resetBtn");
+        if (btnLimpiar) btnLimpiar.addEventListener("click", limpiar);
+
+        var btnAclaracion = document.getElementById("aclaracionBtn");
+        if (btnAclaracion) btnAclaracion.addEventListener("click", aclaracion);
+
+        var btnRevelarTodas = document.getElementById("revelarTodasBtn");
+        if (btnRevelarTodas)
+          btnRevelarTodas.addEventListener("click", revelarTodas);
+
+        var btnToggleMeaning = document.getElementById("toggleMeaningBtn");
+        if (btnToggleMeaning) {
+          btnToggleMeaning.addEventListener("click", function () {
+            var content = document.getElementById("panelMeaningContent");
+            if (!content) return;
+            var isHidden = content.classList.contains("hidden");
+            content.classList.toggle("hidden");
+            btnToggleMeaning.textContent = isHidden
+              ? "▼ Ocultar"
+              : "▶ Ver significado";
+          });
+        }
+
+        var btnInterpretar = document.getElementById("interpretarBtn");
+        if (btnInterpretar)
+          btnInterpretar.addEventListener("click", interpretar);
+
+        var btnScrollInterp = document.getElementById("interpretarScrollBtn");
+        if (btnScrollInterp) {
+          btnScrollInterp.addEventListener("click", function () {
+            var sec = document.getElementById("interpretacionSection");
+            if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }
+
+        var btnCloseInterp = document.getElementById("closeInterpretacionBtn");
+        if (btnCloseInterp) {
+          btnCloseInterp.addEventListener("click", function () {
+            var content = document.getElementById("interpretacionContent");
+            if (!content) return;
+            var isHidden = content.classList.contains("hidden");
+            content.classList.toggle("hidden");
+            btnCloseInterp.textContent = isHidden
+              ? "▼ Ocultar"
+              : "▶ Ver interpretación";
+          });
+        }
+        var btnCopiarInterp = document.getElementById(
+          "copiarInterpretacionBtn",
+        );
+        if (btnCopiarInterp) {
+          btnCopiarInterp.addEventListener("click", function () {
+            var txt = document.getElementById("interpretacionTexto");
+            if (!txt || !txt.textContent) {
+              alert("No hay interpretación para copiar");
+              return;
+            }
+            var text = txt.textContent;
+            navigator.clipboard
+              .writeText(text)
+              .then(function () {
+                var old = btnCopiarInterp.textContent;
+                btnCopiarInterp.textContent = "✓ Copiado";
+                setTimeout(function () {
+                  btnCopiarInterp.textContent = old;
+                }, 1500);
+              })
+              .catch(function () {
+                alert("No se pudo copiar al portapapeles");
+              });
+          });
+        }
+
+        var btnGuardarInterp = document.getElementById(
+          "guardarInterpretacionBtn",
+        );
+        if (btnGuardarInterp) {
+          btnGuardarInterp.addEventListener("click", function () {
+            var txt = document.getElementById("interpretacionTexto");
+            if (!txt || !txt.textContent) {
+              alert("No hay interpretación para guardar");
+              return;
+            }
+
+            var selectedIds = [];
+            document
+              .querySelectorAll("#cardsContainer [data-card]")
+              .forEach(function (el) {
+                try {
+                  var card = JSON.parse(el.dataset.card || "{}");
+                  if (card.id && el.dataset.revealed === "1")
+                    selectedIds.push(card.id);
+                } catch (e) {}
+              });
+
+            if (selectedIds.length === 0) {
+              alert("Primero revela al menos una carta");
+              return;
+            }
+
+            var modeEl = document.querySelector(
+              'input[name="tiradaMode"]:checked',
+            );
+            var mode = modeEl ? modeEl.value : "mixta";
+            var interpretacion = txt.textContent;
+
+            btnGuardarInterp.disabled = true;
+            btnGuardarInterp.textContent = "Guardando...";
+
+            fetch("/api/readings/save", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cards: selectedIds,
+                mode: mode,
+                interpretation: interpretacion,
+                date: new Date().toISOString(),
+              }),
+            })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (data) {
+                if (data.ok) {
+                  var old = btnGuardarInterp.textContent;
+                  btnGuardarInterp.textContent = "✓ Guardado";
+                  setTimeout(function () {
+                    btnGuardarInterp.textContent = old;
+                    btnGuardarInterp.disabled = false;
+                  }, 1500);
+                } else {
+                  throw new Error(data.error || "Error desconocido");
+                }
+              })
+              .catch(function (err) {
+                alert(
+                  "Error al guardar: " +
+                    (err instanceof Error ? err.message : "Error desconocido"),
+                );
+                btnGuardarInterp.textContent = "💾 Guardar";
+                btnGuardarInterp.disabled = false;
+              });
+          });
+        }
+
+        setupMeaningModalEvents();
+
+        // Limpiar estado de lectura anterior si es la primera carga de esta sesión
+        var sessionMarker = "apptarot_reading_session_loaded";
+        if (!sessionStorage.getItem(sessionMarker)) {
+          clearReadingState();
+          sessionStorage.setItem(sessionMarker, "1");
+        }
+
+        restoreReadingState();
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+
+  <style>
+    .flippable-card {
+      @apply transition-transform duration-300;
+      transform-origin: center center;
     }
 
-    setupMeaningModalEvents();
-
-    // Limpiar estado de lectura anterior si es la primera carga de esta sesión
-    var sessionMarker = 'apptarot_reading_session_loaded';
-    if (!sessionStorage.getItem(sessionMarker)) {
-      clearReadingState();
-      sessionStorage.setItem(sessionMarker, '1');
+    .flippable-card:hover {
+      @apply scale-105;
     }
 
-    restoreReadingState();
-  }
+    .flipping {
+      @apply scale-110;
+      transform: scale(1.1) rotateY(180deg);
+      transition: transform 0.3s ease-in-out;
+    }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-</script>
+    .card-revealed {
+      animation: cardReveal 0.5s ease-out;
+    }
 
-<style>
-  .flippable-card {
-    @apply transition-transform duration-300;
-    transform-origin: center center;
-  }
+    @keyframes cardReveal {
+      from {
+        opacity: 0;
+        transform: scale(0.8) rotateY(180deg);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) rotateY(0deg);
+      }
+    }
 
-  .flippable-card:hover {
-    @apply scale-105;
-  }
+    .carta-aclaracion-item {
+      @apply transition-transform hover:scale-105;
+    }
 
-  .flipping {
-    @apply scale-110;
-    transform: scale(1.1) rotateY(180deg);
-    transition: transform 0.3s ease-in-out;
-  }
+    .carta-aclaracion-item .carta-random-container {
+      border: 2px solid color-mix(in srgb, var(--warning) 65%, #ffffff);
+      background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+    }
 
-  .card-revealed {
-    animation: cardReveal 0.5s ease-out;
-  }
+    .carta-detail-trigger {
+      @apply w-full text-left bg-transparent p-0 border-0;
+    }
 
-  @keyframes cardReveal {
-    from {
+    .focus-controls-hidden {
       opacity: 0;
-      transform: scale(0.8) rotateY(180deg);
+      transform: translateY(-10px);
+      max-height: 0;
+      margin: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+      pointer-events: none;
     }
-    to {
-      opacity: 1;
-      transform: scale(1) rotateY(0deg);
-    }
-  }
 
-  .carta-aclaracion-item {
-    @apply transition-transform hover:scale-105;
-  }
-  
-  .carta-aclaracion-item .carta-random-container {
-    border: 2px solid color-mix(in srgb, var(--warning) 65%, #ffffff);
-    background: color-mix(in srgb, var(--warning) 10%, var(--surface));
-  }
-
-  .carta-detail-trigger {
-    @apply w-full text-left bg-transparent p-0 border-0;
-  }
-
-  .focus-controls-hidden {
-    opacity: 0;
-    transform: translateY(-10px);
-    max-height: 0;
-    margin: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .cards-focus-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-  }
-
-  .cards-focus-grid .carta-random-link {
-    max-width: 320px;
-    margin-inline: auto;
-  }
-
-  .cards-focus-grid .carta-random-image-wrapper {
-    min-height: 340px;
-  }
-
-  .cards-focus-secondary .focus-minimizable {
-    opacity: 0.28;
-    transform: scale(0.98);
-    pointer-events: none;
-  }
-
-  .focus-action-panel {
-    position: fixed;
-    left: 50%;
-    bottom: 1rem;
-    transform: translateX(-50%);
-    z-index: 45;
-    width: min(960px, calc(100vw - 1.5rem));
-    border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
-    background: color-mix(in srgb, var(--surface) 84%, #ffffff);
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(10px);
-  }
-
-  .focus-action-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    align-items: center;
-  }
-
-  @media (max-width: 768px) {
     .cards-focus-grid {
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .cards-focus-grid .carta-random-link {
+      max-width: 320px;
+      margin-inline: auto;
     }
 
     .cards-focus-grid .carta-random-image-wrapper {
-      min-height: 250px;
+      min-height: 340px;
+    }
+
+    .cards-focus-secondary .focus-minimizable {
+      opacity: 0.28;
+      transform: scale(0.98);
+      pointer-events: none;
+    }
+
+    .focus-action-panel {
+      position: fixed;
+      left: 50%;
+      bottom: 1rem;
+      transform: translateX(-50%);
+      z-index: 45;
+      width: min(960px, calc(100vw - 1.5rem));
+      border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+      background: color-mix(in srgb, var(--surface) 84%, #ffffff);
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(10px);
     }
 
     .focus-action-grid {
-      grid-template-columns: 1fr !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      align-items: center;
     }
-  }
-  
-  .tirada-mode-option {
-    border: 1px solid var(--border);
-    background: var(--surface);
-  }
 
-  .tirada-mode-option:hover {
-    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
-  }
+    @media (max-width: 768px) {
+      .cards-focus-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
 
-  .tirada-mode-option:has(input[type="radio"]:checked) {
-    border-color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 13%, var(--surface));
-  }
+      .cards-focus-grid .carta-random-image-wrapper {
+        min-height: 250px;
+      }
 
-  .tirada-mode-option input[type="radio"] {
-    accent-color: var(--primary);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .flippable-card,
-    .carta-aclaracion-item,
-    .btn-ui,
-    .carta-random-container {
-      transition: none !important;
-      animation: none !important;
+      .focus-action-grid {
+        grid-template-columns: 1fr !important;
+      }
     }
-  }
-</style>
+
+    .tirada-mode-option {
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .tirada-mode-option:hover {
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    }
+
+    .tirada-mode-option:has(input[type="radio"]:checked) {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+    }
+
+    .tirada-mode-option input[type="radio"] {
+      accent-color: var(--primary);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flippable-card,
+      .carta-aclaracion-item,
+      .btn-ui,
+      .carta-random-container {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style></Layout
+>

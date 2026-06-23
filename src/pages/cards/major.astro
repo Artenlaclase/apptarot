@@ -1,7 +1,6 @@
 ---
 // src/pages/cards/major.astro
-import { db } from '../../lib/firebase';
-import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore';
+import { adminDb } from '../../lib/firebase-admin';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
 
@@ -22,13 +21,11 @@ interface ProcessedCard {
   imagem: string;
 }
 
-// Query para obtener solo los arcanos mayores (sin orderBy para evitar el índice compuesto)
-const q = query(
-  collection(db, 'cards'), 
-  where('arcano', '==', 'mayor')
-);
-
-const querySnapshot = await getDocs(q);
+// Query para obtener solo los arcanos mayores usando Admin SDK
+const querySnapshot = await adminDb
+  .collection('cards')
+  .where('arcano', '==', 'mayor')
+  .get();
 
 const processImageUrl = (url: string | undefined | null): string => {
   if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
@@ -49,7 +46,7 @@ const processImageUrl = (url: string | undefined | null): string => {
 
 const cards: ProcessedCard[] = querySnapshot.docs
   .map((doc): ProcessedCard => {
-    const data: DocumentData = doc.data();
+    const data = doc.data();
     const imageUrl: string | null | undefined = data.imagem || data.imagen;
     
     return {

@@ -1,7 +1,6 @@
 ---
 //src/pages/admin/cards/new.astro
-import { db } from '../../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { adminDb } from '../../lib/firebase-admin';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 // Proteger la ruta (ejemplo básico, en producción usar autenticación)
@@ -19,7 +18,7 @@ if (Astro.request.method === 'POST') {
 
   if (nombre) {
     try {
-      await setDoc(doc(db, 'cards', nombre), {
+      await adminDb.collection('cards').doc(nombre).set({
         nombre: formData.get('nombre'),
         numero: Number(formData.get('numero')),
         arcano: formData.get('arcano'),

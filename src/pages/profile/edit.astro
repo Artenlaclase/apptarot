@@ -107,21 +107,21 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
     <p id="editProfileMsg" class="text-sm hidden" aria-live="polite"></p>
   </main>
 
-  <script is:inline type="module">
-    import { updateCurrentUserPassword } from '/src/lib/auth-client.ts';
-    import { validateFullName } from '/src/lib/arcaneCalculator.ts';
+  <script>
+    import { updateCurrentUserPassword } from '../../lib/auth-client';
+    import { validateFullName } from '../../lib/arcaneCalculator';
 
     const messageEl = document.getElementById('editProfileMsg');
 
-    function setMessage(text, isError = false) {
+    function setMessage(text: string, isError = false) {
       if (!messageEl) return;
       messageEl.textContent = text;
       messageEl.style.color = isError ? 'var(--danger)' : 'var(--success)';
       messageEl.classList.remove('hidden');
     }
 
-    function setBusy(buttonId, busyText, idleText, isBusy) {
-      const btn = document.getElementById(buttonId);
+    function setBusy(buttonId: string, busyText: string, idleText: string, isBusy: boolean) {
+      const btn = document.getElementById(buttonId) as HTMLButtonElement | null;
       if (!btn) return;
       btn.disabled = isBusy;
       btn.textContent = isBusy ? busyText : idleText;
@@ -130,8 +130,8 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
     document.getElementById('profileDetailsForm')?.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      const firstName = document.getElementById('editFirstName')?.value?.trim() ?? '';
-      const lastName = document.getElementById('editLastName')?.value?.trim() ?? '';
+      const firstName = (document.getElementById('editFirstName') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const lastName = (document.getElementById('editLastName') as HTMLInputElement | null)?.value?.trim() ?? '';
       const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
 
       const fullNameValidation = validateFullName(fullName);
@@ -143,12 +143,12 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       const payload = {
         firstName,
         lastName,
-        bio: document.getElementById('editBio')?.value?.trim() ?? '',
-        hobbies: document.getElementById('editHobbies')?.value?.trim() ?? '',
-        socialInstagram: document.getElementById('editInstagram')?.value?.trim() ?? '',
-        socialX: document.getElementById('editX')?.value?.trim() ?? '',
-        socialTiktok: document.getElementById('editTiktok')?.value?.trim() ?? '',
-        socialWebsite: document.getElementById('editWebsite')?.value?.trim() ?? '',
+        bio: (document.getElementById('editBio') as HTMLTextAreaElement | null)?.value?.trim() ?? '',
+        hobbies: (document.getElementById('editHobbies') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialInstagram: (document.getElementById('editInstagram') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialX: (document.getElementById('editX') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialTiktok: (document.getElementById('editTiktok') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialWebsite: (document.getElementById('editWebsite') as HTMLInputElement | null)?.value?.trim() ?? '',
       };
 
       setBusy('saveDetailsBtn', 'Guardando...', 'Guardar cambios', true);
@@ -175,7 +175,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
 
     document.getElementById('passwordForm')?.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const passwordInput = document.getElementById('newPassword');
+      const passwordInput = document.getElementById('newPassword') as HTMLInputElement | null;
       const newPassword = passwordInput?.value ?? '';
 
       if (newPassword.length < 8) {

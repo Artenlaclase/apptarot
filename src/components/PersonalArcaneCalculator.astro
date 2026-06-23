@@ -44,7 +44,13 @@ function toDateInputValue(value: string): string {
 const initialBirthDateValue = toDateInputValue(initialBirthDate);
 ---
 
-<section id={`${idPrefix}-calculator`} class="space-y-4">
+<section
+  id={`${idPrefix}-calculator`}
+  class="space-y-4 arcane-calculator-component"
+  data-id-prefix={idPrefix}
+  data-include-full-name={String(includeFullName)}
+  data-show-arcane-preview={String(showArcanePreview)}
+>
   {includeFullName && (
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
@@ -147,116 +153,119 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
   )}
 </section>
 
-<script is:inline define:vars={{ idPrefix, includeFullName, showArcanePreview }} type="module">
+<script>
   import {
     calculatePersonalArcane,
     normalizeBirthDateInput,
     validateBirthDate,
     validateBirthHour,
     validateFullName,
-  } from '/src/lib/arcaneCalculator.ts';
+  } from '../lib/arcaneCalculator';
 
-  const firstNameInput = document.getElementById(`${idPrefix}-firstName`);
-  const lastNameInput = document.getElementById(`${idPrefix}-lastName`);
-  const birthDateInput = document.getElementById(`${idPrefix}-birthDate`);
-  const birthHourInput = document.getElementById(`${idPrefix}-birthHour`);
-  const preview = document.getElementById(`${idPrefix}-preview`);
-  const previewText = document.getElementById(`${idPrefix}-previewText`);
-  const numberHidden = document.getElementById(`${idPrefix}-arcaneNumber`);
-  const nameHidden = document.getElementById(`${idPrefix}-arcaneName`);
-  const fullNameHidden = document.getElementById(`${idPrefix}-fullName`);
+  document.querySelectorAll('.arcane-calculator-component').forEach((container) => {
+    if (!(container instanceof HTMLElement)) return;
+    const idPrefix = container.dataset.idPrefix;
+    const includeFullName = container.dataset.includeFullName === 'true';
+    const showArcanePreview = container.dataset.showArcanePreview === 'true';
 
-  function buildFullName() {
-    const firstName = firstNameInput ? firstNameInput.value.trim() : '';
-    const lastName = lastNameInput ? lastNameInput.value.trim() : '';
-    return [firstName, lastName].filter(Boolean).join(' ').trim();
-  }
+    const firstNameInput = document.getElementById(`${idPrefix}-firstName`) as HTMLInputElement | null;
+    const lastNameInput = document.getElementById(`${idPrefix}-lastName`) as HTMLInputElement | null;
+    const birthDateInput = document.getElementById(`${idPrefix}-birthDate`) as HTMLInputElement | null;
+    const birthHourInput = document.getElementById(`${idPrefix}-birthHour`) as HTMLInputElement | null;
+    const preview = document.getElementById(`${idPrefix}-preview`);
+    const previewText = document.getElementById(`${idPrefix}-previewText`);
+    const numberHidden = document.getElementById(`${idPrefix}-arcaneNumber`) as HTMLInputElement | null;
+    const nameHidden = document.getElementById(`${idPrefix}-arcaneName`) as HTMLInputElement | null;
+    const fullNameHidden = document.getElementById(`${idPrefix}-fullName`) as HTMLInputElement | null;
 
-  function setFieldValidity(element, validation) {
-    if (!element) return;
-    if (validation.valid) {
-      element.setCustomValidity('');
-    } else {
-      element.setCustomValidity(validation.message || 'Campo inválido.');
-    }
-  }
-
-  function updatePreview() {
-    const birthDate = birthDateInput ? birthDateInput.value : '';
-    const normalizedDate = normalizeBirthDateInput(birthDate);
-    const dateValidation = validateBirthDate(normalizedDate);
-    setFieldValidity(birthDateInput, dateValidation);
-
-    const fullName = buildFullName();
-    if (includeFullName) {
-      const fullNameValidation = validateFullName(fullName);
-      setFieldValidity(firstNameInput, fullNameValidation);
-      setFieldValidity(lastNameInput, fullNameValidation);
+    function buildFullName() {
+      const firstName = firstNameInput ? firstNameInput.value.trim() : '';
+      const lastName = lastNameInput ? lastNameInput.value.trim() : '';
+      return [firstName, lastName].filter(Boolean).join(' ').trim();
     }
 
-    if (birthHourInput) {
-      setFieldValidity(birthHourInput, validateBirthHour(birthHourInput.value));
-    }
-
-    if (fullNameHidden) fullNameHidden.value = fullName;
-
-    if (!dateValidation.valid) {
-      if (preview) preview.classList.add('hidden');
-      if (numberHidden) numberHidden.value = '';
-      if (nameHidden) nameHidden.value = '';
-      const bd = document.getElementById(`${idPrefix}-breakdown`);
-      if (bd) bd.classList.add('hidden');
-      return;
-    }
-
-    if (!showArcanePreview) return;
-
-    const result = calculatePersonalArcane(normalizedDate);
-    if (numberHidden) numberHidden.value = String(result.number);
-    if (nameHidden) nameHidden.value = result.name;
-
-    if (preview && previewText) {
-      preview.classList.remove('hidden');
-      previewText.textContent = `Tu Arcano Personal sería ${result.number}: ${result.name}`;
-    }
-
-    // --- Tabla de reducción ---
-    const breakdownEl = document.getElementById(`${idPrefix}-breakdown`);
-    const breakdownBody = document.getElementById(`${idPrefix}-breakdown-body`);
-    if (breakdownEl && breakdownBody) {
-      const parts = normalizedDate.split('/').map(Number);
-      const day = parts[0]; const month = parts[1]; let year = parts[2];
-      const dayLabel = String(day).padStart(2, '0');
-      const monthLabel = String(month).padStart(2, '0');
-      const steps = [];
-      let total = day + month + year;
-      steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
-      while (total > 21) {
-        year = String(year).split('').reduce((s, c) => s + Number(c), 0);
-        total = day + month + year;
-        steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+    function setFieldValidity(element: HTMLInputElement | null, validation: { valid: boolean; message?: string }) {
+      if (!element) return;
+      if (validation.valid) {
+        element.setCustomValidity('');
+      } else {
+        element.setCustomValidity(validation.message || 'Campo inválido.');
       }
-      breakdownBody.innerHTML = steps.map((s, i) => {
-        const rowStyle = i < steps.length - 1
-          ? 'border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);'
-          : '';
-        const totalStyle = i === steps.length - 1
-          ? 'font-weight:700; color: var(--primary);'
-          : 'color: var(--text-muted);';
-        return `<tr style="${rowStyle}">
-          <td style="padding:0.55rem 1rem; color:var(--text);">${s.d}</td>
-          <td style="padding:0.55rem 1rem; color:var(--text);">${s.m}</td>
-          <td style="padding:0.55rem 1rem; color:var(--text);">${s.y}</td>
-          <td style="padding:0.55rem 0.5rem; text-align:center; color:var(--text-muted);">=</td>
-          <td style="padding:0.55rem 1rem; ${totalStyle}">${s.t}</td>
-        </tr>`;
-      }).join('');
-      breakdownEl.classList.remove('hidden');
     }
-    // ---
 
-    const container = document.getElementById(`${idPrefix}-calculator`);
-    if (container) {
+    function updatePreview() {
+      const birthDate = birthDateInput ? birthDateInput.value : '';
+      const normalizedDate = normalizeBirthDateInput(birthDate);
+      const dateValidation = validateBirthDate(normalizedDate);
+      setFieldValidity(birthDateInput, dateValidation);
+
+      const fullName = buildFullName();
+      if (includeFullName) {
+        const fullNameValidation = validateFullName(fullName);
+        setFieldValidity(firstNameInput, fullNameValidation);
+        setFieldValidity(lastNameInput, fullNameValidation);
+      }
+
+      if (birthHourInput) {
+        setFieldValidity(birthHourInput, validateBirthHour(birthHourInput.value));
+      }
+
+      if (fullNameHidden) fullNameHidden.value = fullName;
+
+      if (!dateValidation.valid) {
+        if (preview) preview.classList.add('hidden');
+        if (numberHidden) numberHidden.value = '';
+        if (nameHidden) nameHidden.value = '';
+        const bd = document.getElementById(`${idPrefix}-breakdown`);
+        if (bd) bd.classList.add('hidden');
+        return;
+      }
+
+      if (!showArcanePreview) return;
+
+      const result = calculatePersonalArcane(normalizedDate);
+      if (numberHidden) numberHidden.value = String(result.number);
+      if (nameHidden) nameHidden.value = result.name;
+
+      if (preview && previewText) {
+        preview.classList.remove('hidden');
+        previewText.textContent = `Tu Arcano Personal sería ${result.number}: ${result.name}`;
+      }
+
+      // --- Tabla de reducción ---
+      const breakdownEl = document.getElementById(`${idPrefix}-breakdown`);
+      const breakdownBody = document.getElementById(`${idPrefix}-breakdown-body`);
+      if (breakdownEl && breakdownBody) {
+        const parts = normalizedDate.split('/').map(Number);
+        const day = parts[0]; const month = parts[1]; let year = parts[2];
+        const dayLabel = String(day).padStart(2, '0');
+        const monthLabel = String(month).padStart(2, '0');
+        const steps = [];
+        let total = day + month + year;
+        steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+        while (total > 21) {
+          year = String(year).split('').reduce((s, c) => s + Number(c), 0);
+          total = day + month + year;
+          steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+        }
+        breakdownBody.innerHTML = steps.map((s, i) => {
+          const rowStyle = i < steps.length - 1
+            ? 'border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);'
+            : '';
+          const totalStyle = i === steps.length - 1
+            ? 'font-weight:700; color: var(--primary);'
+            : 'color: var(--text-muted);';
+          return `<tr style="${rowStyle}">
+            <td style="padding:0.55rem 1rem; color:var(--text);">${s.d}</td>
+            <td style="padding:0.55rem 1rem; color:var(--text);">${s.m}</td>
+            <td style="padding:0.55rem 1rem; color:var(--text);">${s.y}</td>
+            <td style="padding:0.55rem 0.5rem; text-align:center; color:var(--text-muted);">=</td>
+            <td style="padding:0.55rem 1rem; ${totalStyle}">${s.t}</td>
+          </tr>`;
+        }).join('');
+        breakdownEl.classList.remove('hidden');
+      }
+
       container.dispatchEvent(
         new CustomEvent('arcanechange', {
           detail: {
@@ -273,14 +282,14 @@ const initialBirthDateValue = toDateInputValue(initialBirthDate);
         })
       );
     }
-  }
 
-  [firstNameInput, lastNameInput, birthDateInput, birthHourInput].forEach((el) => {
-    el?.addEventListener('input', updatePreview);
-    el?.addEventListener('blur', updatePreview);
+    [firstNameInput, lastNameInput, birthDateInput, birthHourInput].forEach((el) => {
+      el?.addEventListener('input', updatePreview);
+      el?.addEventListener('blur', updatePreview);
+    });
+
+    if (birthDateInput?.value) {
+      updatePreview();
+    }
   });
-
-  if (birthDateInput?.value) {
-    updatePreview();
-  }
 </script>

@@ -2,6 +2,19 @@ import type { APIRoute } from 'astro';
 import { adminDb } from '../../../lib/firebase-admin';
 import { verifySessionCookieFromRequest } from '../../../lib/auth-server';
 
+function toISO(value: any): string {
+  if (!value) return new Date().toISOString();
+  if (typeof value.toDate === 'function') return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') return value;
+  try {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 export const GET: APIRoute = async (context) => {
   const user = await verifySessionCookieFromRequest(context);
   if (!user) {
@@ -26,7 +39,7 @@ export const GET: APIRoute = async (context) => {
     const readings = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-      createdAt: doc.data().createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: toISO(doc.data().createdAt),
     }));
 
     return new Response(JSON.stringify({ readings }), {

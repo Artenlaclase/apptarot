@@ -17,10 +17,38 @@ export const POST: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: 'readingId requerido' }), { status: 400 });
   }
 
-  await adminDb.collection('users').doc(user.uid).collection('readings').doc(readingId).delete();
+  const userRef = adminDb.collection('users').doc(user.uid);
+  const readingRef = userRef.collection('readings').doc(readingId);
 
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  try {
+    await adminDb.runTransaction(async (transaction) => {
+      const readingSnap = await transaction.get(readingRef);
+      if (!readingSnap.exists) {
+        throw new Error('La lectura no existe o ya fue eliminada.');
+      }
+
+      const userSnap = await transaction.get(userRef);
+      const currentCount = userSnap.data()?.readingCount || 0;
+      const newCount = Math.max(0, currentCount - 1);
+
+      transaction.delete(readingRef);
+      transaction.update(userRef, {
+        readingCount: newCount,
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Error al eliminar la lectura.' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 };

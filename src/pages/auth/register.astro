@@ -46,37 +46,37 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
     </section>
   </main>
 
-  <script is:inline type="module">
+  <script>
     import {
       registerWithEmail,
       createServerSession,
-    } from '/src/lib/auth-client.ts';
+    } from '../../lib/auth-client';
     import {
       normalizeBirthDateInput,
       validateBirthDate,
       validateBirthHour,
       validateFullName,
-    } from '/src/lib/arcaneCalculator.ts';
+    } from '../../lib/arcaneCalculator';
 
-    const form = document.getElementById('registerForm');
-    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('registerForm') as HTMLFormElement | null;
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
     const errorMsg = document.getElementById('errorMsg');
 
-    function showError(message) {
+    function showError(message: string) {
       if (!errorMsg) return;
       errorMsg.textContent = message;
       errorMsg.classList.remove('hidden');
       errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function setBusy(isBusy) {
+    function setBusy(isBusy: boolean) {
       if (submitBtn) {
         submitBtn.disabled = isBusy;
         submitBtn.textContent = isBusy ? 'Creando cuenta...' : 'Crear cuenta';
       }
     }
 
-    function translateAuthError(error) {
+    function translateAuthError(error: any) {
       const code = error?.code ?? '';
       if (code === 'auth/email-already-in-use')
         return 'Este email ya está registrado. Si ya tienes cuenta, inicia sesión.';
@@ -96,14 +96,14 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
       setBusy(true);
       if (errorMsg) errorMsg.classList.add('hidden');
 
-      const email = document.getElementById('email')?.value?.trim() ?? '';
-      const password = document.getElementById('password')?.value ?? '';
-      const password2 = document.getElementById('password2')?.value ?? '';
-      const firstName = document.getElementById('registerArcane-firstName')?.value?.trim() ?? '';
-      const lastName = document.getElementById('registerArcane-lastName')?.value?.trim() ?? '';
+      const email = (document.getElementById('email') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const password = (document.getElementById('password') as HTMLInputElement | null)?.value ?? '';
+      const password2 = (document.getElementById('password2') as HTMLInputElement | null)?.value ?? '';
+      const firstName = (document.getElementById('registerArcane-firstName') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const lastName = (document.getElementById('registerArcane-lastName') as HTMLInputElement | null)?.value?.trim() ?? '';
       const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
-      const birthDateInput = document.getElementById('registerArcane-birthDate')?.value ?? '';
-      const birthHour = document.getElementById('registerArcane-birthHour')?.value?.trim() ?? '';
+      const birthDateInput = (document.getElementById('registerArcane-birthDate') as HTMLInputElement | null)?.value ?? '';
+      const birthHour = (document.getElementById('registerArcane-birthHour') as HTMLInputElement | null)?.value?.trim() ?? '';
 
       const normalizedBirthDate = normalizeBirthDateInput(birthDateInput);
       const fullNameValidation = validateFullName(fullName);

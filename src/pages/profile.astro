@@ -4,8 +4,7 @@ import { getOrCreateUserProfile } from '../lib/auth-server';
 import { getPlanLabel, FREE_READING_LIMIT, isPremiumPlan } from '../lib/plans';
 import PersonalArcaneCalculator from '../components/PersonalArcaneCalculator.astro';
 import { getPersonalArcaneBreakdown } from '../lib/arcaneCalculator';
-import { db } from '../lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { adminDb } from '../lib/firebase-admin';
 import '../styles/cards.css';
 
 interface ProfileArcaneCard {
@@ -43,7 +42,7 @@ const description = 'Gestiona tu cuenta, suscripcion y privacidad.';
 const canUsePremium = isPremiumPlan(profile.plan) && profile.planStatus === 'active';
 const hasPersonalArcane = Boolean(profile.personalArcaneNumber && profile.personalArcaneName);
 const majorArcanaSnapshot = hasPersonalArcane
-  ? await getDocs(query(collection(db, 'cards'), where('arcano', '==', 'mayor')))
+  ? await adminDb.collection('cards').where('arcano', '==', 'mayor').get()
   : null;
 const majorArcanaCards: ProfileArcaneCard[] = majorArcanaSnapshot
   ? majorArcanaSnapshot.docs.map((doc) => ({
@@ -212,17 +211,17 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
     <p id="profileMsg" class="text-sm hidden" aria-live="polite"></p>
   </main>
 
-  <script is:inline type="module">
+  <script>
     import {
       normalizeBirthDateInput,
       validateBirthDate,
       validateBirthHour,
       validateFullName,
-    } from '/src/lib/arcaneCalculator.ts';
+    } from '../lib/arcaneCalculator';
 
     const profileMsg = document.getElementById('profileMsg');
 
-    function setMessage(text, isError = false) {
+    function setMessage(text: string, isError = false) {
       if (!profileMsg) return;
       profileMsg.textContent = text;
       profileMsg.style.color = isError ? 'var(--danger)' : 'var(--success)';
@@ -248,7 +247,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           return;
         }
 
-        container.innerHTML = data.readings.map((reading) => {
+        container.innerHTML = data.readings.map((reading: any) => {
           const date = new Date(reading.createdAt).toLocaleDateString('es-ES', {
             year: 'numeric',
             month: 'short',
@@ -275,14 +274,14 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
 
     loadRecentReadings();
 
-    function setArcaneBusy(isBusy) {
-      const btn = document.getElementById('saveArcaneBtn');
+    function setArcaneBusy(isBusy: boolean) {
+      const btn = document.getElementById('saveArcaneBtn') as HTMLButtonElement | null;
       if (!btn) return;
       btn.disabled = isBusy;
       btn.textContent = isBusy ? 'Guardando...' : 'Guardar Arcano Personal';
     }
 
-    async function startCheckout(billingCycle) {
+    async function startCheckout(billingCycle: string) {
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -331,11 +330,11 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
     document.getElementById('arcaneForm')?.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      const firstName = document.getElementById('profileArcane-firstName')?.value?.trim() ?? '';
-      const lastName = document.getElementById('profileArcane-lastName')?.value?.trim() ?? '';
+      const firstName = (document.getElementById('profileArcane-firstName') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const lastName = (document.getElementById('profileArcane-lastName') as HTMLInputElement | null)?.value?.trim() ?? '';
       const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
-      const rawBirthDate = document.getElementById('profileArcane-birthDate')?.value ?? '';
-      const birthHour = document.getElementById('profileArcane-birthHour')?.value?.trim() ?? '';
+      const rawBirthDate = (document.getElementById('profileArcane-birthDate') as HTMLInputElement | null)?.value ?? '';
+      const birthHour = (document.getElementById('profileArcane-birthHour') as HTMLInputElement | null)?.value?.trim() ?? '';
 
       const birthDate = normalizeBirthDateInput(rawBirthDate);
       const fullNameValidation = validateFullName(fullName);

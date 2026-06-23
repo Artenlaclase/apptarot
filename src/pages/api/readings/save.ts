@@ -57,7 +57,7 @@ export const POST: APIRoute = async (context) => {
     // Actualizar contador de lecturas en el perfil
     const userRef = adminDb.collection('users').doc(user.uid);
     await userRef.update({
-      readingCount: (await userRef.get()).data()?.readingCount || 0 + 1,
+      readingCount: ((await userRef.get()).data()?.readingCount || 0) + 1,
     });
 
     return new Response(JSON.stringify({ ok: true, readingId }), {

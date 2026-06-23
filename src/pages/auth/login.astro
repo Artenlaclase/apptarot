@@ -20,7 +20,7 @@ const showLecturaMessage = message === 'lectura';
         </p>
       )}
 
-      <form id="loginForm" class="space-y-4" novalidate>
+      <form id="loginForm" class="space-y-4" data-next={next} novalidate>
         <div>
           <label class="block text-sm font-semibold mb-1" for="email">Email</label>
           <input id="email" name="email" type="email" autocomplete="email" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
@@ -45,30 +45,31 @@ const showLecturaMessage = message === 'lectura';
     </section>
   </main>
 
-  <script is:inline define:vars={{ next }} type="module">
+  <script>
     import {
       loginWithEmail,
       loginWithGoogle,
       createServerSession,
-    } from '/src/lib/auth-client.ts';
+    } from '../../lib/auth-client';
 
-    const form = document.getElementById('loginForm');
-    const googleBtn = document.getElementById('googleBtn');
-    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('loginForm') as HTMLFormElement | null;
+    const googleBtn = document.getElementById('googleBtn') as HTMLButtonElement | null;
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
     const errorMsg = document.getElementById('errorMsg');
+    const next = form?.dataset.next || '/profile';
 
-    function showError(message) {
+    function showError(message: string) {
       if (!errorMsg) return;
       errorMsg.textContent = message;
       errorMsg.classList.remove('hidden');
     }
 
-    function setBusy(isBusy) {
+    function setBusy(isBusy: boolean) {
       if (submitBtn) submitBtn.disabled = isBusy;
       if (googleBtn) googleBtn.disabled = isBusy;
     }
 
-    function translateAuthError(error) {
+    function translateAuthError(error: any) {
       const code = error?.code ?? '';
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found')
         return 'Email o contraseña incorrectos. Verifica tus datos e inténtalo de nuevo.';
@@ -85,7 +86,7 @@ const showLecturaMessage = message === 'lectura';
       return error instanceof Error ? error.message : 'No se pudo iniciar sesión.';
     }
 
-    async function finalizeLogin(credential) {
+    async function finalizeLogin(credential: any) {
       await createServerSession(credential);
       window.location.href = next;
     }
@@ -95,8 +96,8 @@ const showLecturaMessage = message === 'lectura';
       setBusy(true);
       if (errorMsg) errorMsg.classList.add('hidden');
 
-      const email = document.getElementById('email')?.value ?? '';
-      const password = document.getElementById('password')?.value ?? '';
+      const email = (document.getElementById('email') as HTMLInputElement | null)?.value ?? '';
+      const password = (document.getElementById('password') as HTMLInputElement | null)?.value ?? '';
 
       try {
         const credential = await loginWithEmail(email, password);

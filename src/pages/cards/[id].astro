@@ -1,7 +1,6 @@
 ---
 // src/pages/cards/[id].astro
-import { db } from '../../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { adminDb } from '../../lib/firebase-admin';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cards.css';
 
@@ -15,8 +14,8 @@ const returnTo =
     ? returnToParam
     : null;
 
-const docRef = doc(db, 'cards', id);
-const docSnap = await getDoc(docRef);
+const docRef = adminDb.collection('cards').doc(id);
+const docSnap = await docRef.get();
 
 interface Card {
   id: string;
