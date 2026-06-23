@@ -106,7 +106,7 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
         <div class="cartas-grid-minor">
           {cardsBySuit[suit].map(card => (
             <a
-              href={`/cards/${card.id}`}
+              href={`/cards/${card.id}?returnTo=/cards/minor`}
               class="carta-link-minor"
             >
               <article class="carta-item-minor">

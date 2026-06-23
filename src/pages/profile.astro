@@ -67,7 +67,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         <h2 class="text-sm uppercase tracking-[0.2em] mb-3" style="color: var(--text-muted);">Carta Arcano Personal</h2>
 
         {hasPersonalArcane && personalArcaneCard ? (
-          <a href={`/cards/${personalArcaneCard.id}`} class="carta-link max-w-none">
+          <a href={`/cards/${personalArcaneCard.id}?returnTo=/profile`} class="carta-link max-w-none">
             <article class="carta-item overflow-hidden">
               <div class="carta-image-container min-h-[20rem]">
                 <img
