@@ -1,6 +1,6 @@
 import type { UserPlan } from '../types/auth';
 
-export const FREE_READING_LIMIT = 10;
+export const FREE_READING_LIMIT = 3;
 
 export function isPremiumPlan(plan: UserPlan): boolean {
   return plan === 'premium_monthly' || plan === 'premium_annual';
