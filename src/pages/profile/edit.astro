@@ -65,8 +65,8 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
             <input id="editInstagram" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialInstagram || ''} placeholder="@usuario" />
           </div>
           <div>
-            <label for="editX" class="block text-sm font-semibold mb-1">X / Twitter</label>
-            <input id="editX" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialX || ''} placeholder="@usuario" />
+            <label for="editFacebook" class="block text-sm font-semibold mb-1">Facebook</label>
+            <input id="editFacebook" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialFacebook || ''} placeholder="usuario o enlace" />
           </div>
           <div>
             <label for="editTiktok" class="block text-sm font-semibold mb-1">TikTok</label>
@@ -146,7 +146,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         bio: (document.getElementById('editBio') as HTMLTextAreaElement | null)?.value?.trim() ?? '',
         hobbies: (document.getElementById('editHobbies') as HTMLInputElement | null)?.value?.trim() ?? '',
         socialInstagram: (document.getElementById('editInstagram') as HTMLInputElement | null)?.value?.trim() ?? '',
-        socialX: (document.getElementById('editX') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialFacebook: (document.getElementById('editFacebook') as HTMLInputElement | null)?.value?.trim() ?? '',
         socialTiktok: (document.getElementById('editTiktok') as HTMLInputElement | null)?.value?.trim() ?? '',
         socialWebsite: (document.getElementById('editWebsite') as HTMLInputElement | null)?.value?.trim() ?? '',
       };

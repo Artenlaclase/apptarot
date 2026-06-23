@@ -8,7 +8,7 @@ export interface UserProfile {
   bio?: string;
   hobbies?: string;
   socialInstagram?: string;
-  socialX?: string;
+  socialFacebook?: string;
   socialTiktok?: string;
   socialWebsite?: string;
   photoURL?: string;

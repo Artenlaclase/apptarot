@@ -30,7 +30,7 @@ export const POST: APIRoute = async (context) => {
       bio?: string;
       hobbies?: string;
       socialInstagram?: string;
-      socialX?: string;
+      socialFacebook?: string;
       socialTiktok?: string;
       socialWebsite?: string;
     };
@@ -43,7 +43,7 @@ export const POST: APIRoute = async (context) => {
     const bio = (body.bio || '').trim();
     const hobbies = (body.hobbies || '').trim();
     const socialInstagram = (body.socialInstagram || '').trim();
-    const socialX = (body.socialX || '').trim();
+    const socialFacebook = (body.socialFacebook || '').trim();
     const socialTiktok = (body.socialTiktok || '').trim();
     const socialWebsite = (body.socialWebsite || '').trim();
 
@@ -61,7 +61,7 @@ export const POST: APIRoute = async (context) => {
       bio: bio || null,
       hobbies: hobbies || null,
       socialInstagram: socialInstagram || null,
-      socialX: socialX || null,
+      socialFacebook: socialFacebook || null,
       socialTiktok: socialTiktok || null,
       socialWebsite: socialWebsite || null,
       updatedAt: new Date().toISOString(),
