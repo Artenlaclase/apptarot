@@ -27,6 +27,7 @@ const reading = readingSnap.data() as {
   createdAt?: string;
   cards?: Array<{ nombre: string; arcano: string; numero?: number; valor?: string }>;
   interpretation?: string;
+  pregunta?: string;
 };
 
 const title = 'Detalle de tirada';
@@ -40,6 +41,13 @@ const description = 'Consulta el detalle completo de una lectura guardada.';
       <h1 class="text-3xl font-bold page-title mt-2">Detalle de tirada</h1>
       <p class="page-lead">Fecha: {reading.createdAt ? new Date(reading.createdAt).toLocaleString('es-ES') : 'Sin fecha'}</p>
     </header>
+
+    {reading.pregunta && (
+      <section class="surface-card p-6 border-l-4" style="border-left-color: var(--primary);">
+        <h2 class="text-sm uppercase tracking-wider font-semibold mb-2" style="color: var(--text-muted);">Pregunta / Intención</h2>
+        <p class="text-lg italic font-medium" style="color: var(--text);">"{reading.pregunta}"</p>
+      </section>
+    )}
 
     <section class="surface-card p-6">
       <h2 class="text-xl font-semibold page-title mb-4">Cartas</h2>

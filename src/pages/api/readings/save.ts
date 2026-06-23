@@ -17,12 +17,14 @@ export const POST: APIRoute = async (context) => {
       mode?: string;
       interpretation?: string;
       date?: string;
+      pregunta?: string;
     };
 
     const cards = Array.isArray(body.cards) ? body.cards : [];
     const mode = (body.mode || 'mixta').trim();
     const interpretation = (body.interpretation || '').trim();
     const date = body.date || new Date().toISOString();
+    const pregunta = (body.pregunta || '').trim();
 
     if (!interpretation) {
       return new Response(JSON.stringify({ error: 'La interpretación es obligatoria.' }), {
@@ -50,6 +52,7 @@ export const POST: APIRoute = async (context) => {
         cards,
         mode,
         interpretation,
+        pregunta: pregunta || null,
         createdAt: new Date(date),
         updatedAt: new Date().toISOString(),
       });

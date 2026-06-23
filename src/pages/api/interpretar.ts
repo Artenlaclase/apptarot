@@ -27,10 +27,12 @@ export async function POST(context: APIContext): Promise<Response> {
   }
 
   let cartas: CartaInput[] = [];
+  let pregunta = '';
 
   try {
-    const body = (await request.json()) as { cartas?: CartaInput[] };
+    const body = (await request.json()) as { cartas?: CartaInput[]; pregunta?: string };
     cartas = body.cartas ?? [];
+    pregunta = (body.pregunta || '').trim();
   } catch {
     return json({ error: 'Cuerpo de la peticion invalido' }, 400);
   }
@@ -55,9 +57,15 @@ export async function POST(context: APIContext): Promise<Response> {
     })
     .join('; ');
 
-  const prompt =
+  let prompt =
     'Eres un experto en Tarot de Marsella con decadas de experiencia. ' +
-    'Realiza una interpretacion en espanol de esta tirada de cartas: ' + cartasList + '. ' +
+    'Realiza una interpretacion en espanol de esta tirada de cartas: ' + cartasList + '. ';
+
+  if (pregunta) {
+    prompt += 'La tirada se ha intencionado con la siguiente pregunta o tema del consultante: "' + pregunta + '". Adapta e integra esta consulta en tu interpretacion de forma natural. ';
+  }
+
+  prompt +=
     'Responde con 4 a 6 oraciones que expliquen el mensaje conjunto de las cartas, ' +
     'como se relacionan entre si y que nos revelan. ' +
     'Mantente reflexivo, simbolico y constructivo.';
@@ -110,6 +118,7 @@ export async function POST(context: APIContext): Promise<Response> {
       uid: user.uid,
       cards: cartas,
       interpretation: interpretacion,
+      pregunta: pregunta || null,
       source: 'random-cards',
       createdAt: now,
       updatedAt: now,

@@ -138,6 +138,23 @@ const userArcaneHint = userArcaneNumber
             </div>
           </div>
 
+          <div class="mb-5">
+            <label
+              for="tiradaPregunta"
+              class="block text-sm font-semibold mb-1.5"
+              style="color: var(--text-muted);"
+            >
+              Intención de la tirada (opcional - escribe tu pregunta o tema de consulta):
+            </label>
+            <textarea
+              id="tiradaPregunta"
+              rows="2"
+              class="w-full px-4 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
+              style="border: 1px solid var(--border); background: var(--surface); color: var(--text);"
+              placeholder="Ej: ¿Qué camino debo tomar en mi carrera profesional? o Amor y relaciones..."
+            ></textarea>
+          </div>
+
           <div
             class="flex flex-col sm:flex-row gap-3 md:gap-4 items-end justify-center"
           >
@@ -724,6 +741,8 @@ const userArcaneHint = userArcaneNumber
         var countEl = document.getElementById("cardCount");
         var interpretation = document.getElementById("interpretacionTexto");
 
+        var preguntaEl = document.getElementById("tiradaPregunta");
+
         return {
           mode: modeEl ? modeEl.value : "mixta",
           count: Math.min(
@@ -734,6 +753,7 @@ const userArcaneHint = userArcaneNumber
           revealedIds: revealedIds,
           aclaracionIds: aclaracionIds,
           interpretacionHtml: interpretation ? interpretation.innerHTML : "",
+          pregunta: preguntaEl ? preguntaEl.value.trim() : "",
         };
       }
 
@@ -892,6 +912,9 @@ const userArcaneHint = userArcaneNumber
         var panelMeaning = document.getElementById("panelMeaningContent");
         if (panelMeaning) panelMeaning.classList.add("hidden");
 
+        var inputPregunta = document.getElementById("tiradaPregunta");
+        if (inputPregunta) inputPregunta.value = "";
+
         setInterpretarFeedback("hidden");
         closeMeaningModal();
         clearReadingState();
@@ -1011,10 +1034,13 @@ const userArcaneHint = userArcaneNumber
         if (content) content.classList.remove("hidden");
         if (content) content.setAttribute("aria-busy", "true");
 
+        var inputPregunta = document.getElementById("tiradaPregunta");
+        var preguntaText = inputPregunta ? inputPregunta.value.trim() : "";
+
         fetch("/api/interpretar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cartas: cartasReveladas }),
+          body: JSON.stringify({ cartas: cartasReveladas, pregunta: preguntaText }),
         })
           .then(function (res) {
             return res.json();
@@ -1331,6 +1357,11 @@ const userArcaneHint = userArcaneNumber
           if (interpContent) interpContent.classList.remove("hidden");
         }
 
+        var inputPregunta = document.getElementById("tiradaPregunta");
+        if (inputPregunta && state.pregunta) {
+          inputPregunta.value = state.pregunta;
+        }
+
         setHasActiveReading(true);
         setFocusMode(false);
       }
@@ -1341,6 +1372,11 @@ const userArcaneHint = userArcaneNumber
 
         var btnLimpiar = document.getElementById("resetBtn");
         if (btnLimpiar) btnLimpiar.addEventListener("click", limpiar);
+
+        var inputPregunta = document.getElementById("tiradaPregunta");
+        if (inputPregunta) {
+          inputPregunta.addEventListener("input", persistCurrentState);
+        }
 
         var btnAclaracion = document.getElementById("aclaracionBtn");
         if (btnAclaracion) btnAclaracion.addEventListener("click", aclaracion);
@@ -1448,6 +1484,9 @@ const userArcaneHint = userArcaneNumber
             btnGuardarInterp.disabled = true;
             btnGuardarInterp.textContent = "Guardando...";
 
+            var inputPregunta = document.getElementById("tiradaPregunta");
+            var preguntaText = inputPregunta ? inputPregunta.value.trim() : "";
+
             fetch("/api/readings/save", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1455,6 +1494,7 @@ const userArcaneHint = userArcaneNumber
                 cards: selectedIds,
                 mode: mode,
                 interpretation: interpretacion,
+                pregunta: preguntaText,
                 date: new Date().toISOString(),
               }),
             })

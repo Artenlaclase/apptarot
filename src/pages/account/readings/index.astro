@@ -21,6 +21,7 @@ const readings = readingsSnapshot.docs.map((doc) => ({
     createdAt?: string;
     cards?: Array<{ nombre?: string }>;
     interpretation?: string;
+    pregunta?: string;
   }),
 }));
 
@@ -46,7 +47,12 @@ const description = 'Consulta y elimina tus tiradas pasadas.';
         <article class="surface-card p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4" id={`reading-${reading.id}`}>
           <div>
             <p class="text-sm page-lead">{reading.createdAt ? new Date(reading.createdAt).toLocaleString('es-ES') : 'Sin fecha'}</p>
-            <h2 class="text-lg font-semibold page-title">
+            {reading.pregunta && (
+              <p class="text-sm font-semibold italic mt-0.5" style="color: var(--primary);">
+                Pregunta: "{reading.pregunta}"
+              </p>
+            )}
+            <h2 class="text-lg font-semibold page-title mt-1">
               {Array.isArray(reading.cards)
                 ? reading.cards.map((card) => card.nombre).filter(Boolean).slice(0, 3).join(', ')
                 : 'Tirada'}
