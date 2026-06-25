@@ -36,8 +36,9 @@ Se han unificado la cabecera y el pie de página mediante componentes altamente 
 - **Navbar (`src/components/Navbar.astro`):**
   - Soporta un diseño responsive (menú hamburguesa en móviles y enlaces expandidos en desktop).
   - **Control de visibilidad condicional:** Elementos como `Mi Perfil` y `Cerrar sesión` se muestran solo a usuarios con sesión activa (usando selectores `data-auth-only` y `data-guest-only`), sincronizándose dinámicamente en tiempo real mediante el listener `onAuthStateChanged` de Firebase.
+  - **Enlaces a Redes Sociales:** Se agregaron accesos directos a Facebook, Instagram y el nuevo enlace de **Spotify** (apuntando al show/podcast oficial de Tarot Terapéutico).
 - **Footer (`src/components/Footer.astro`):**
-  - Proporciona navegación secundaria clara y enlaces a las redes sociales del proyecto.
+  - Proporciona navegación secundaria clara y enlaces a las redes sociales del proyecto (incluyendo el nuevo icono y enlace de **Spotify**).
   - Incluye acceso a las páginas legales de reciente creación (Términos de servicio, Política de privacidad y Política de cookies).
 
 ---
