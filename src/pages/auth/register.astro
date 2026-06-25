@@ -4,6 +4,7 @@ import PersonalArcaneCalculator from '../../components/PersonalArcaneCalculator.
 
 const title = 'Crear cuenta';
 const description = 'Registra tu cuenta para guardar historial de tiradas y acceder a planes premium.';
+const next = Astro.url.searchParams.get('next') || '/profile';
 ---
 
 <Layout {title} {description}>
@@ -12,7 +13,7 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
       <h1 class="text-3xl font-bold page-title mb-2">Crear cuenta</h1>
       <p class="page-lead mb-6">Completa tus datos para guardar tu historial y acceder a tu perfil. Una vez registrado podrás calcular tu Arcano Personal desde tu perfil.</p>
 
-      <form id="registerForm" class="space-y-4" novalidate>
+      <form id="registerForm" class="space-y-4" data-next={next} novalidate>
         <div class="rounded-2xl p-4 md:p-5" style="background: color-mix(in srgb, var(--primary) 6%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
           <h2 class="text-lg font-semibold mb-2" style="color: var(--text);">Tus datos personales</h2>
           <p class="text-sm mb-4" style="color: var(--text-muted);">Nombre, apellido y fecha de nacimiento. Con estos datos podrás calcular tu Arcano Personal desde tu perfil.</p>
@@ -41,7 +42,7 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
 
       <p class="text-sm mt-6 page-lead">
         ¿Ya tienes cuenta?
-        <a href="/auth/login" class="token-link font-semibold">Inicia sesion</a>
+        <a href={`/auth/login?next=${encodeURIComponent(next)}`} class="token-link font-semibold">Inicia sesión</a>
       </p>
     </section>
   </main>
@@ -61,6 +62,7 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
     const form = document.getElementById('registerForm') as HTMLFormElement | null;
     const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
     const errorMsg = document.getElementById('errorMsg');
+    const next = form?.dataset.next || '/profile';
 
     function showError(message: string) {
       if (!errorMsg) return;
@@ -154,8 +156,8 @@ const description = 'Registra tu cuenta para guardar historial de tiradas y acce
           // Continuar aunque falle — la sesión está lista
         }
 
-        // 4. Redirigir al perfil para ver y calcular el arcano
-        window.location.href = '/profile';
+        // 4. Redirigir al destino original o perfil
+        window.location.href = next;
 
       } catch (error) {
         showError(translateAuthError(error));

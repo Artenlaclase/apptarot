@@ -49,6 +49,17 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           </div>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="editBirthDate" class="block text-sm font-semibold mb-1">Fecha de nacimiento</label>
+            <input id="editBirthDate" type="date" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.birthDate || ''} />
+          </div>
+          <div>
+            <label for="editBirthHour" class="block text-sm font-semibold mb-1">Hora de nacimiento</label>
+            <input id="editBirthHour" type="time" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.birthHour || ''} />
+          </div>
+        </div>
+
         <div>
           <label for="editHobbies" class="block text-sm font-semibold mb-1">Pasatiempos</label>
           <input id="editHobbies" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.hobbies || ''} placeholder="Ej: lectura, música, senderismo" />
@@ -109,7 +120,12 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
 
   <script>
     import { updateCurrentUserPassword } from '../../lib/auth-client';
-    import { validateFullName } from '../../lib/arcaneCalculator';
+    import {
+      validateFullName,
+      validateBirthDate,
+      validateBirthHour,
+      normalizeBirthDateInput,
+    } from '../../lib/arcaneCalculator';
 
     const messageEl = document.getElementById('editProfileMsg');
 
@@ -140,9 +156,29 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         return;
       }
 
+      const rawBirthDate = (document.getElementById('editBirthDate') as HTMLInputElement | null)?.value ?? '';
+      const birthHour = (document.getElementById('editBirthHour') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const birthDate = normalizeBirthDateInput(rawBirthDate);
+
+      if (birthDate) {
+        const birthDateValidation = validateBirthDate(birthDate);
+        if (!birthDateValidation.valid) {
+          setMessage(birthDateValidation.message || 'Fecha de nacimiento inválida.', true);
+          return;
+        }
+
+        const birthHourValidation = validateBirthHour(birthHour);
+        if (!birthHourValidation.valid) {
+          setMessage(birthHourValidation.message || 'Hora de nacimiento inválida.', true);
+          return;
+        }
+      }
+
       const payload = {
         firstName,
         lastName,
+        birthDate,
+        birthHour,
         bio: (document.getElementById('editBio') as HTMLTextAreaElement | null)?.value?.trim() ?? '',
         hobbies: (document.getElementById('editHobbies') as HTMLInputElement | null)?.value?.trim() ?? '',
         socialInstagram: (document.getElementById('editInstagram') as HTMLInputElement | null)?.value?.trim() ?? '',

@@ -4,7 +4,7 @@ const currentYear = new Date().getFullYear();
 const user = Astro.locals.user;
 const lecturaHref = user
   ? "/cards/random-cards"
-  : "/auth/login?next=%2Fcards%2Frandom-cards";
+  : "/auth/login?next=%2Fcards%2Frandom-cards&message=lectura";
 ---
 
 <footer class="app-footer pt-10 pb-6">
@@ -39,9 +39,9 @@ const lecturaHref = user
               >Significados</a>
           </li>
           <li>
-            <a href={lecturaHref} class="app-footer-link transition-colors"
-              >Lectura</a>
-          </li>
+            <a href={lecturaHref} data-lectura-link class="app-footer-link transition-colors"
+              >Lectura</a
+            ></li>
           <li>
             <a href="/about" class="app-footer-link transition-colors"
               >Sobre el Proyecto</a>

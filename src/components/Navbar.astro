@@ -20,7 +20,7 @@ const guestOnlyClass = user ? 'hidden' : '';
     <div class="hidden md:flex items-center space-x-6">
       <a href="/about" class="app-nav-link transition-colors">Acerca del Tarot</a>
       <a href="/cards" class="app-nav-link transition-colors">Mazo completo</a>
-      <a href={lecturaHref} class="app-nav-link transition-colors">Lectura</a>
+      <a href={lecturaHref} data-lectura-link class="app-nav-link transition-colors">Lectura</a>
       <a href="/profile" data-auth-only class={`app-nav-link transition-colors ${authOnlyClass}`}>Mi Perfil</a>
       <a href="/auth/login" data-guest-only class={`app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar sesión</a>
       <button
@@ -67,7 +67,7 @@ const guestOnlyClass = user ? 'hidden' : '';
     <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
       <a href="/about" class="block py-2 app-nav-link transition-colors">Acerca del Tarot</a>
       <a href="/cards" class="block py-2 app-nav-link transition-colors">Mazo completo</a>
-      <a href={lecturaHref} class="block py-2 app-nav-link transition-colors">Lectura</a>
+      <a href={lecturaHref} data-lectura-link class="block py-2 app-nav-link transition-colors">Lectura</a>
       <a href="/profile" data-auth-only class={`block py-2 app-nav-link transition-colors ${authOnlyClass}`}>Mi Perfil</a>
       <a href="/auth/login" data-guest-only class={`block py-2 app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar sesión</a>
       <button
@@ -110,6 +110,14 @@ const guestOnlyClass = user ? 'hidden' : '';
 
     document.querySelectorAll('[data-guest-only]').forEach((el) => {
       el.classList.toggle('hidden', isAuthenticated);
+    });
+
+    document.querySelectorAll('[data-lectura-link]').forEach((el) => {
+      if (el instanceof HTMLAnchorElement) {
+        el.href = isAuthenticated
+          ? '/cards/random-cards'
+          : '/auth/login?next=%2Fcards%2Frandom-cards&message=lectura';
+      }
     });
   }
 

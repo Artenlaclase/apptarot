@@ -137,6 +137,8 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           </div>
           <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
           {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
+          {profile.birthDate && <p class="page-lead">Fecha de nacimiento: <strong>{profile.birthDate}</strong></p>}
+          {profile.birthHour && <p class="page-lead">Hora de nacimiento: <strong>{profile.birthHour}</strong></p>}
           <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
           <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
 

@@ -16,7 +16,7 @@ const showLecturaMessage = message === 'lectura';
 
       {showLecturaMessage && (
         <p class="rounded-lg px-4 py-3 mb-4 text-sm" style="background: color-mix(in srgb, var(--primary) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); color: var(--text);">
-          Para realizar una experiencia personalizada, debes iniciar sesión.
+          Para realizar una experiencia personalizada, debes iniciar sesión o registrarte.
         </p>
       )}
 
@@ -40,7 +40,7 @@ const showLecturaMessage = message === 'lectura';
 
       <p class="text-sm mt-6 page-lead">
         ¿No tienes cuenta?
-        <a href="/auth/register" class="token-link font-semibold">Crear cuenta</a>
+        <a href={`/auth/register?next=${encodeURIComponent(next)}`} class="token-link font-semibold">Crear cuenta</a>
       </p>
     </section>
   </main>
@@ -50,6 +50,8 @@ const showLecturaMessage = message === 'lectura';
       loginWithEmail,
       loginWithGoogle,
       createServerSession,
+      auth,
+      onAuthStateChanged,
     } from '../../lib/auth-client';
 
     const form = document.getElementById('loginForm') as HTMLFormElement | null;
@@ -120,6 +122,20 @@ const showLecturaMessage = message === 'lectura';
         showError(translateAuthError(error));
       } finally {
         setBusy(false);
+      }
+    });
+
+    onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setBusy(true);
+        try {
+          await createServerSession(firebaseUser);
+          window.location.href = next;
+        } catch (error) {
+          console.error('Error al sincronizar sesión cliente-servidor:', error);
+          showError('Sesión local detectada pero no se pudo sincronizar con el servidor. Por favor, inicia sesión de nuevo.');
+          setBusy(false);
+        }
       }
     });
   </script>
