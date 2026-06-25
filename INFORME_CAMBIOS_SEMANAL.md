@@ -35,6 +35,10 @@ Se han unificado la cabecera y el pie de página mediante componentes altamente 
 ### Componentes Clave:
 - **Navbar (`src/components/Navbar.astro`):**
   - Soporta un diseño responsive (menú hamburguesa en móviles y enlaces expandidos en desktop).
+  - **Icono de Usuario y Menú Desplegable (Dropdown):** Se reemplazó el enlace de texto "Iniciar sesión" por un icono circular de usuario posicionado a la extrema derecha del Navbar.
+    - **Comportamiento Invitado:** Si el usuario no está autenticado, hacer clic en el icono redirige a la página de login.
+    - **Comportamiento Autenticado:** Si el usuario está autenticado, al hacer clic se despliega un menú flotante con accesos directos a "Mi Perfil" y "Cerrar sesión" (logout).
+    - **Control del Dropdown en Cliente (Vanilla JS):** Se implementó un control de apertura con accesos de accesibilidad (`aria-expanded`, `aria-haspopup`) y un detector de clics en `document` para cerrar el dropdown automáticamente cuando el usuario hace clic fuera del menú.
   - **Control de visibilidad condicional:** Elementos como `Mi Perfil` y `Cerrar sesión` se muestran solo a usuarios con sesión activa (usando selectores `data-auth-only` y `data-guest-only`), sincronizándose dinámicamente en tiempo real mediante el listener `onAuthStateChanged` de Firebase.
   - **Enlaces a Redes Sociales:** Se agregaron accesos directos a Facebook, Instagram y el nuevo enlace de **Spotify** (apuntando al show/podcast oficial de Tarot Terapéutico).
 - **Footer (`src/components/Footer.astro`):**

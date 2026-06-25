@@ -16,55 +16,107 @@ const guestOnlyClass = user ? 'hidden' : '';
       <span>Tarot Terapéutico</span>
     </a>
     
-    <!-- Desktop Navigation -->
-    <div class="hidden md:flex items-center space-x-6">
-      <a href="/about" class="app-nav-link transition-colors">Acerca del Tarot</a>
-      <a href="/cards" class="app-nav-link transition-colors">Mazo completo</a>
-      <a href={lecturaHref} data-lectura-link class="app-nav-link transition-colors">Lectura</a>
-      <a href="/profile" data-auth-only class={`app-nav-link transition-colors ${authOnlyClass}`}>Mi Perfil</a>
-      <a href="/auth/login" data-guest-only class={`app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar sesión</a>
-      <button
-        type="button"
-        data-auth-only
-        data-logout-btn
-        class={`app-nav-link app-nav-logout-btn transition-colors ${authOnlyClass}`}
-        aria-label="Cerrar sesión"
-      >
-        Cerrar sesión
-      </button>
-      <!-- RRSS -->
-      <div class="flex items-center space-x-3 app-nav-separator pl-6">
-        <a href="https://www.facebook.com/tarotmarsellaterapeutico" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="app-nav-icon transition-colors">
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
-          </svg>
-        </a>
-        <a href="https://www.instagram.com/tarot_marsella_terapeutico/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="app-nav-icon transition-colors">
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/>
-            <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.162 12 18.162s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zM12 16c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"/>
-            <path d="M18.406 7.034c.796 0 1.441-.645 1.441-1.44s-.645-1.44-1.441-1.44-1.44.645-1.44 1.44.644 1.44 1.44 1.44z"/>
-          </svg>
-        </a>
-        <a href="https://open.spotify.com/show/3EgiMXlVCob66Xgg3b9JLS" target="_blank" rel="noopener noreferrer" aria-label="Spotify" class="app-nav-icon transition-colors">
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12.01 0C5.38 0 0 5.38 0 12.01s5.38 12.01 12.01 12.01c6.63 0 12.01-5.38 12.01-12.01S18.64 0 12.01 0zm5.5 17.33c-.22.36-.68.48-1.04.26-2.9-1.77-6.56-2.17-10.87-1.18-.41.1-.83-.16-.92-.57-.1-.41.16-.83.57-.92 4.72-1.08 8.76-.62 12 1.36.36.22.48.68.26 1.05zm1.47-3.26c-.28.45-.88.6-1.33.32-3.32-2.04-8.38-2.63-12.3-1.44-.51.15-1.04-.15-1.19-.66-.15-.51.15-1.04.66-1.19 4.47-1.36 10.05-.7 13.84 1.63.45.27.6.87.32 1.34zm.13-3.37C15.2 8.35 8.75 8.14 5 9.28c-.59.18-1.21-.16-1.39-.75-.18-.59.16-1.21.75-1.39 4.3-1.3 11.42-1.06 16.03 1.68.53.31.71 1 .4 1.53-.31.53-1 .71-1.53.4z"/>
-          </svg>
-        </a>
+    <!-- Right Actions: Navigation, User Profile and Mobile Button -->
+    <div class="flex items-center space-x-4 md:space-x-6 pl-4 ml-auto">
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center space-x-6">
+        <a href="/about" class="app-nav-link transition-colors">Acerca del Tarot</a>
+        <a href="/cards" class="app-nav-link transition-colors">Mazo completo</a>
+        <a href={lecturaHref} data-lectura-link class="app-nav-link transition-colors">Lectura</a>
+        <!-- RRSS -->
+        <div class="flex items-center space-x-3 app-nav-separator pl-6">
+          <a href="https://www.facebook.com/tarotmarsellaterapeutico" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="app-nav-icon transition-colors">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+            </svg>
+          </a>
+          <a href="https://www.instagram.com/tarot_marsella_terapeutico/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="app-nav-icon transition-colors">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/>
+              <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.162 12 18.162s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zM12 16c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"/>
+              <path d="M18.406 7.034c.796 0 1.441-.645 1.441-1.44s-.645-1.44-1.441-1.44-1.44.645-1.44 1.44.644 1.44 1.44 1.44z"/>
+            </svg>
+          </a>
+          <a href="https://open.spotify.com/show/3EgiMXlVCob66Xgg3b9JLS" target="_blank" rel="noopener noreferrer" aria-label="Spotify" class="app-nav-icon transition-colors">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12.01 0C5.38 0 0 5.38 0 12.01s5.38 12.01 12.01 12.01c6.63 0 12.01-5.38 12.01-12.01S18.64 0 12.01 0zm5.5 17.33c-.22.36-.68.48-1.04.26-2.9-1.77-6.56-2.17-10.87-1.18-.41.1-.83-.16-.92-.57-.1-.41.16-.83.57-.92 4.72-1.08 8.76-.62 12 1.36.36.22.48.68.26 1.05zm1.47-3.26c-.28.45-.88.6-1.33.32-3.32-2.04-8.38-2.63-12.3-1.44-.51.15-1.04-.15-1.19-.66-.15-.51.15-1.04.66-1.19 4.47-1.36 10.05-.7 13.84 1.63.45.27.6.87.32 1.34zm.13-3.37C15.2 8.35 8.75 8.14 5 9.28c-.59.18-1.21-.16-1.39-.75-.18-.59.16-1.21.75-1.39 4.3-1.3 11.42-1.06 16.03 1.68.53.31.71 1 .4 1.53-.31.53-1 .71-1.53.4z"/>
+            </svg>
+          </a>
+        </div>
       </div>
+
+      <!-- User Menu Dropdown -->
+      <div class="relative" id="userDropdownContainer">
+        <!-- Guest: Icon Link to Login -->
+        <a 
+          href="/auth/login?next=%2Fcards%2Frandom-cards&message=lectura" 
+          id="userMenuGuest" 
+          data-guest-only 
+          class={`app-nav-icon hover:text-white transition-colors cursor-pointer block ${guestOnlyClass}`} 
+          aria-label="Iniciar sesión"
+        >
+          <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/>
+          </svg>
+        </a>
+
+        <!-- Authenticated: Button + Dropdown Menu -->
+        <div id="userMenuAuth" data-auth-only class={`relative ${authOnlyClass}`}>
+          <button 
+            type="button" 
+            id="userDropdownBtn" 
+            class="app-nav-icon hover:text-white transition-colors cursor-pointer focus:outline-none flex items-center" 
+            aria-expanded="false" 
+            aria-label="Menú de usuario" 
+            aria-haspopup="true"
+          >
+            <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/>
+            </svg>
+          </button>
+          
+          <!-- Dropdown Options -->
+          <div 
+            id="userDropdownMenu" 
+            class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 border z-50 transition-all duration-100 ease-out origin-top-right"
+            style="background: var(--surface); border-color: var(--border);"
+            role="menu"
+            aria-orientation="vertical"
+            aria-labelledby="userDropdownBtn"
+          >
+            <a 
+              href="/profile" 
+              class="block px-4 py-2 text-sm transition-colors hover:bg-white/5" 
+              style="color: var(--text);"
+              role="menuitem"
+            >
+              Mi Perfil
+            </a>
+            <button 
+              type="button" 
+              data-logout-btn 
+              class="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-white/5 cursor-pointer" 
+              style="color: var(--text);"
+              role="menuitem"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button 
+        class="md:hidden focus:outline-none" 
+        id="mobileMenuButton"
+        aria-expanded="false"
+        aria-label="Menú mobile"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
-    
-    <!-- Mobile Menu Button -->
-    <button 
-      class="md:hidden focus:outline-none" 
-      id="mobileMenuButton"
-      aria-expanded="false"
-      aria-label="Menú mobile"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
   </div>
   
   <!-- Mobile Menu -->
@@ -167,8 +219,40 @@ const guestOnlyClass = user ? 'hidden' : '';
   });
 
   document.querySelectorAll('[data-logout-btn]').forEach((btn) => {
-    if (!(btn instanceof HTMLButtonElement)) return;
-    btn.addEventListener('click', () => handleLogout(btn));
+    btn.addEventListener('click', (e) => {
+      // Si el botón está dentro de un formulario u otro elemento clicable, evitamos el default
+      if (btn instanceof HTMLButtonElement) {
+        handleLogout(btn);
+      } else {
+        // En caso de ser un botón del dropdown sin ser HTMLButtonElement, creamos un mock button temporal
+        const tempBtn = document.createElement('button');
+        tempBtn.textContent = 'Cerrando...';
+        handleLogout(tempBtn);
+      }
+    });
+  });
+
+  // Dropdown Toggle Logic
+  const dropdownBtn = document.getElementById('userDropdownBtn');
+  const dropdownMenu = document.getElementById('userDropdownMenu');
+
+  dropdownBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!dropdownMenu) return;
+    const isExpanded = dropdownBtn.getAttribute('aria-expanded') === 'true';
+    dropdownBtn.setAttribute('aria-expanded', String(!isExpanded));
+    dropdownMenu.classList.toggle('hidden');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (dropdownMenu && !dropdownMenu.classList.contains('hidden')) {
+      const target = e.target as HTMLElement;
+      if (!dropdownBtn?.contains(target) && !dropdownMenu.contains(target)) {
+        dropdownBtn?.setAttribute('aria-expanded', 'false');
+        dropdownMenu.classList.add('hidden');
+      }
+    }
   });
 
   onAuthStateChanged(auth, (firebaseUser) => {
