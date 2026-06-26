@@ -132,3 +132,6 @@ Toda la aplicación fue adaptada a un nuevo esquema visual premium y moderno.
   - Soporte de transiciones suaves e interactividad dinámica en botones y enlaces.
 - **Tipografía Exclusiva:**
   - Integración de fuentes optimizadas de Google Fonts (`Cardo` para encabezados con estilo clásico de Tarot, y `Montserrat` para textos de cuerpo legibles y limpios).
+- **Optimización de Recursos y Rendimiento (Astro Assets):**
+  - Se migró y renombró el logotipo de `public/logo-Tarot-1.PNG` a `src/assets/logo-Tarot-1.png`.
+  - Se reemplazaron las etiquetas HTML nativas `<img>` en `Navbar.astro` y `Footer.astro` por el componente oficial `<Image />` de `astro:assets`. Esto permite que Astro optimice automáticamente la imagen (generando formatos modernos como WebP/AVIF y ajustando resoluciones de pantalla) mejorando significativamente la velocidad de carga y eliminando las advertencias de rendimiento de Astro. El renombrado a extensión en minúscula (`.png`) asegura compatibilidad con las declaraciones de tipos de TypeScript globales (`astro/client`).

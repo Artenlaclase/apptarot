@@ -1,5 +1,8 @@
 ---
 // src/components/Footer.astro
+import { Image } from 'astro:assets';
+import logoImg from '../assets/logo-Tarot-1.png';
+
 const currentYear = new Date().getFullYear();
 const user = Astro.locals.user;
 const lecturaHref = user
@@ -13,8 +16,8 @@ const lecturaHref = user
       <!-- Columna 1: Logo y descripción -->
       <div class="md:col-span-2">
         <div class="flex items-center gap-2 mb-4">
-          <img
-            src="/logo-Tarot-1.PNG"
+          <Image
+            src={logoImg}
             alt="Logo Tarot Terapéutico"
             class="h-8 w-auto rounded bg-white/95 p-1 shadow-sm"
           />
