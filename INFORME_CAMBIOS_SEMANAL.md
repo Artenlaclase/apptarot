@@ -63,6 +63,9 @@ Se detectó y reparó un problema de regresión por el cual al hacer clic en el 
    - La página de registro (`register.astro`) ahora extrae el parámetro `next` y redirige al usuario a la lectura solicitada en lugar de enviarlo a su perfil por defecto al crear su cuenta.
 3. **Auto-sincronización de Sesión en Login:**
    - Si un usuario ya tiene una sesión activa en Firebase client-side pero su cookie de servidor expiró, la página de login detecta esto mediante `onAuthStateChanged`, genera automáticamente la sesión de servidor y lo redirige a su destino original (`next`) de forma transparente sin obligarlo a ingresar sus credenciales nuevamente.
+4. **Redirección de Retorno Inteligente y Dinámica (UX):**
+   - Se modificaron los enlaces de inicio de sesión del icono de usuario (desktop) y del menú móvil en `Navbar.astro` para capturar dinámicamente la página actual (`Astro.url.pathname + Astro.url.search`) y pasarla en el parámetro `next`. Esto garantiza que al iniciar sesión desde cualquier página no protegida (como "Acerca del Tarot" o el "Mazo completo"), el usuario sea devuelto a la misma página desde donde hizo clic, evitando interrumpir su navegación actual.
+   - En las páginas de inicio de sesión (`login.astro`) y registro (`register.astro`), se actualizó el destino por defecto cuando no existe el parámetro `next`, apuntando ahora a la página de inicio (`/`) en lugar de `/profile` para una experiencia inicial más natural y fluida.
 
 ---
 

@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 
 const title = 'Iniciar sesión';
 const description = 'Accede a tu cuenta para guardar tus tiradas y gestionar tu suscripción.';
-const next = Astro.url.searchParams.get('next') || '/profile';
+const next = Astro.url.searchParams.get('next') || '/';
 const message = Astro.url.searchParams.get('message');
 const showLecturaMessage = message === 'lectura';
 ---

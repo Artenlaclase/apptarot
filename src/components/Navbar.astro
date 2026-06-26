@@ -7,6 +7,12 @@ const lecturaHref = user
   : '/auth/login?next=%2Fcards%2Frandom-cards&message=lectura';
 const authOnlyClass = user ? '' : 'hidden';
 const guestOnlyClass = user ? 'hidden' : '';
+
+// Redirección dinámica para el icono de usuario y enlace de login móvil
+const currentPath = Astro.url.pathname + Astro.url.search;
+const isAuthPage = currentPath.startsWith('/auth/');
+const dynamicNext = isAuthPage ? '/' : currentPath;
+const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
 ---
 
 <nav class="app-nav shadow-lg">
@@ -49,7 +55,7 @@ const guestOnlyClass = user ? 'hidden' : '';
       <div class="relative" id="userDropdownContainer">
         <!-- Guest: Icon Link to Login -->
         <a 
-          href="/auth/login?next=%2Fcards%2Frandom-cards&message=lectura" 
+          href={loginHref} 
           id="userMenuGuest" 
           data-guest-only 
           class={`app-nav-icon hover:text-white transition-colors cursor-pointer block ${guestOnlyClass}`} 
@@ -126,7 +132,7 @@ const guestOnlyClass = user ? 'hidden' : '';
       <a href="/cards" class="block py-2 app-nav-link transition-colors">Mazo completo</a>
       <a href={lecturaHref} data-lectura-link class="block py-2 app-nav-link transition-colors">Lectura</a>
       <a href="/profile" data-auth-only class={`block py-2 app-nav-link transition-colors ${authOnlyClass}`}>Mi Perfil</a>
-      <a href="/auth/login" data-guest-only class={`block py-2 app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar sesión</a>
+      <a href={loginHref} data-guest-only class={`block py-2 app-nav-link transition-colors ${guestOnlyClass}`}>Iniciar sesión</a>
       <button
         type="button"
         data-auth-only
