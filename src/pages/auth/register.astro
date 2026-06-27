@@ -35,6 +35,13 @@ const next = Astro.url.searchParams.get('next') || '/';
           <input id="password2" name="password2" type="password" minlength="8" autocomplete="new-password" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
         </div>
 
+        <div class="flex items-start gap-2 py-2">
+          <input id="acceptPolicies" name="acceptPolicies" type="checkbox" required class="mt-1 h-4 w-4 rounded cursor-pointer" style="border-color: var(--border); accent-color: var(--primary);" />
+          <label for="acceptPolicies" class="text-sm select-none cursor-pointer" style="color: var(--text-muted);">
+            He leído y acepto los <a href="/terms" target="_blank" class="token-link font-semibold underline">Términos de Servicio</a> y la <a href="/privacy" target="_blank" class="token-link font-semibold underline">Política de Privacidad</a> del sitio.
+          </label>
+        </div>
+
         <button id="submitBtn" class="btn-ui btn-ui-primary w-full py-2" type="submit">Crear cuenta</button>
       </form>
 
@@ -101,6 +108,7 @@ const next = Astro.url.searchParams.get('next') || '/';
       const email = (document.getElementById('email') as HTMLInputElement | null)?.value?.trim() ?? '';
       const password = (document.getElementById('password') as HTMLInputElement | null)?.value ?? '';
       const password2 = (document.getElementById('password2') as HTMLInputElement | null)?.value ?? '';
+      const acceptPolicies = (document.getElementById('acceptPolicies') as HTMLInputElement | null)?.checked ?? false;
       const firstName = (document.getElementById('registerArcane-firstName') as HTMLInputElement | null)?.value?.trim() ?? '';
       const lastName = (document.getElementById('registerArcane-lastName') as HTMLInputElement | null)?.value?.trim() ?? '';
       const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
@@ -114,6 +122,12 @@ const next = Astro.url.searchParams.get('next') || '/';
 
       if (password !== password2) {
         showError('Las contraseñas no coinciden.');
+        setBusy(false);
+        return;
+      }
+
+      if (!acceptPolicies) {
+        showError('Debes aceptar los Términos de Servicio y la Política de Privacidad.');
         setBusy(false);
         return;
       }
