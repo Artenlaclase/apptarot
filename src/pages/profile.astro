@@ -142,7 +142,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
           {profile.birthDate && <p class="page-lead">Fecha de nacimiento: <strong>{profile.birthDate}</strong></p>}
           {profile.birthHour && <p class="page-lead">Hora de nacimiento: <strong>{profile.birthHour}</strong></p>}
-          <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
+          <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong>{isPremiumPlan(profile.plan) ? ` (${profile.planStatus})` : ''}</p>
           <p class="page-lead">Tiradas guardadas: <strong>{profile.readingCount} / {getReadingLimit(profile.plan)}</strong></p>
 
           <div class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">

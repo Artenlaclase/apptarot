@@ -22,7 +22,7 @@ export function getPlanLabel(plan: UserPlan): string {
     case 'premium_annual':
       return 'Buscador Anual (Anterior)';
     default:
-      return 'Caminante (Gratuito)';
+      return 'Caminante';
   }
 }
 
