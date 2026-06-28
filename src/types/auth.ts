@@ -1,4 +1,4 @@
-export type UserPlan = 'free' | 'premium_monthly' | 'premium_annual';
+export type UserPlan = 'free' | 'premium_monthly' | 'premium_annual' | 'buscador_monthly' | 'buscador_annual' | 'guia_monthly' | 'guia_annual';
 
 export interface UserProfile {
   uid: string;

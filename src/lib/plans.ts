@@ -1,23 +1,36 @@
 import type { UserPlan } from '../types/auth';
 
 export const FREE_READING_LIMIT = 3;
+export const PREMIUM_READING_LIMIT = 10;
 
 export function isPremiumPlan(plan: UserPlan): boolean {
-  return plan === 'premium_monthly' || plan === 'premium_annual';
+  return plan !== 'free';
 }
 
 export function getPlanLabel(plan: UserPlan): string {
   switch (plan) {
+    case 'buscador_monthly':
+      return 'Buscador Mensual';
+    case 'buscador_annual':
+      return 'Buscador Anual';
+    case 'guia_monthly':
+      return 'Guía Personal Mensual (Premium)';
+    case 'guia_annual':
+      return 'Guía Personal Anual (Premium)';
     case 'premium_monthly':
-      return 'Premium mensual';
+      return 'Buscador Mensual (Anterior)';
     case 'premium_annual':
-      return 'Premium anual';
+      return 'Buscador Anual (Anterior)';
     default:
-      return 'Gratis';
+      return 'Caminante (Gratuito)';
   }
 }
 
+export function getReadingLimit(plan: UserPlan): number {
+  if (plan === 'free') return FREE_READING_LIMIT;
+  return PREMIUM_READING_LIMIT;
+}
+
 export function canSaveReading(plan: UserPlan, readingCount: number): boolean {
-  if (isPremiumPlan(plan)) return true;
-  return readingCount < FREE_READING_LIMIT;
+  return readingCount < getReadingLimit(plan);
 }

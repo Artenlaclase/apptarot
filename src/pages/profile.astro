@@ -1,10 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getOrCreateUserProfile } from '../lib/auth-server';
-import { getPlanLabel, FREE_READING_LIMIT, isPremiumPlan } from '../lib/plans';
+import { getPlanLabel, getReadingLimit, isPremiumPlan } from '../lib/plans';
 import PersonalArcaneCalculator from '../components/PersonalArcaneCalculator.astro';
 import { getPersonalArcaneBreakdown } from '../lib/arcaneCalculator';
 import { adminDb } from '../lib/firebase-admin';
+import { Image } from 'astro:assets';
 import '../styles/cards.css';
 
 interface ProfileArcaneCard {
@@ -25,10 +26,10 @@ function splitFullName(fullName: string | undefined): { firstName: string; lastN
 }
 
 function getProfileArcaneImage(card: ProfileArcaneCard | null): string {
-  if (!card) return '/placeholder-card.jpg';
+  if (!card) return '/cardback.jpg';
   if (typeof card.imagem === 'string' && card.imagem.trim()) return card.imagem;
   if (typeof card.imagen === 'string' && card.imagen.trim()) return card.imagen;
-  return '/placeholder-card.jpg';
+  return '/cardback.jpg';
 }
 
 const user = Astro.locals.user;
@@ -70,12 +71,14 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           <a href={`/cards/${personalArcaneCard.id}?returnTo=/profile`} class="carta-link max-w-none">
             <article class="carta-item overflow-hidden">
               <div class="carta-image-container min-h-[20rem]">
-                <img
+                <Image
                   src={personalArcaneImage}
                   alt={`Carta ${profile.personalArcaneName}`}
-                  loading="lazy"
+                  width={300}
+                  height={500}
+                  loading="eager"
                   class="carta-image"
-                  onerror="this.onerror=null;this.src='/placeholder-card.jpg'"
+                  onerror="this.onerror=null;this.src='/cardback.jpg'"
                 />
               </div>
               <div class="carta-info">
@@ -140,7 +143,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           {profile.birthDate && <p class="page-lead">Fecha de nacimiento: <strong>{profile.birthDate}</strong></p>}
           {profile.birthHour && <p class="page-lead">Hora de nacimiento: <strong>{profile.birthHour}</strong></p>}
           <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong> ({profile.planStatus})</p>
-          <p class="page-lead">Tiradas guardadas: {profile.readingCount}{!canUsePremium ? ` / ${FREE_READING_LIMIT}` : ''}</p>
+          <p class="page-lead">Tiradas guardadas: <strong>{profile.readingCount} / {getReadingLimit(profile.plan)}</strong></p>
 
           <div class="mt-5 rounded-2xl p-4" style="background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
             <h2 class="text-xl font-semibold page-title mb-2">Resumen espiritual</h2>
@@ -292,16 +295,75 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       </div>
     </section>
 
-    <section>
-      <article class="surface-card p-6">
-        <h2 class="text-xl font-semibold page-title mb-3">Suscripción</h2>
-        <p class="page-lead mb-4">Desbloquea tiradas ilimitadas, videollamadas y chat personal.</p>
-        <div class="flex flex-wrap gap-3">
-          <button id="upgradeMonthly" class="btn-ui btn-ui-primary px-4 py-2" type="button">Premium mensual</button>
-          <button id="upgradeAnnual" class="btn-ui btn-ui-secondary px-4 py-2" type="button">Premium anual</button>
-          <button id="manageBilling" class="btn-ui btn-ui-neutral px-4 py-2" type="button">Gestionar facturación</button>
+    <section class="space-y-4">
+      <h2 class="text-2xl font-bold page-title">Mi Membresía</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Caminante -->
+        <article class="surface-card p-5 flex flex-col justify-between" style={profile.plan === 'free' ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-lg font-bold" style="color: var(--text);">Caminante</h3>
+              {profile.plan === 'free' && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
+            </div>
+            <p class="text-xs mb-4" style="color: var(--text-muted);">Membresía inicial de estudio y consulta elemental.</p>
+            <ul class="text-sm space-y-2 mb-6" style="color: var(--text-muted);">
+              <li>✨ 1 interpretación con IA por sesión.</li>
+              <li>📁 Guarda hasta 3 tiradas.</li>
+              <li>👥 Acceso básico a la comunidad.</li>
+            </ul>
+          </div>
+          <div class="text-center pt-2">
+            <span class="text-sm font-bold" style="color: var(--text-muted);">Plan Gratuito</span>
+          </div>
+        </article>
+
+        <!-- Buscador -->
+        <article class="surface-card p-5 flex flex-col justify-between" style={profile.plan.startsWith('buscador') || profile.plan.startsWith('premium') ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-lg font-bold" style="color: var(--text);">Buscador</h3>
+              {(profile.plan.startsWith('buscador') || profile.plan.startsWith('premium')) && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
+            </div>
+            <p class="text-xs mb-4" style="color: var(--text-muted);">Para buscadores que desean profundizar su aprendizaje.</p>
+            <ul class="text-sm space-y-2 mb-6" style="color: var(--text-muted);">
+              <li>✨ 2 interpretaciones con IA por sesión.</li>
+              <li>📁 Guarda hasta 10 tiradas.</li>
+              <li>👥 Acceso a reuniones grupales.</li>
+              <li>📚 Talleres introductorios de tarot.</li>
+            </ul>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button id="upgradeBuscadorMonthly" class="btn-ui btn-ui-primary w-full py-2 text-sm" style={profile.plan !== 'free' ? 'opacity: 0.5; pointer-events: none;' : ''} disabled={profile.plan !== 'free'}>$5.990 CLP / Mes</button>
+            <button id="upgradeBuscadorAnnual" class="btn-ui btn-ui-secondary w-full py-2 text-sm" style={profile.plan !== 'free' ? 'opacity: 0.5; pointer-events: none;' : ''} disabled={profile.plan !== 'free'}>$59.900 CLP / Año</button>
+          </div>
+        </article>
+
+        <!-- Guía Personal -->
+        <article class="surface-card p-5 flex flex-col justify-between" style={profile.plan.startsWith('guia') ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-lg font-bold" style="color: var(--text);">Guía Personal</h3>
+              {profile.plan.startsWith('guia') && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
+            </div>
+            <p class="text-xs mb-4" style="color: var(--text-muted);">Acompañamiento individual de guía y mentoría.</p>
+            <ul class="text-sm space-y-2 mb-6" style="color: var(--text-muted);">
+              <li>✨ 3 interpretaciones con IA por sesión.</li>
+              <li>📁 Guarda hasta 10 tiradas.</li>
+              <li>📹 Videollamada mensual con mentor.</li>
+              <li>💬 Chat directo y talleres avanzados.</li>
+            </ul>
+          </div>
+          <div class="flex flex-col gap-2">
+            <a href="mailto:contacto@taroterapeutico.net?subject=Solicitud%20de%20Membres%C3%ADa%20Gu%C3%ADa%20Personal" class="btn-ui btn-ui-primary w-full py-2 text-center text-sm">Solicitar Membresía</a>
+          </div>
+        </article>
+      </div>
+
+      {profile.plan !== 'free' && (
+        <div class="flex justify-end pt-3">
+          <button id="manageBilling" class="btn-ui btn-ui-neutral px-4 py-2 text-sm" type="button">Gestionar facturación</button>
         </div>
-      </article>
+      )}
     </section>
 
     <p id="profileMsg" class="text-sm hidden" aria-live="polite"></p>
@@ -394,7 +456,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       }
     }
 
-    document.getElementById('upgradeMonthly')?.addEventListener('click', async () => {
+    document.getElementById('upgradeBuscadorMonthly')?.addEventListener('click', async () => {
       try {
         await startCheckout('monthly');
       } catch (error) {
@@ -402,7 +464,7 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
       }
     });
 
-    document.getElementById('upgradeAnnual')?.addEventListener('click', async () => {
+    document.getElementById('upgradeBuscadorAnnual')?.addEventListener('click', async () => {
       try {
         await startCheckout('annual');
       } catch (error) {

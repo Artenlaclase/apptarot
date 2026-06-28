@@ -135,3 +135,34 @@ Toda la aplicación fue adaptada a un nuevo esquema visual premium y moderno.
 - **Optimización de Recursos y Rendimiento (Astro Assets):**
   - Se migró y renombró el logotipo de `public/logo-Tarot-1.PNG` a `src/assets/logo-Tarot-1.png`.
   - Se reemplazaron las etiquetas HTML nativas `<img>` en `Navbar.astro` y `Footer.astro` por el componente oficial `<Image />` de `astro:assets`. Esto permite que Astro optimice automáticamente la imagen (generando formatos modernos como WebP/AVIF y ajustando resoluciones de pantalla) mejorando significativamente la velocidad de carga y eliminando las advertencias de rendimiento de Astro. El renombrado a extensión en minúscula (`.png`) asegura compatibilidad con las declaraciones de tipos de TypeScript globales (`astro/client`).
+
+---
+
+## 8. Términos de Servicio, Políticas de Privacidad y Consentimiento de Registro
+
+Se han implementado controles de conformidad y legalidad en el registro de usuarios, y se han rediseñado por completo las páginas de términos y políticas bajo el nuevo sistema visual.
+
+### Características Clave:
+- **Casilla de Conformidad en el Registro (`src/pages/auth/register.astro`):**
+  - Se añadió una casilla de verificación obligatoria (checkbox) que exige a los usuarios declarar haber leído y aceptado los Términos de Servicio y la Política de Privacidad del sitio antes de crear su cuenta.
+  - Implementación de validación del lado del cliente en el controlador de envío del formulario (`registerForm`), deteniendo el flujo y mostrando un mensaje de advertencia claro si el usuario intenta registrarse sin marcar la aceptación.
+- **Actualización y Rediseño de Términos de Servicio (`src/pages/terms.astro`):**
+  - Se renovó el diseño con secciones legibles, tipografía coherente y tablas responsivas con bordes suaves que admiten visualización móvil.
+  - Se definieron formalmente las tres membresías del sitio (Caminante, Buscador, Guía Personal) y sus características asociadas.
+  - Se agregaron las tablas de precios en pesos chilenos (CLP) mensuales y anuales.
+  - Se actualizaron las referencias de pagos migrando la pasarela comercial de Stripe a **Mercado Pago**.
+  - Incorporación de consentimiento de newsletter y canal de soporte oficial (`contacto@taroterapeutico.net`).
+- **Actualización y Rediseño de la Política de Privacidad (`src/pages/privacy.astro`):**
+  - Alineación completa al esquema visual y espaciado de la página de términos.
+  - Se detalló que la fecha y hora de nacimiento recolectadas en el perfil se utilizan con la finalidad explícita de calcular y desplegar el Arcano Personal del usuario.
+  - Se especificó de forma detallada que el historial de tiradas se almacena para que el usuario pueda visualizar, comparar y hacer un seguimiento evolutivo de sus lecturas de acuerdo a las preguntas realizadas a lo largo del tiempo.
+  - Actualización de referencias comerciales a **Mercado Pago** como proveedor de facturación.
+- **Rediseño de Membresías en Perfil (`src/pages/profile.astro`, `src/lib/plans.ts` y `src/types/auth.ts`):**
+  - Se adaptó el perfil del usuario para mostrar claramente los tres niveles de membresía: *Caminante* (gratuito), *Buscador* (intermedio) y *Guía Personal* (premium), incluyendo sus precios en pesos chilenos y lista de características/límites de tiradas.
+  - Se definieron nuevos tipos de plan (`buscador_monthly`, `buscador_annual`, `guia_monthly`, `guia_annual`) manteniendo retrocompatibilidad automática con los usuarios que tenían suscripciones anteriores.
+  - Se ajustaron los límites dinámicos de guardado de tiradas (3 para Caminante, 10 para Buscador y Guía Personal).
+- **Optimización de Carga de Imágenes (`Navbar.astro`, `profile.astro` y `astro.config.mjs`):**
+  - Se autorizó el dominio de Cloudinary (`res.cloudinary.com`) en la configuración de Astro para procesar imágenes remotas dinámicamente.
+  - Se reemplazó la etiqueta HTML `<img>` de la carta de Arcano Personal en el perfil por el componente oficial `<Image />` de Astro configurado con precarga activa (`loading="eager"`) y tamaño explícito, mejorando los tiempos del Largest Contentful Paint (LCP).
+  - Se actualizó el fallback de la carta de Arcano Personal de `/placeholder-card.jpg` (inexistente) a `/cardback.jpg` (existente en el proyecto).
+  - Se agregó precarga activa (`loading="eager"`) al logotipo de la cabecera (`Navbar.astro`) al ubicarse por encima de la línea de pliegue de la página (above the fold).

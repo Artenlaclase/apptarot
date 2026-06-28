@@ -8,6 +8,9 @@ const site = process.env.SITE_URL || 'http://localhost:4321';
 export default defineConfig({
   site,
   integrations: [sitemap()],
+  image: {
+    domains: ['res.cloudinary.com'],
+  },
   vite: {
     css: {
       postcss: './postcss.config.cjs',
