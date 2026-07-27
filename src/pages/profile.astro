@@ -139,9 +139,9 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
             </a>
           </div>
           <p class="page-lead mt-2">Email: {profile.email || user.email}</p>
-          {profile.fullName && <p class="page-lead">Nombre: <strong>{profile.fullName}</strong></p>}
-          {profile.birthDate && <p class="page-lead">Fecha de nacimiento: <strong>{profile.birthDate}</strong></p>}
-          {profile.birthHour && <p class="page-lead">Hora de nacimiento: <strong>{profile.birthHour}</strong></p>}
+          <p class="page-lead font-medium">Nombre: {profile.fullName ? <strong>{profile.fullName}</strong> : <a href="/profile/edit#editFirstName" class="text-sm italic hover:underline" style="color: var(--primary);">Añadir nombre...</a>}</p>
+          <p class="page-lead font-medium">Fecha de nacimiento: {profile.birthDate ? <strong>{profile.birthDate}</strong> : <a href="/profile/edit#editBirthDate" class="text-sm italic hover:underline" style="color: var(--primary);">Añadir fecha...</a>}</p>
+          <p class="page-lead font-medium">Hora de nacimiento: {profile.birthHour ? <strong>{profile.birthHour}</strong> : <a href="/profile/edit#editBirthHour" class="text-sm italic hover:underline" style="color: var(--primary);">Añadir hora...</a>}</p>
           <p class="page-lead">Plan actual: <strong>{getPlanLabel(profile.plan)}</strong>{isPremiumPlan(profile.plan) ? ` (${profile.planStatus})` : ''}</p>
           <p class="page-lead">Tiradas guardadas: <strong>{profile.readingCount} / {getReadingLimit(profile.plan)}</strong></p>
 
@@ -158,99 +158,145 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
           </div>
         </header>
 
-        {Boolean(profile.bio || profile.hobbies || profile.socialInstagram || profile.socialFacebook || profile.socialTiktok || profile.socialWebsite) && (
-          <section class="surface-card p-6 space-y-4">
+        <section class="surface-card p-6 space-y-4">
+          <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold page-title">Sobre mí</h2>
-            
-            {profile.bio && (
-              <div class="space-y-1">
-                <h3 class="text-xs uppercase tracking-wider font-semibold" style="color: var(--text-muted);">Descripción</h3>
-                <p class="text-sm whitespace-pre-line" style="color: var(--text);">{profile.bio}</p>
-              </div>
+            <a href="/profile/edit" class="text-sm italic hover:underline" style="color: var(--primary);">
+              ✏️ Editar
+            </a>
+          </div>
+          
+          <div class="space-y-1">
+            <h3 class="text-xs uppercase tracking-wider font-semibold" style="color: var(--text-muted);">Descripción</h3>
+            {profile.bio ? (
+              <p class="text-sm whitespace-pre-line" style="color: var(--text);">{profile.bio}</p>
+            ) : (
+              <p class="text-sm italic">
+                <a href="/profile/edit#editBio" class="hover:underline" style="color: var(--text-muted);">
+                  Añade una descripción sobre ti...
+                </a>
+              </p>
             )}
+          </div>
 
-            {profile.hobbies && (
-              <div class="space-y-1">
-                <h3 class="text-xs uppercase tracking-wider font-semibold" style="color: var(--text-muted);">Pasatiempos</h3>
-                <p class="text-sm" style="color: var(--text);">{profile.hobbies}</p>
-              </div>
+          <div class="space-y-1">
+            <h3 class="text-xs uppercase tracking-wider font-semibold" style="color: var(--text-muted);">Pasatiempos</h3>
+            {profile.hobbies ? (
+              <p class="text-sm" style="color: var(--text);">{profile.hobbies}</p>
+            ) : (
+              <p class="text-sm italic">
+                <a href="/profile/edit#editHobbies" class="hover:underline" style="color: var(--text-muted);">
+                  Añade tus pasatiempos (lectura, música, senderismo)...
+                </a>
+              </p>
             )}
+          </div>
 
-            {Boolean(profile.socialInstagram || profile.socialFacebook || profile.socialTiktok || profile.socialWebsite) && (
-              <div class="space-y-2 pt-3 border-t" style="border-color: var(--border);">
-                <h3 class="text-xs uppercase tracking-wider font-semibold mb-2" style="color: var(--text-muted);">Redes y Enlaces</h3>
-                <div class="flex flex-wrap gap-4">
-                  {profile.socialInstagram && (
-                    <a
-                      href={`https://instagram.com/${profile.socialInstagram.replace('@', '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-                      style="color: var(--primary);"
-                      onmouseover="this.style.color='var(--primary-hover)'"
-                      onmouseout="this.style.color='var(--primary)'"
-                    >
-                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/>
-                        <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.162 12 18.162s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zM12 16c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"/>
-                        <path d="M18.406 7.034c.796 0 1.441-.645 1.441-1.44s-.645-1.44-1.441-1.44-1.44.645-1.44 1.44.644 1.44 1.44 1.44z"/>
-                      </svg>
-                      <span>Instagram</span>
-                    </a>
-                  )}
-                  {profile.socialFacebook && (
-                    <a
-                      href={profile.socialFacebook.startsWith('http') ? profile.socialFacebook : `https://facebook.com/${profile.socialFacebook}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-                      style="color: var(--primary);"
-                      onmouseover="this.style.color='var(--primary-hover)'"
-                      onmouseout="this.style.color='var(--primary)'"
-                    >
-                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
-                      </svg>
-                      <span>Facebook</span>
-                    </a>
-                  )}
-                  {profile.socialTiktok && (
-                    <a
-                      href={`https://tiktok.com/@${profile.socialTiktok.replace('@', '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-                      style="color: var(--primary);"
-                      onmouseover="this.style.color='var(--primary-hover)'"
-                      onmouseout="this.style.color='var(--primary)'"
-                    >
-                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.95-1.72-.1-.09-.17-.18-.26-.28v6.61c.03 2.12-.66 4.31-2.23 5.75-1.85 1.73-4.66 2.16-6.99 1.25-2.23-.87-3.8-3.08-3.97-5.46-.22-3.14 1.73-6.19 4.82-6.84 1-.22 2.05-.17 3.03.11v4.02c-.89-.35-1.89-.42-2.8-.08-1.25.46-2.14 1.73-2.19 3.07-.07 1.83 1.41 3.49 3.24 3.51 1.71.02 3.26-1.19 3.43-2.88.06-.57.03-1.15.03-1.73V.02z"/>
-                      </svg>
-                      <span>TikTok</span>
-                    </a>
-                  )}
-                  {profile.socialWebsite && (
-                    <a
-                      href={profile.socialWebsite}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-                      style="color: var(--primary);"
-                      onmouseover="this.style.color='var(--primary-hover)'"
-                      onmouseout="this.style.color='var(--primary)'"
-                    >
-                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                      </svg>
-                      <span>Sitio web</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
+          <div class="space-y-2 pt-3 border-t" style="border-color: var(--border);">
+            <h3 class="text-xs uppercase tracking-wider font-semibold mb-2" style="color: var(--text-muted);">Redes y Enlaces</h3>
+            <div class="flex flex-wrap gap-4">
+              {profile.socialInstagram ? (
+                <a
+                  href={`https://instagram.com/${profile.socialInstagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+                  style="color: var(--primary);"
+                  onmouseover="this.style.color='var(--primary-hover)'"
+                  onmouseout="this.style.color='var(--primary)'"
+                >
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/>
+                    <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.162 12 18.162s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zM12 16c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"/>
+                    <path d="M18.406 7.034c.796 0 1.441-.645 1.441-1.44s-.645-1.44-1.441-1.44-1.44.645-1.44 1.44.644 1.44 1.44 1.44z"/>
+                  </svg>
+                  <span>Instagram ({profile.socialInstagram})</span>
+                </a>
+              ) : (
+                <a href="/profile/edit#editInstagram" class="inline-flex items-center gap-1.5 text-sm italic hover:underline" style="color: var(--text-muted);">
+                  <svg class="h-5 w-5 opacity-60" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/>
+                    <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.162 12 18.162s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zM12 16c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"/>
+                    <path d="M18.406 7.034c.796 0 1.441-.645 1.441-1.44s-.645-1.44-1.441-1.44-1.44.645-1.44 1.44.644 1.44 1.44 1.44z"/>
+                  </svg>
+                  <span>Conectar Instagram</span>
+                </a>
+              )}
+
+              {profile.socialFacebook ? (
+                <a
+                  href={profile.socialFacebook.startsWith('http') ? profile.socialFacebook : `https://facebook.com/${profile.socialFacebook}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+                  style="color: var(--primary);"
+                  onmouseover="this.style.color='var(--primary-hover)'"
+                  onmouseout="this.style.color='var(--primary)'"
+                >
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                  </svg>
+                  <span>Facebook ({profile.socialFacebook})</span>
+                </a>
+              ) : (
+                <a href="/profile/edit#editFacebook" class="inline-flex items-center gap-1.5 text-sm italic hover:underline" style="color: var(--text-muted);">
+                  <svg class="h-5 w-5 opacity-60" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                  </svg>
+                  <span>Conectar Facebook</span>
+                </a>
+              )}
+
+              {profile.socialTiktok ? (
+                <a
+                  href={`https://tiktok.com/@${profile.socialTiktok.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+                  style="color: var(--primary);"
+                  onmouseover="this.style.color='var(--primary-hover)'"
+                  onmouseout="this.style.color='var(--primary)'"
+                >
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.95-1.72-.1-.09-.17-.18-.26-.28v6.61c.03 2.12-.66 4.31-2.23 5.75-1.85 1.73-4.66 2.16-6.99 1.25-2.23-.87-3.8-3.08-3.97-5.46-.22-3.14 1.73-6.19 4.82-6.84 1-.22 2.05-.17 3.03.11v4.02c-.89-.35-1.89-.42-2.8-.08-1.25.46-2.14 1.73-2.19 3.07-.07 1.83 1.41 3.49 3.24 3.51 1.71.02 3.26-1.19 3.43-2.88.06-.57.03-1.15.03-1.73V.02z"/>
+                  </svg>
+                  <span>TikTok ({profile.socialTiktok})</span>
+                </a>
+              ) : (
+                <a href="/profile/edit#editTiktok" class="inline-flex items-center gap-1.5 text-sm italic hover:underline" style="color: var(--text-muted);">
+                  <svg class="h-5 w-5 opacity-60" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.95-1.72-.1-.09-.17-.18-.26-.28v6.61c.03 2.12-.66 4.31-2.23 5.75-1.85 1.73-4.66 2.16-6.99 1.25-2.23-.87-3.8-3.08-3.97-5.46-.22-3.14 1.73-6.19 4.82-6.84 1-.22 2.05-.17 3.03.11v4.02c-.89-.35-1.89-.42-2.8-.08-1.25.46-2.14 1.73-2.19 3.07-.07 1.83 1.41 3.49 3.24 3.51 1.71.02 3.26-1.19 3.43-2.88.06-.57.03-1.15.03-1.73V.02z"/>
+                  </svg>
+                  <span>Conectar TikTok</span>
+                </a>
+              )}
+
+              {profile.socialWebsite ? (
+                <a
+                  href={profile.socialWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+                  style="color: var(--primary);"
+                  onmouseover="this.style.color='var(--primary-hover)'"
+                  onmouseout="this.style.color='var(--primary)'"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                  <span>Sitio web ({profile.socialWebsite.replace(/^https?:\/\//i, '')})</span>
+                </a>
+              ) : (
+                <a href="/profile/edit#editWebsite" class="inline-flex items-center gap-1.5 text-sm italic hover:underline" style="color: var(--text-muted);">
+                  <svg class="h-5 w-5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                  <span>Añadir Sitio web</span>
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
 
         <section class="surface-card p-6 space-y-4">
           <div>

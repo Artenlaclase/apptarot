@@ -44,6 +44,21 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 
 ---
 
+## 15. Enlaces de edición y marcadores de posición para campos vacíos en el Perfil
+
+### Problema
+- Aquellos campos opcionales del perfil (tales como Nombre, Fecha de nacimiento, Hora de nacimiento, Descripción, Pasatiempos y Redes Sociales) se ocultaban por completo de la vista si estaban vacíos, lo que impedía al usuario ver su existencia o tener un acceso directo y rápido para completarlos.
+
+### Solución aplicada
+
+**Archivo:** `src/pages/profile.astro`
+
+- **Visualización de Campos Vacíos**: Se configuró para que los campos vacíos aparezcan de forma elegante en el perfil con enlaces de invitación (ej. *"Añadir nombre..."*, *"Añade una descripción sobre ti..."*, *"Conectar Instagram"*).
+- **Enlaces de Anclaje de Edición**: Al hacer clic en cualquiera de estos campos vacíos, el usuario es redirigido directamente a la página `/profile/edit` haciendo foco/desplazamiento exacto en el input correspondiente gracias a los enlaces de anclaje de hash (`#editFirstName`, `#editBirthDate`, `#editHobbies`, `#editBio`, `#editInstagram`, etc.).
+- **Siempre Visible la Sección "Sobre mí"**: La sección inferior que agrupa la descripción, los pasatiempos y las redes sociales ahora permanece visible permanentemente para facilitar su compleción.
+
+---
+
 ## 14. Endpoint administrativo de pruebas para cambio dinámico de planes
 
 ### Problema
