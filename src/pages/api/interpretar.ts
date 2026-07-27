@@ -116,7 +116,7 @@ REGLAS OBLIGATORIAS PARA TUS INTERPRETACIONES:
 5. VOCABULARIO PROHIBIDO (indica Rider-Waite):
    - "elemento aire/tierra/fuego/agua" (en Marsella son palos: Bastos, Copas, Espadas, Oros)
    - Términos de la Golden Dawn o astrología moderna
-   - "lección kármica", "leccion karmica", "vibración energética", "vibracion energetica"
+   
 
 6. VOCABULARIO MARSELLA CORRECTO:
    - "Arcano", "lámina", "naipe", "triunfo"
