@@ -2,6 +2,36 @@
 
 ---
 
+## Fecha: 26 de julio de 2026
+
+---
+
+## 10. Protocolo estricto del Tarot de Marsella y control de pureza para interpretación de IA
+
+### Problema
+Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de Rider-Waite-Smith (simbolismo new age, psicología junguiana, asociaciones astrológicas modernas) en lugar de ceñirse estrictamente a la tradición clásica del Tarot de Marsella.
+
+### Solución aplicada
+
+**Archivo:** `src/pages/api/interpretar.ts`
+
+- **System Prompt Estricto**: Se definió un prompt de sistema robusto con reglas obligatorias para basarse únicamente en la tradición marsellesa (geometría sagrada, colores primarios medievales, disposición espacial, miradas y gestos de los personajes, leyes de 3+1 y repetición, etc.).
+- **Vocabulario Prohibido y Permitido**: Se restringieron explícitamente términos de Rider-Waite como "viaje del héroe", "sombra junguiana" e "inconsciente colectivo", indicando las correspondencias marsellesas correctas ("lámina", "triunfo", "palo de bastos/copas/espadas/oros").
+- **Función de Control de Pureza `verificarPurezaMarsella`**: Se implementó una función para inspeccionar la interpretación generada y verificar que no contenga contaminaciones de Rider-Waite.
+- **Persistencia en Firestore y Respuesta API**:
+  - Los metadatos de validación (incluyendo la pureza y los términos detectados) ahora se guardan en el documento de la lectura en Firestore (`readings`).
+  - La API retorna los metadatos de pureza en el objeto `metadatos.verificacionPureza`.
+
+---
+
+## Archivos modificados (26 jul 2026)
+
+| Archivo | Operación |
+|---|---|
+| `src/pages/api/interpretar.ts` | Modificado |
+
+---
+
 ## Fecha: 14 de junio de 2026
 
 ---
