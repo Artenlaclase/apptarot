@@ -44,6 +44,25 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 
 ---
 
+## 13. Funcionalidad de Guardado de Tirada sin Interpretación IA con Alerta de Límites
+
+### Problema
+- Si un usuario alcanza el límite de interpretaciones con IA de su sesión, no se mostraba el panel de interpretación y, por lo tanto, no tenía manera de guardar la tirada en su perfil.
+
+### Solución aplicada
+
+**Archivo:** `src/pages/cards/random-cards.astro`
+
+- **Botón de Guardado Directo**: Se agregó el botón `💾 Guardar Tirada (Sin IA)` en el panel de acciones principales (`#aclaracionControls`), visible tan pronto como se barajan y revelan las cartas.
+- **Alerta de Confirmación de Límites**:
+  - Al pulsar el botón, el cliente calcula dinámicamente cuántos espacios de guardado le quedan en su plan (`límite - tiradasGuardadas`).
+  - Muestra un cuadro de diálogo (`window.confirm`) con un mensaje informativo: *"La tirada se guardará sin interpretación de IA. Te quedan X tiradas por guardar de tu límite de Y. ¿Deseas continuar?"*.
+  - Si el usuario acepta, se realiza el guardado manual (con la interpretación marcada como *"Tirada guardada sin interpretación de IA."*).
+  - Si el usuario ya completó su límite de tiradas, se muestra un mensaje de alerta impidiendo el guardado.
+- **Persistencia de la Pregunta**: Tanto al guardar con o sin interpretación de la IA, si el campo de texto de la pregunta está vacío, se almacena por defecto la consulta: *"¿Cuál es la energía actual del consultante?"*. Esto garantiza que se mantenga el formato e información en la vista de detalle de la tirada.
+
+---
+
 ## 11. Corrección de límites de guardado, límite de interpretaciones por sesión y navegación del historial
 
 ### Problema

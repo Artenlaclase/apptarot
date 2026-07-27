@@ -5,6 +5,7 @@ import Layout from "../../layouts/Layout.astro";
 import "../../styles/cards.css";
 import { getOrCreateUserProfile } from "../../lib/auth-server";
 import { getDailyArcaneHint } from "../../lib/arcaneCalculator";
+import { getReadingLimit } from "../../lib/plans";
 
 interface Card {
   id: string;
@@ -71,7 +72,14 @@ const userArcaneHint = userArcaneNumber
 
 <Layout title={pageTitle} description={pageDescription}>
   <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
-    <div id="user-plan-data" data-plan={userProfile?.plan || 'free'} data-uid={user?.uid || ''} class="hidden"></div>
+    <div
+      id="user-plan-data"
+      data-plan={userProfile?.plan || 'free'}
+      data-uid={user?.uid || ''}
+      data-count={userProfile?.readingCount ?? 0}
+      data-limit={getReadingLimit(userProfile?.plan || 'free')}
+      class="hidden"
+    ></div>
     <header class="text-center mb-8 md:mb-12">
       <h1
         class="text-3xl md:text-4xl font-bold mb-3 md:mb-4"
@@ -309,6 +317,12 @@ const userArcaneHint = userArcaneNumber
                   id="interpretarBtn"
                   class="btn-ui btn-ui-primary px-4 py-2"
                   >✨ Interpretar Tirada</button
+                >
+                <button
+                  type="button"
+                  id="guardarTiradaSinInterpBtn"
+                  class="btn-ui btn-ui-secondary px-4 py-2"
+                  >💾 Guardar Tirada (Sin IA)</button
                 >
               </div>
             </div>
@@ -780,6 +794,7 @@ const userArcaneHint = userArcaneNumber
           "aclaracionBtn",
           "revelarTodasBtn",
           "interpretarBtn",
+          "guardarTiradaSinInterpBtn",
         ].forEach(function (id) {
           var el = document.getElementById(id);
           if (!el) return;
@@ -1517,6 +1532,12 @@ const userArcaneHint = userArcaneNumber
 
             var inputPregunta = document.getElementById("tiradaPregunta");
             var preguntaText = inputPregunta ? inputPregunta.value.trim() : "";
+            if (!preguntaText) {
+              preguntaText = "¿Cuál es la energía actual del consultante?";
+            }
+
+            var planEl = document.getElementById("user-plan-data");
+            var currentCount = parseInt(planEl ? planEl.dataset.count : "0", 10) || 0;
 
             fetch("/api/readings/save", {
               method: "POST",
@@ -1534,6 +1555,9 @@ const userArcaneHint = userArcaneNumber
               })
               .then(function (data) {
                 if (data.ok) {
+                  if (planEl) {
+                    planEl.dataset.count = String(currentCount + 1);
+                  }
                   var old = btnGuardarInterp.textContent;
                   btnGuardarInterp.textContent = "✓ Guardado";
                   setTimeout(function () {
@@ -1551,6 +1575,93 @@ const userArcaneHint = userArcaneNumber
                 );
                 btnGuardarInterp.textContent = "💾 Guardar";
                 btnGuardarInterp.disabled = false;
+              });
+          });
+        }
+
+        var btnGuardarSinInterp = document.getElementById("guardarTiradaSinInterpBtn");
+        if (btnGuardarSinInterp) {
+          btnGuardarSinInterp.addEventListener("click", function () {
+            var planEl = document.getElementById("user-plan-data");
+            var currentCount = parseInt(planEl ? planEl.dataset.count : "0", 10) || 0;
+            var limit = parseInt(planEl ? planEl.dataset.limit : "3", 10) || 3;
+            var remaining = limit - currentCount;
+
+            if (remaining <= 0) {
+              alert("Has alcanzado el límite de " + limit + " tiradas de tu plan. No puedes guardar más tiradas.");
+              return;
+            }
+
+            var confirmMsg = "La tirada se guardará sin interpretación de IA.\n" +
+              "Te quedan " + remaining + " tiradas por guardar de tu límite de " + limit + ".\n" +
+              "¿Deseas continuar?";
+            
+            if (!window.confirm(confirmMsg)) {
+              return;
+            }
+
+            var cartasReveladas = [];
+            document
+              .querySelectorAll("#cardsContainer [data-card]")
+              .forEach(function (el) {
+                try {
+                  var card = JSON.parse(el.dataset.card || "{}");
+                  if (el.dataset.revealed === "1")
+                    cartasReveladas.push(card);
+                } catch (e) {}
+              });
+
+            if (cartasReveladas.length === 0) {
+              alert("Primero revela al menos una carta");
+              return;
+            }
+
+            var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
+            var mode = modeEl ? modeEl.value : "mixta";
+            var inputPregunta = document.getElementById("tiradaPregunta");
+            var preguntaText = inputPregunta ? inputPregunta.value.trim() : "";
+            if (!preguntaText) {
+              preguntaText = "¿Cuál es la energía actual del consultante?";
+            }
+
+            btnGuardarSinInterp.disabled = true;
+            btnGuardarSinInterp.textContent = "Guardando...";
+
+            fetch("/api/readings/save", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cards: cartasReveladas,
+                mode: mode,
+                interpretation: "Tirada guardada sin interpretación de IA.",
+                pregunta: preguntaText,
+                date: new Date().toISOString(),
+              }),
+            })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (data) {
+                if (data.ok) {
+                  if (planEl) {
+                    planEl.dataset.count = String(currentCount + 1);
+                  }
+                  btnGuardarSinInterp.textContent = "✓ Guardado";
+                  setTimeout(function () {
+                    btnGuardarSinInterp.textContent = "💾 Guardar Tirada (Sin IA)";
+                    btnGuardarSinInterp.disabled = false;
+                  }, 1500);
+                } else {
+                  throw new Error(data.error || "Error desconocido");
+                }
+              })
+              .catch(function (err) {
+                alert(
+                  "Error al guardar: " +
+                    (err instanceof Error ? err.message : "Error desconocido"),
+                );
+                btnGuardarSinInterp.textContent = "💾 Guardar Tirada (Sin IA)";
+                btnGuardarSinInterp.disabled = false;
               });
           });
         }
