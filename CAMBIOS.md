@@ -25,6 +25,24 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 
 ---
 
+## 12. Ajuste de formato corto de IA, pregunta por defecto y carga multimodal de imágenes en la tirada
+
+### Problema
+- El formato de respuesta era demasiado largo y estructurado por apartados, en lugar de un mensaje tradicional directo de 600 caracteres.
+- Se producían alucinaciones visuales en cartas menores (ej. describir jinetes o caballos en el Seis de Bastos) debido a la memoria cruzada de Rider-Waite.
+- Si el usuario no ingresaba una pregunta, la interpretación se generaba sin un contexto de consulta definido.
+
+### Solución aplicada
+
+**Archivo:** `src/pages/api/interpretar.ts`
+
+- **Formato Corto de 600 Caracteres**: Se reescribieron las instrucciones del system prompt para obligar a la IA a devolver un único párrafo integrado y fluido de aproximadamente 600 caracteres (~100 palabras) sin apartados ni títulos.
+- **Evitar Figuras en Palos Menores**: Se introdujo una regla crítica explicitando que las cartas del 1 al 10 de Bastos, Copas, Espadas y Oros son naipes abstractos y geométricos sin personajes humanos, caballos ni jinetes.
+- **Carga de Imágenes a OpenAI**: Se implementó el envío multimodal de las imágenes de las cartas reales (urls absolutas de Cloudinary) en el cuerpo del payload de OpenAI (`type: "image_url"`). Esto permite que el modelo analice visualmente los detalles reales de la lámina de Marsella.
+- **Pregunta por Defecto**: Si no se provee pregunta en la consulta, se inicializa automáticamente como: *"¿Cuál es la energía actual del consultante?"*.
+
+---
+
 ## 11. Corrección de límites de guardado, límite de interpretaciones por sesión y navegación del historial
 
 ### Problema

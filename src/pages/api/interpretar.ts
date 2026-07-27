@@ -17,6 +17,7 @@ interface CartaInput {
   arcano: string;
   numero?: number;
   valor?: string;
+  imagem?: string;
 }
 
 function verificarPurezaMarsella(respuesta: string) {
@@ -50,6 +51,9 @@ export async function POST(context: APIContext): Promise<Response> {
     const body = (await request.json()) as { cartas?: CartaInput[]; pregunta?: string };
     cartas = body.cartas ?? [];
     pregunta = (body.pregunta || '').trim();
+    if (!pregunta) {
+      pregunta = '¿Cuál es la energía actual del consultante?';
+    }
   } catch {
     return json({ error: 'Cuerpo de la peticion invalido' }, 400);
   }
@@ -79,15 +83,6 @@ export async function POST(context: APIContext): Promise<Response> {
     })
     .join('; ');
 
-  const limiteExtension = esCaminante
-    ? `
-
-8. LÍMITE DE EXTENSIÓN (PLAN CAMINANTE - GRATUITO):
-   - Tu respuesta COMPLETA debe tener un MÁXIMO DE 150 PALABRAS en total, contando todos los apartados.
-   - Resume cada apartado (Descripción visual, Significado numerológico, Interpretación según posición, Mensaje tradicional) en 1-2 frases muy concisas, directas y sin relleno.
-   - Prioriza claridad y utilidad práctica sobre exhaustividad. No excedas el límite bajo ninguna circunstancia.`
-    : '';
-
   const systemPrompt = `SISTEMA EXPERTO TAROT DE MARSELLA - PROTOCOLO ESTRICTO:
 ERES UN EXPERTO EXCLUSIVO EN EL TAROT DE MARSELLA (Tarot de Marseille).
 
@@ -108,64 +103,77 @@ REGLAS OBLIGATORIAS PARA TUS INTERPRETACIONES:
    - La numerología medieval y pitagórica
    - Los palos tradicionales: Bastos, Copas, Espadas, Oros
 
-3. DIFERENCIAS CLAVE A RESPETAR:
+3. ADVERTENCIA CRÍTICA SOBRE PALOS MENORES:
+   - Las cartas del 1 al 10 de los palos menores (Bastos, Copas, Espadas, Oros) NO tienen personajes ni figuras humanas (no hay caballos, jinetes, ni personas en acción). Son naipes estrictamente abstractos que constan de los símbolos del palo dispuestos geométricamente y acompañados por detalles ornamentales de flores, hojas, columnas y líneas. Solo las Figuras de la corte (Sota/Valet, Caballo/Cavalier, Reina, Rey) y los Arcanos Mayores contienen personajes.
+
+4. DIFERENCIAS CLAVE A RESPETAR:
    - Marsella: NAIPES BIDIMENSIONALES MEDIEVALES → Rider: ESCENAS TRIDIMENSIONALES
    - Marsella: COLORES PLANOS SIMBÓLICOS → Rider: ILUSTRACIONES NARRATIVAS
    - Marsella: ICONOGRAFÍA CRISTIANA MEDIEVAL → Rider: OCULTISMO SIGLO XIX
    - Marsella: FIGURAS ESTÁTICAS SIMBÓLICAS → Rider: PERSONAJES EN ACCIÓN
    - Marsella: ORIGEN JUEGO DE NAIPES → Rider: ORIGEN ESOTÉRICO
 
-4. VOCABULARIO PROHIBIDO (indica Rider-Waite):
+5. VOCABULARIO PROHIBIDO (indica Rider-Waite):
    - "inconsciente colectivo", "sombra junguiana", "viaje del héroe", "viaje del heroe"
    - "elemento aire/tierra/fuego/agua" (en Marsella son palos: Bastos, Copas, Espadas, Oros)
    - Términos de la Golden Dawn o astrología moderna
    - "lección kármica", "leccion karmica", "vibración energética", "vibracion energetica"
 
-5. VOCABULARIO MARSELLA CORRECTO:
+6. VOCABULARIO MARSELLA CORRECTO:
    - "Arcano", "lámina", "naipe", "triunfo"
    - "Palo de Bastos/Copas/Espadas/Oros"
    - "Derecho/Invertido" (no bloqueado/sombra)
    - "Figura", "ornamento", "color"
 
-6. REFERENCIAS AUTORIZADAS Y PRINCIPIOS:
+7. REFERENCIAS AUTORIZADAS Y PRINCIPIOS:
    - Alejandro Jodorowsky: "La vía del Tarot", Philippe Camoin, Joseph Paul Marteau, Jean-Claude Flornoy, Marianne Costa.
-   - La carta se lee como un TODO orgánico, no por símbolos aislados: El Tarot es un "ser" y un conjunto unitario donde cada detalle, por pequeño que sea, forma parte de un mandala o sistema coherente.
+   - La carta se lee como un TODO orgánico, no por símbolos aislados: El Tarot es un "ser" y un conjunto unitario coherente.
    - Los colores forman un lenguaje: El rojo representa la actividad, la vitalidad y el fuego; el azul (especialmente el oscuro) la recepción, la pasividad y la interiorización; y el amarillo la conciencia, la inteligencia y la luz del intelecto.
    - La dirección de las figuras indica movimiento energético: La mirada y los pies hacia la izquierda señalan el pasado y la receptividad, mientras que hacia la derecha indican el futuro y la acción.
-   - Las manos muestran la acción del alma: Las manos pueden ser receptivas (si sostienen un continente) o activas (si sostienen un símbolo de poder como una vara o espada), revelando la disposición del personaje frente a su entorno.
+   - Las manos muestran la acción del alma: Las manos pueden ser receptivas o activas, revelando la disposición del personaje frente a su entorno.
    - Los pies indican la dirección del destino: La orientación de los pies determina el grado de actividad o receptividad y si el paso se dirige hacia lo material o lo espiritual.
-   - El Tarot es un espejo: No sirve para predecir un futuro fatalista, sino que refleja la verdad subjetiva y el estado de conciencia presente del consultante.
-   - La estructura es un doble cuadrado: La parte superior de la carta representa el Cielo (espiritualidad, mente), mientras que la inferior representa la Tierra (vida material, cuerpo).
-   - Ley del 3+1: En cualquier grupo de cuatro elementos (como los cuatro Palos), tres son similares y uno es diferente, marcando este último el punto de transición o toma de conciencia.
-   - La numerología es evolutiva: Los números del 1 al 10 representan un ciclo de crecimiento, desde la potencia inicial (As) hasta la transformación o fin de ciclo (10).
-   - Ley de Repetición: Los símbolos se repiten de una carta a otra con sutiles diferencias (por ejemplo, el tamaño de las estrellas o la apertura de un velo), lo que indica un cambio de estado o evolución en la historia que cuentan.
-   - El centro es la conciencia: En estructuras como el Arcano XXI (El Mundo), el personaje central representa la "quintaesencia" o el alma que armoniza las cuatro energías básicas del ser humano.
-   - La lectura es una "frase" óptica: Las cartas puestas una al lado de la otra forman un lenguaje visual donde los personajes dialogan según sus miradas y gestos, creando un relato coherente.
+   - El Tarot es un espejo del estado de conciencia presente del consultante.
+   - La estructura es un doble cuadrado: la parte superior representa el Cielo y la inferior representa la Tierra.
+   - Ley del 3+1, Ley de Repetición y la numerología evolutiva (1 al 10).
+   - La lectura es una "frase" óptica: las cartas puestas al lado forman un diálogo según miradas y gestos.
 
-7. FORMATO DE RESPUESTA OBLIGATORIO:
-   Debes estructurar tu interpretación claramente con los siguientes apartados:
-   - Descripción visual Marsella (no escénica)
-   - Significado numerológico
-   - Interpretación según posición espacial
-   - Mensaje tradicional del arcano${limiteExtension}`;
+8. FORMATO DE RESPUESTA OBLIGATORIO:
+   Debes responder con una única interpretación fluida y unificada (mensaje tradicional de la tirada) que integre la descripción visual de Marsella, el significado numérico/geométrico y la frase óptica. NO utilices títulos, guiones ni apartados separados. La respuesta COMPLETA debe ser un único párrafo de aproximadamente 600 caracteres (alrededor de 100 palabras) en total.`;
 
   const userMessage = `CONSULTA DE TAROT DE MARSELLA:
 
 Tirada de cartas: ${cartasList}
-${pregunta ? `Pregunta / Tema de consulta: "${pregunta}"` : ''}
+Pregunta / Tema de consulta: "${pregunta}"
 
 INSTRUCCIONES DE INTERPRETACIÓN:
-1. Describe los elementos visuales ESPECÍFICOS del Tarot de Marsella para las cartas de la tirada.
-2. Explica el simbolismo NUMÉRICO y GEOMÉTRICO conjunto y de cada arcano.
+1. Describe y analiza los elementos visuales basándote en la tradición del Tarot de Marsella y las imágenes provistas.
+2. Explica el simbolismo NUMÉRICO y GEOMÉTRICO conjunto.
 3. Interpreta según la TRADICIÓN MARSELLESA (Jodorowsky, Camoin, Marteau, etc.).
-4. Menciona el significado de los COLORES y su disposición espacial en la tirada (miradas, gestos, direcciones).
-5. Si hay cartas invertivas/al revés, explica la interpretación marsellesa (no psicológica).
-6. Explica cómo dialogan las cartas entre sí (frase óptica).
+4. Menciona el significado de los COLORES y su disposición espacial (miradas, gestos, direcciones).
+5. Explica el diálogo conjunto entre las cartas (frase óptica).
 
-RECUERDA: NO uses referencias del Rider-Waite. Si no conoces la tradición marsellesa para alguna carta, indícalo honestamente.${esCaminante
-      ? '\nRECUERDA TAMBIÉN: Esta es una consulta del plan CAMINANTE (gratuito). Tu respuesta debe ser MUY BREVE, con un máximo absoluto de 150 palabras en total.'
-      : ''
-    }`;
+RECUERDA: NO uses referencias del Rider-Waite. Responde en un único bloque de texto integrado y fluido de unos 600 caracteres en total. No incluyas títulos ni subtítulos.`;
+
+  const userContent: any[] = [
+    {
+      type: 'text',
+      text: userMessage,
+    },
+  ];
+
+  // Enviar imágenes de Cloudinary si están disponibles y son absolutas
+  const imageUrls = cartas
+    .map((c) => c.imagem)
+    .filter((img): img is string => typeof img === 'string' && img.startsWith('http'));
+
+  for (const url of imageUrls) {
+    userContent.push({
+      type: 'image_url',
+      image_url: {
+        url: url,
+      },
+    });
+  }
 
   let aiResponse: Response;
   try {
@@ -179,7 +187,7 @@ RECUERDA: NO uses referencias del Rider-Waite. Si no conoces la tradición marse
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
+          { role: 'user', content: userContent },
         ],
         max_tokens: esCaminante ? 320 : 1000,
         temperature: 0.4,
