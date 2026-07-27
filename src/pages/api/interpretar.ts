@@ -114,7 +114,6 @@ REGLAS OBLIGATORIAS PARA TUS INTERPRETACIONES:
    - Marsella: ORIGEN JUEGO DE NAIPES → Rider: ORIGEN ESOTÉRICO
 
 5. VOCABULARIO PROHIBIDO (indica Rider-Waite):
-   - "inconsciente colectivo", "sombra junguiana", "viaje del héroe", "viaje del heroe"
    - "elemento aire/tierra/fuego/agua" (en Marsella son palos: Bastos, Copas, Espadas, Oros)
    - Términos de la Golden Dawn o astrología moderna
    - "lección kármica", "leccion karmica", "vibración energética", "vibracion energetica"
