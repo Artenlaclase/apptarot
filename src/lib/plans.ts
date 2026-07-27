@@ -9,18 +9,16 @@ export function isPremiumPlan(plan: UserPlan): boolean {
 
 export function getPlanLabel(plan: UserPlan): string {
   switch (plan) {
+    case 'buscador':
     case 'buscador_monthly':
-      return 'Buscador Mensual';
     case 'buscador_annual':
-      return 'Buscador Anual';
-    case 'guia_monthly':
-      return 'Guía Personal Mensual (Premium)';
-    case 'guia_annual':
-      return 'Guía Personal Anual (Premium)';
     case 'premium_monthly':
-      return 'Buscador Mensual (Anterior)';
     case 'premium_annual':
-      return 'Buscador Anual (Anterior)';
+      return 'Buscador';
+    case 'guia':
+    case 'guia_monthly':
+    case 'guia_annual':
+      return 'Guía Personal';
     default:
       return 'Caminante';
   }

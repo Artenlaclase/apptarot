@@ -44,6 +44,23 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 
 ---
 
+## 14. Endpoint administrativo de pruebas para cambio dinámico de planes
+
+### Problema
+- Para diseñar y validar lo que ve un perfil premium (ej. "buscador" o "guia") versus un perfil gratuito ("caminante/free"), no había un mecanismo directo y ágil para que el usuario o desarrollador pudiera alternar su suscripción en la base de datos sin entrar a la consola de Firebase.
+
+### Solución aplicada
+
+**Archivo:** `src/pages/api/admin/set-plan.ts` [NEW]
+
+- Se creó una ruta de API GET `/api/admin/set-plan` que permite cambiar el plan del usuario autenticado dinámicamente mediante parámetros de URL.
+- El usuario puede visitar `http://localhost:4321/api/admin/set-plan?plan=buscador` o `?plan=guia` para pasar a un plan de pago, y `?plan=free` para regresar al plan gratuito. Las claves cortas (`buscador`, `guia`, `caminante`) son convertidas internamente a los valores válidos de la base de datos (`buscador_monthly`, `guia_monthly`, `free`) para mapearse correctamente con las etiquetas del perfil.
+
+**Archivo:** `src/lib/plans.ts`
+- Se simplificó la función `getPlanLabel` para retornar nombres limpios sin sufijos de facturación (ej. `"Buscador"` en lugar de `"Buscador Mensual"`, y `"Guía Personal"` en lugar de `"Guía Personal Mensual (Premium)"`), tal como se requirió para la visualización del perfil.
+
+---
+
 ## 13. Funcionalidad de Guardado de Tirada sin Interpretación IA con Alerta de Límites
 
 ### Problema
