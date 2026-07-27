@@ -71,6 +71,7 @@ const userArcaneHint = userArcaneNumber
 
 <Layout title={pageTitle} description={pageDescription}>
   <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
+    <div id="user-plan-data" data-plan={userProfile?.plan || 'free'} class="hidden"></div>
     <header class="text-center mb-8 md:mb-12">
       <h1
         class="text-3xl md:text-4xl font-bold mb-3 md:mb-4"
@@ -995,6 +996,29 @@ const userArcaneHint = userArcaneNumber
       var hasInterpretacion = false;
 
       function interpretar() {
+        var planEl = document.getElementById("user-plan-data");
+        var plan = planEl ? planEl.dataset.plan : "free";
+
+        var sessionLimit = 1; // free / Caminante
+        if (plan && (plan.indexOf("buscador") !== -1 || plan.indexOf("premium") !== -1)) {
+          sessionLimit = 2;
+        } else if (plan && plan.indexOf("guia") !== -1) {
+          sessionLimit = 3;
+        }
+
+        var sessionKey = "apptarot_interpretations_session_count";
+        var sessionCount = parseInt(sessionStorage.getItem(sessionKey) || "0", 10);
+
+        if (sessionCount >= sessionLimit) {
+          setInterpretarFeedback(
+            "warn",
+            "Has alcanzado el límite de " + sessionLimit + " interpretación(es) con IA por sesión para tu plan " +
+            (plan === 'free' ? 'Caminante' : plan.indexOf('guia') !== -1 ? 'Guía Personal' : 'Buscador') +
+            '. <a href="/premium/chat" style="color: var(--primary); font-weight: bold; text-decoration: underline;">Actualiza tu plan</a> para obtener interpretaciones ilimitadas.'
+          );
+          return;
+        }
+
         if (hasInterpretacion) {
           setInterpretarFeedback(
             "warn",
@@ -1080,6 +1104,10 @@ const userArcaneHint = userArcaneNumber
             }
 
             hasInterpretacion = true;
+
+            // Increment session interpretation count
+            var currentCount = parseInt(sessionStorage.getItem(sessionKey) || "0", 10);
+            sessionStorage.setItem(sessionKey, String(currentCount + 1));
 
             // Actualizar texto del botón toggle
             var closeBtn = document.getElementById("closeInterpretacionBtn");
@@ -1459,18 +1487,18 @@ const userArcaneHint = userArcaneNumber
               return;
             }
 
-            var selectedIds = [];
+            var cartasReveladas = [];
             document
               .querySelectorAll("#cardsContainer [data-card]")
               .forEach(function (el) {
                 try {
                   var card = JSON.parse(el.dataset.card || "{}");
-                  if (card.id && el.dataset.revealed === "1")
-                    selectedIds.push(card.id);
+                  if (el.dataset.revealed === "1")
+                    cartasReveladas.push(card);
                 } catch (e) {}
               });
 
-            if (selectedIds.length === 0) {
+            if (cartasReveladas.length === 0) {
               alert("Primero revela al menos una carta");
               return;
             }
@@ -1491,7 +1519,7 @@ const userArcaneHint = userArcaneNumber
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                cards: selectedIds,
+                cards: cartasReveladas,
                 mode: mode,
                 interpretation: interpretacion,
                 pregunta: preguntaText,

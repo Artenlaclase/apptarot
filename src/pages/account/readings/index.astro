@@ -15,15 +15,35 @@ const readingsSnapshot = await adminDb
   .limit(200)
   .get();
 
-const readings = readingsSnapshot.docs.map((doc) => ({
-  id: doc.id,
-  ...(doc.data() as {
-    createdAt?: string;
-    cards?: Array<{ nombre?: string }>;
-    interpretation?: string;
-    pregunta?: string;
-  }),
-}));
+function formatFirestoreDate(val: any): string {
+  if (!val) return '';
+  if (typeof val.toDate === 'function') {
+    return val.toDate().toISOString();
+  }
+  if (val instanceof Date) {
+    return val.toISOString();
+  }
+  if (typeof val === 'string') {
+    return val;
+  }
+  try {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? '' : d.toISOString();
+  } catch {
+    return '';
+  }
+}
+
+const readings = readingsSnapshot.docs.map((doc) => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    createdAt: formatFirestoreDate(data.createdAt),
+    cards: Array.isArray(data.cards) ? data.cards : [],
+    interpretation: data.interpretation || '',
+    pregunta: data.pregunta || null,
+  };
+});
 
 const title = 'Historial de tiradas';
 const description = 'Consulta y elimina tus tiradas pasadas.';
@@ -32,7 +52,8 @@ const description = 'Consulta y elimina tus tiradas pasadas.';
 <Layout {title} {description}>
   <main class="container mx-auto max-w-5xl px-4 py-10">
     <header class="mb-6">
-      <h1 class="text-3xl font-bold page-title">Historial de tiradas</h1>
+      <a href="/profile" class="token-link">← Volver a mi perfil</a>
+      <h1 class="text-3xl font-bold page-title mt-2">Historial de tiradas</h1>
       <p class="page-lead mt-2">Cada lectura queda guardada con fecha y detalle.</p>
     </header>
 
@@ -54,7 +75,11 @@ const description = 'Consulta y elimina tus tiradas pasadas.';
             )}
             <h2 class="text-lg font-semibold page-title mt-1">
               {Array.isArray(reading.cards)
-                ? reading.cards.map((card) => card.nombre).filter(Boolean).slice(0, 3).join(', ')
+                ? reading.cards
+                    .map((card) => (typeof card === 'string' ? card : card?.nombre || ''))
+                    .filter(Boolean)
+                    .slice(0, 3)
+                    .join(', ')
                 : 'Tirada'}
             </h2>
             <p class="text-sm page-lead">

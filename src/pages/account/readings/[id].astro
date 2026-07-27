@@ -23,11 +23,31 @@ if (!readingSnap.exists) {
   return Astro.redirect('/account/readings');
 }
 
-const reading = readingSnap.data() as {
-  createdAt?: string;
-  cards?: Array<{ nombre: string; arcano: string; numero?: number; valor?: string }>;
-  interpretation?: string;
-  pregunta?: string;
+function formatFirestoreDate(val: any): string {
+  if (!val) return '';
+  if (typeof val.toDate === 'function') {
+    return val.toDate().toISOString();
+  }
+  if (val instanceof Date) {
+    return val.toISOString();
+  }
+  if (typeof val === 'string') {
+    return val;
+  }
+  try {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? '' : d.toISOString();
+  } catch {
+    return '';
+  }
+}
+
+const data = readingSnap.data() || {};
+const reading = {
+  createdAt: formatFirestoreDate(data.createdAt),
+  cards: Array.isArray(data.cards) ? data.cards : [],
+  interpretation: data.interpretation || '',
+  pregunta: data.pregunta || null,
 };
 
 const title = 'Detalle de tirada';
@@ -52,12 +72,21 @@ const description = 'Consulta el detalle completo de una lectura guardada.';
     <section class="surface-card p-6">
       <h2 class="text-xl font-semibold page-title mb-4">Cartas</h2>
       <ul class="space-y-2">
-        {(reading.cards || []).map((card) => (
-          <li class="app-surface-soft rounded-lg p-3">
-            <strong>{card.nombre}</strong>
-            <span class="page-lead"> · {card.arcano}{card.numero ? ` #${card.numero}` : ''}{card.valor ? ` ${card.valor}` : ''}</span>
-          </li>
-        ))}
+        {(reading.cards || []).map((card) => {
+          const isStr = typeof card === 'string';
+          const nombre = isStr ? card : card?.nombre || '';
+          const arcano = isStr ? '' : card?.arcano || '';
+          const numero = isStr ? null : card?.numero;
+          const valor = isStr ? '' : card?.valor || '';
+          return (
+            <li class="app-surface-soft rounded-lg p-3">
+              <strong>{nombre}</strong>
+              {(arcano || numero || valor) && (
+                <span class="page-lead"> · {arcano}{numero ? ` #${numero}` : ''}{valor ? ` ${valor}` : ''}</span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
 

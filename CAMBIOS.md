@@ -21,14 +21,49 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 - **Persistencia en Firestore y Respuesta API**:
   - Los metadatos de validación (incluyendo la pureza y los términos detectados) ahora se guardan en el documento de la lectura en Firestore (`readings`).
   - La API retorna los metadatos de pureza en el objeto `metadatos.verificacionPureza`.
+- **Corrección de Tipado TypeScript (`UserPlan`)**: Se corrigió la comparación del plan del usuario. El tipo de datos `UserPlan` utiliza el identificador `'free'` internamente para el plan gratuito en lugar de `'caminante'` (el cual es la etiqueta de presentación visual). Esto resolvió el error de compilación de TypeScript (TS2367).
 
 ---
 
-## Archivos modificados (26 jul 2026)
+## 11. Corrección de límites de guardado, límite de interpretaciones por sesión y navegación del historial
+
+### Problema
+- En el plan Caminante (gratuito) se permitía seguir guardando lecturas superando el límite de 3 a través del botón manual de guardado.
+- Las tiradas guardadas de forma manual a través del endpoint `/api/readings/save` fallaban al renderizar las cartas porque se guardaban solo los IDs (strings) en vez de los objetos de cartas completos. Además, se guardaba el campo `createdAt` como Timestamp directo, provocando que la página de historial renderizara la fecha como `Invalid Date`.
+- No se estaba controlando el límite de interpretaciones por sesión del plan activo (Caminante: 1, Buscador: 2, Guía: 3).
+- No había forma de regresar al Perfil desde la página del Historial de Tiradas (`/account/readings`).
+
+### Solución aplicada
+
+**11a. Límite de guardado en el backend y consistencia de datos**
+**Archivo:** `src/pages/api/readings/save.ts`
+- Se agregó el chequeo del límite de guardado en el endpoint usando `canSaveReading` y `getReadingLimit`. Si el límite se supera, se retorna un código HTTP 403 con el mensaje del error correspondiente.
+- Se formateó la propiedad `createdAt` para persistirla como string ISO (`new Date().toISOString()`), unificándolo con `/api/interpretar.ts` y evitando el bug de `Invalid Date`.
+
+**11b. Guardado de objetos de cartas completos**
+**Archivo:** `src/pages/cards/random-cards.astro`
+- Se modificó el evento de click de `guardarInterpretacionBtn` para recopilar y enviar el objeto de carta completo (`cartasReveladas`) al endpoint `/api/readings/save` en vez de mandar solo un array de IDs (strings). Esto soluciona que las cartas guardadas manualmente aparezcan vacías o sin nombre.
+
+**11c. Control de interpretaciones de IA por sesión**
+**Archivo:** `src/pages/cards/random-cards.astro`
+- Se implementó la verificación de límite de interpretaciones mediante `sessionStorage` en el cliente. Se lee el plan actual (`free` u otros) y se valida que la cantidad de interpretaciones generadas en la sesión actual de navegación no exceda el cupo de su membresía (1 para Caminante, 2 para Buscador, 3 para Guía).
+
+**11d. Robustez y navegación del historial**
+**Archivos:** `src/pages/account/readings/index.astro`, `src/pages/account/readings/[id].astro`
+- Se introdujo una función utilitaria de sanitizado y parseo de fechas de Firestore (`formatFirestoreDate`) para soportar fechas almacenadas tanto en string como en Timestamp sin fallos de renderizado.
+- Se agregaron validaciones en los renderers de la lista e individual para soportar compatibilidad con tiradas antiguas (que tenían array de strings) y las nuevas tiradas (que guardan objetos completos).
+- Se añadió el botón/enlace `← Volver a mi perfil` en la cabecera de la página `/account/readings`.
+
+---
+
+## Archivos modificados (27 jul 2026)
 
 | Archivo | Operación |
 |---|---|
-| `src/pages/api/interpretar.ts` | Modificado |
+| `src/pages/api/readings/save.ts` | Modificado |
+| `src/pages/cards/random-cards.astro` | Modificado |
+| `src/pages/account/readings/index.astro` | Modificado |
+| `src/pages/account/readings/[id].astro` | Modificado |
 
 ---
 

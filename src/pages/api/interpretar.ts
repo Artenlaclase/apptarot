@@ -66,6 +66,11 @@ export async function POST(context: APIContext): Promise<Response> {
     );
   }
 
+  // Necesitamos el plan del usuario ANTES de llamar a la IA para poder
+  // ajustar la longitud de la interpretación (plan "caminante" = gratis).
+  const profile = await getOrCreateUserProfile(user.uid, user);
+  const esCaminante = profile.plan === 'free' || !profile.plan;
+
   const cartasList = cartas
     .map((c) => {
       const tipo = c.arcano === 'mayor' ? 'Arcano Mayor' : 'Arcano Menor';
@@ -73,6 +78,15 @@ export async function POST(context: APIContext): Promise<Response> {
       return c.nombre + ' (' + tipo + id + ')';
     })
     .join('; ');
+
+  const limiteExtension = esCaminante
+    ? `
+
+8. LÍMITE DE EXTENSIÓN (PLAN CAMINANTE - GRATUITO):
+   - Tu respuesta COMPLETA debe tener un MÁXIMO DE 150 PALABRAS en total, contando todos los apartados.
+   - Resume cada apartado (Descripción visual, Significado numerológico, Interpretación según posición, Mensaje tradicional) en 1-2 frases muy concisas, directas y sin relleno.
+   - Prioriza claridad y utilidad práctica sobre exhaustividad. No excedas el límite bajo ninguna circunstancia.`
+    : '';
 
   const systemPrompt = `SISTEMA EXPERTO TAROT DE MARSELLA - PROTOCOLO ESTRICTO:
 ERES UN EXPERTO EXCLUSIVO EN EL TAROT DE MARSELLA (Tarot de Marseille).
@@ -133,7 +147,7 @@ REGLAS OBLIGATORIAS PARA TUS INTERPRETACIONES:
    - Descripción visual Marsella (no escénica)
    - Significado numerológico
    - Interpretación según posición espacial
-   - Mensaje tradicional del arcano`;
+   - Mensaje tradicional del arcano${limiteExtension}`;
 
   const userMessage = `CONSULTA DE TAROT DE MARSELLA:
 
@@ -148,7 +162,10 @@ INSTRUCCIONES DE INTERPRETACIÓN:
 5. Si hay cartas invertivas/al revés, explica la interpretación marsellesa (no psicológica).
 6. Explica cómo dialogan las cartas entre sí (frase óptica).
 
-RECUERDA: NO uses referencias del Rider-Waite. Si no conoces la tradición marsellesa para alguna carta, indícalo honestamente.`;
+RECUERDA: NO uses referencias del Rider-Waite. Si no conoces la tradición marsellesa para alguna carta, indícalo honestamente.${esCaminante
+      ? '\nRECUERDA TAMBIÉN: Esta es una consulta del plan CAMINANTE (gratuito). Tu respuesta debe ser MUY BREVE, con un máximo absoluto de 150 palabras en total.'
+      : ''
+    }`;
 
   let aiResponse: Response;
   try {
@@ -164,7 +181,7 @@ RECUERDA: NO uses referencias del Rider-Waite. Si no conoces la tradición marse
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
-        max_tokens: 1000,
+        max_tokens: esCaminante ? 320 : 1000,
         temperature: 0.4,
       }),
     });
@@ -190,7 +207,6 @@ RECUERDA: NO uses referencias del Rider-Waite. Si no conoces la tradición marse
   const interpretacion = (data.choices[0]?.message?.content ?? '').trim();
   const pureza = verificarPurezaMarsella(interpretacion);
 
-  const profile = await getOrCreateUserProfile(user.uid, user);
   const saveAllowed = canSaveReading(profile.plan, profile.readingCount);
 
   let warning: string | null = null;

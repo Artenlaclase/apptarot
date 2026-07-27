@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { adminDb } from '../../../lib/firebase-admin';
-import { verifySessionCookieFromRequest } from '../../../lib/auth-server';
+import { verifySessionCookieFromRequest, getOrCreateUserProfile } from '../../../lib/auth-server';
+import { canSaveReading, getReadingLimit } from '../../../lib/plans';
 
 export const POST: APIRoute = async (context) => {
   const user = await verifySessionCookieFromRequest(context);
@@ -13,7 +14,7 @@ export const POST: APIRoute = async (context) => {
 
   try {
     const body = (await context.request.json()) as {
-      cards?: string[];
+      cards?: any[];
       mode?: string;
       interpretation?: string;
       date?: string;
@@ -40,6 +41,21 @@ export const POST: APIRoute = async (context) => {
       });
     }
 
+    // Verificar límite de tiradas guardadas
+    const profile = await getOrCreateUserProfile(user.uid, user);
+    if (!canSaveReading(profile.plan, profile.readingCount)) {
+      const limit = getReadingLimit(profile.plan);
+      return new Response(
+        JSON.stringify({
+          error: `Has alcanzado el limite de ${limit} tiradas del plan gratuito. Actualiza a premium para guardado ilimitado.`,
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Guardar lectura en subcollection
     const readingId = adminDb.collection('users').doc(user.uid).collection('readings').doc().id;
     await adminDb
@@ -53,7 +69,7 @@ export const POST: APIRoute = async (context) => {
         mode,
         interpretation,
         pregunta: pregunta || null,
-        createdAt: new Date(date),
+        createdAt: new Date(date).toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
