@@ -3,7 +3,7 @@ export const prerender = false;
 import type { APIContext } from 'astro';
 import { verifySessionCookieFromRequest, getOrCreateUserProfile } from '../../lib/auth-server';
 import { adminDb } from '../../lib/firebase-admin';
-import { canSaveReading, FREE_READING_LIMIT } from '../../lib/plans';
+import { canSaveReading, FREE_READING_LIMIT, getReadingLimit } from '../../lib/plans';
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -215,38 +215,16 @@ RECUERDA: NO uses referencias del Rider-Waite. Responde en un único bloque de t
   const pureza = verificarPurezaMarsella(interpretacion);
 
   const saveAllowed = canSaveReading(profile.plan, profile.readingCount);
-
   let warning: string | null = null;
+  if (!saveAllowed) {
+    const limit = getReadingLimit(profile.plan);
+    warning = `Has alcanzado el limite de ${limit} tiradas de tu plan. Actualiza a premium para guardado ilimitado.`;
+  }
+
   const metadatos = {
     tradicion: 'Tarot de Marsella',
     verificacionPureza: pureza,
   };
-
-  if (saveAllowed) {
-    const now = new Date().toISOString();
-    const readingRef = adminDb.collection('users').doc(user.uid).collection('readings').doc();
-
-    await readingRef.set({
-      uid: user.uid,
-      cards: cartas,
-      interpretation: interpretacion,
-      pregunta: pregunta || null,
-      source: 'random-cards',
-      createdAt: now,
-      updatedAt: now,
-      metadatos,
-    });
-
-    await adminDb.collection('users').doc(user.uid).set(
-      {
-        readingCount: (profile.readingCount ?? 0) + 1,
-        updatedAt: now,
-      },
-      { merge: true }
-    );
-  } else {
-    warning = `Has alcanzado el limite de ${FREE_READING_LIMIT} tiradas del plan gratuito. Actualiza a premium para guardado ilimitado.`;
-  }
 
   return json({ interpretacion, warning, metadatos });
 }

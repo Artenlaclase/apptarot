@@ -40,6 +40,7 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 - **Evitar Figuras en Palos Menores**: Se introdujo una regla crítica explicitando que las cartas del 1 al 10 de Bastos, Copas, Espadas y Oros son naipes abstractos y geométricos sin personajes humanos, caballos ni jinetes.
 - **Carga de Imágenes a OpenAI**: Se implementó el envío multimodal de las imágenes de las cartas reales (urls absolutas de Cloudinary) en el cuerpo del payload de OpenAI (`type: "image_url"`). Esto permite que el modelo analice visualmente los detalles reales de la lámina de Marsella.
 - **Pregunta por Defecto**: Si no se provee pregunta en la consulta, se inicializa automáticamente como: *"¿Cuál es la energía actual del consultante?"*.
+- **Encabezado con Pregunta**: Se añadió dinámicamente la pregunta realizada (o la pregunta por defecto si no se escribió ninguna) como un encabezado estilizado (`Consulta: "..."`) en la parte superior de la sección de interpretación en la interfaz de usuario.
 
 ---
 
@@ -53,8 +54,9 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 
 ### Solución aplicada
 
-**11a. Límite de guardado en el backend y consistencia de datos**
-**Archivo:** `src/pages/api/readings/save.ts`
+**11a. Límite de guardado en el backend y eliminación de duplicidad (auto-guardado)**
+**Archivos:** `src/pages/api/readings/save.ts`, `src/pages/api/interpretar.ts`
+- Se eliminó el guardado automático de lecturas en el endpoint `/api/interpretar`, dejando únicamente el guardado manual que realiza el usuario mediante el botón `💾 Guardar` del cliente. Esto resuelve por completo el error por el cual las lecturas se guardaban dos veces (duplicadas).
 - Se agregó el chequeo del límite de guardado en el endpoint usando `canSaveReading` y `getReadingLimit`. Si el límite se supera, se retorna un código HTTP 403 con el mensaje del error correspondiente.
 - Se formateó la propiedad `createdAt` para persistirla como string ISO (`new Date().toISOString()`), unificándolo con `/api/interpretar.ts` y evitando el bug de `Invalid Date`.
 
@@ -64,7 +66,7 @@ Las interpretaciones generadas por la IA podían mezclar conceptos del Tarot de 
 
 **11c. Control de interpretaciones de IA por sesión**
 **Archivo:** `src/pages/cards/random-cards.astro`
-- Se implementó la verificación de límite de interpretaciones mediante `sessionStorage` en el cliente. Se lee el plan actual (`free` u otros) y se valida que la cantidad de interpretaciones generadas en la sesión actual de navegación no exceda el cupo de su membresía (1 para Caminante, 2 para Buscador, 3 para Guía).
+- Se implementó la verificación de límite de interpretaciones mediante `sessionStorage` en el cliente. Se lee el plan actual (`free` u otros) y se valida que la cantidad de interpretaciones generadas en la sesión actual de navegación no exceda el cupo de su membresía (1 para Caminante, 2 para Buscador, 3 para Guía). Para evitar que el conteo persista o se herede de una cuenta a otra al cambiar de perfil en la misma pestaña, la clave de almacenamiento se vincula dinámicamente con el `uid` del usuario (`apptarot_interpretations_session_count_{uid}`).
 
 **11d. Robustez y navegación del historial**
 **Archivos:** `src/pages/account/readings/index.astro`, `src/pages/account/readings/[id].astro`
