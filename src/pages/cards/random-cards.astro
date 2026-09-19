@@ -63,6 +63,8 @@ const pageDescription =
   "Genera una tirada aleatoria de cartas del Tarot de Marsella";
 const user = Astro.locals.user;
 const userProfile = user ? await getOrCreateUserProfile(user.uid, user) : null;
+const userPlan = userProfile?.plan || 'free';
+const isBuscador = userPlan !== 'free' && (userPlan.includes('buscador') || userPlan.includes('premium') || userPlan.includes('guia'));
 const userArcaneNumber = userProfile?.personalArcaneNumber;
 const userArcaneName = userProfile?.personalArcaneName;
 const userArcaneHint = userArcaneNumber
@@ -71,36 +73,35 @@ const userArcaneHint = userArcaneNumber
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
-  <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
+  <main class="w-full max-w-[1650px] mx-auto px-3 sm:px-6 py-6 md:py-8">
     <div
       id="user-plan-data"
-      data-plan={userProfile?.plan || 'free'}
+      data-plan={userPlan}
       data-uid={user?.uid || ''}
       data-count={userProfile?.readingCount ?? 0}
-      data-limit={getReadingLimit(userProfile?.plan || 'free')}
+      data-limit={getReadingLimit(userPlan)}
       class="hidden"
     ></div>
-    <header class="text-center mb-8 md:mb-12">
+    <header class="text-center mb-6 md:mb-8">
       <h1
-        class="text-3xl md:text-4xl font-bold mb-3 md:mb-4"
+        class="text-3xl md:text-4xl font-bold mb-2 md:mb-3"
         style="color: var(--text);"
       >
         Tirada de Cartas Aleatorias
       </h1>
-      <p class="text-base md:text-xl" style="color: var(--text-muted);">
+      <p class="text-base md:text-lg" style="color: var(--text-muted);">
         Elige tu modalidad de tirada y número de cartas
       </p>
     </header>
 
     <div
       id="readingExperience"
-      class="grid grid-cols-1 xl:grid-cols-12 gap-6 transition-all duration-500"
+      class="space-y-6 transition-all duration-500"
     >
-      <section class="xl:col-span-8 space-y-6">
-        <section
-          id="modeControlsSection"
-          class="app-surface rounded-2xl p-4 md:p-6 transition-all duration-500 ease-out"
-        >
+      <section
+        id="modeControlsSection"
+        class="app-surface rounded-2xl p-4 md:p-6 transition-all duration-500 ease-out"
+      >
           <div class="mb-6">
             <h3 class="text-lg font-semibold mb-3" style="color: var(--text);">
               Modalidad de tirada:
@@ -203,16 +204,149 @@ const userArcaneHint = userArcaneNumber
           </div>
         </section>
 
-        <section
-          id="cardsContainer"
-          class="app-surface rounded-2xl p-3 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 min-h-[16rem] md:min-h-[18rem] transition-all duration-500 ease-out"
-        >
-          <div id="initialMessage" class="col-span-full text-center py-12">
-            <p class="text-base md:text-xl" style="color: var(--text-muted);">
-              Selecciona tu modalidad de tirada y presiona "Barajar Cartas"
-            </p>
+        <!-- Contenedor Principal de la Tirada: Tablero Interactivo con Paño de Tela o Cuadrícula -->
+        <div class="tarot-board-wrapper mb-6">
+          <!-- Barra de herramientas del tapete -->
+          <div class="tarot-board-toolbar">
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Selector de Paño de Tela -->
+              <div class="flex items-center gap-1.5 text-xs">
+                <span class="text-amber-300 font-semibold flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                  Tapete:
+                </span>
+                <select
+                  id="clothThemeSelect"
+                  class="bg-slate-900/90 text-white text-xs px-2.5 py-1 rounded-md border border-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  data-has-buscador={isBuscador ? "true" : "false"}
+                >
+                  <option value="cloth-violeta" selected>Paño Violeta (Terciopelo)</option>
+                  <option value="cloth-azul" disabled={!isBuscador}>
+                    {isBuscador ? "Paño Azul Místico" : "🔒 Paño Azul (Buscador)"}
+                  </option>
+                  <option value="cloth-madera" disabled={!isBuscador}>
+                    {isBuscador ? "Mesa de Madera" : "🔒 Mesa Madera (Buscador)"}
+                  </option>
+                  <option value="cloth-defecto" disabled={!isBuscador}>
+                    {isBuscador ? "Modo Oscuro Plano" : "🔒 Modo Oscuro (Buscador)"}
+                  </option>
+                </select>
+                {!isBuscador && (
+                  <a
+                    href="/profile"
+                    class="text-[11px] text-amber-300/80 hover:text-amber-200 underline hidden sm:inline ml-1"
+                    title="Hazte miembro Buscador para desbloquear todos los tapetes"
+                  >
+                    ✨ Desbloquear tapetes
+                  </a>
+                )}
+              </div>
+
+              <!-- Vista Tablero vs Cuadrícula -->
+              <div class="inline-flex rounded-lg bg-slate-900/80 p-0.5 text-xs border border-slate-700/60 ml-1">
+                <button type="button" id="viewModeBoardBtn" class="px-2.5 py-1 rounded-md font-medium text-amber-300 bg-slate-800 transition-all cursor-pointer" title="Modo Mesa Libre: mueve y voltea libremente las cartas">
+                  ✨ Tablero Libre
+                </button>
+                <button type="button" id="viewModeGridBtn" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer" title="Vista tradicional en cuadrícula">
+                  ⊞ Cuadrícula
+                </button>
+              </div>
+            </div>
+
+            <!-- Acciones del Tablero -->
+            <div class="flex items-center gap-1.5 text-xs flex-wrap">
+              <button type="button" id="boardFlipAllBtn" class="px-2.5 py-1 rounded-md bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1 cursor-pointer" title="Voltear todas las cartas">
+                👁️ Voltear todas
+              </button>
+              <button type="button" id="boardReorganizeBtn" class="px-2.5 py-1 rounded-md bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1 cursor-pointer" title="Reordenar cartas centradas">
+                🔄 Reorganizar
+              </button>
+              <button type="button" id="boardClearBtn" class="px-2.5 py-1 rounded-md bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1 cursor-pointer" title="Recoger cartas del tapete">
+                🧹 Recoger
+              </button>
+            </div>
           </div>
-        </section>
+
+          <!-- ÁREA 1: Tablero Interactivo con Paño de Tela -->
+          <div id="boardCanvas" class="tarot-board-canvas cloth-violeta">
+            <div class="tarot-board-altar-mark"></div>
+            
+            <!-- Mensaje inicial sobre el tapete -->
+            <div id="boardInitialMessage" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none z-0">
+              <div class="bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-amber-400/20 max-w-md shadow-2xl">
+                <span class="text-4xl block mb-2">🔮</span>
+                <h3 class="text-lg font-bold text-amber-200 mb-1">Mesa de Lectura</h3>
+                <p class="text-sm text-slate-300">
+                  Presiona <strong>"Barajar Cartas"</strong> para repartir sobre el paño de terciopelo.
+                </p>
+                <p class="text-xs text-slate-400 mt-2">
+                  ✨ Podrás <strong>pinchar las cartas para voltearlas</strong> y <strong>moverlas libremente</strong> por el paño para organizar tu tirada.
+                </p>
+              </div>
+            </div>
+
+            <!-- Contenedor donde se montan las cartas absolutas en el tablero -->
+            <div id="boardCardsSurface" class="absolute inset-0 w-full h-full"></div>
+          </div>
+
+          <!-- ÁREA 2: Vista tradicional en Cuadrícula -->
+          <section
+            id="cardsContainer"
+            class="hidden app-surface rounded-none p-3 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 min-h-[16rem] md:min-h-[18rem] transition-all duration-500 ease-out"
+          >
+            <div id="initialMessage" class="col-span-full text-center py-12">
+              <p class="text-base md:text-xl" style="color: var(--text-muted);">
+                Selecciona tu modalidad de tirada y presiona "Barajar Cartas"
+              </p>
+            </div>
+          </section>
+
+          <!-- Barra de Acciones en el Borde del Tablero -->
+          <div id="actionPanel" class="tarot-board-bottombar hidden">
+            <div id="aclaracionControls" class="w-full flex items-center justify-between flex-wrap gap-2.5">
+              <div class="flex items-center gap-2 text-xs text-amber-200/90 font-semibold tracking-wide">
+                <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span>Acciones de Tirada</span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  type="button"
+                  id="revelarTodasBtn"
+                  class="btn-board-action btn-board-secondary"
+                  title="Revelar todas las cartas de la tirada"
+                >
+                  🃏 Revelar Todas
+                </button>
+                <button
+                  type="button"
+                  id="aclaracionBtn"
+                  class="btn-board-action btn-board-warning"
+                  title="Sacar una carta de aclaración adicional"
+                >
+                  🔍 Sacar Carta de Aclaración
+                </button>
+                <button
+                  type="button"
+                  id="interpretarBtn"
+                  class="btn-board-action btn-board-primary"
+                  title="Interpretar tirada con Inteligencia Artificial"
+                >
+                  ✨ Interpretar Tirada
+                </button>
+                <button
+                  type="button"
+                  id="guardarTiradaSinInterpBtn"
+                  class="btn-board-action btn-board-secondary"
+                  title="Guardar tirada sin interpretar"
+                >
+                  💾 Guardar Tirada
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div id="loadingIndicator" class="hidden text-center py-6">
           <div
@@ -225,34 +359,16 @@ const userArcaneHint = userArcaneNumber
           </p>
         </div>
 
-        <section
-          id="aclaracionSection"
-          class="hidden focus-minimizable transition-all duration-300 ease-out"
-        >
-          <div class="app-surface-soft rounded-xl p-4 md:p-6">
-            <h3
-              class="text-lg md:text-xl font-semibold mb-4 text-center"
-              style="color: var(--warning);"
-            >
-              🔍 Cartas de Aclaración
-            </h3>
+        <!-- Fila inferior complementaria: Arcano Personal, Significado y Lectura IA -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+          <aside class="lg:col-span-4">
             <div
-              id="aclaracionContainer"
-              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              id="secondaryControlsColumn"
+              class="space-y-6 transition-all duration-300 ease-out"
             >
-            </div>
-          </div>
-        </section>
-      </section>
-
-      <aside class="xl:col-span-4">
-        <div
-          id="secondaryControlsColumn"
-          class="xl:sticky xl:top-24 space-y-4 transition-all duration-300 ease-out"
-        >
-          <section
-            class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out"
-          >
+              <section
+                class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out"
+              >
             <h3
               class="text-base font-semibold mb-2"
               style="color: var(--text);"
@@ -289,44 +405,7 @@ const userArcaneHint = userArcaneNumber
             }
           </section>
 
-          <section
-            id="actionPanel"
-            class="app-surface rounded-2xl p-5 hidden transition-all duration-300 ease-out"
-          >
-            <div id="aclaracionControls" class="hidden">
-              <div class="text-sm mb-4" style="color: var(--text-muted);">
-                <strong style="color: var(--text);">Acciones:</strong> Profundiza
-                en tu tirada
-              </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
-                <button
-                  type="button"
-                  id="revelarTodasBtn"
-                  class="btn-ui btn-ui-secondary px-4 py-2"
-                  >🃏 Revelar Todas</button
-                >
-                <button
-                  type="button"
-                  id="aclaracionBtn"
-                  class="btn-ui btn-ui-warning px-4 py-2"
-                  >Sacar Carta de Aclaración</button
-                >
-                <button
-                  type="button"
-                  id="interpretarBtn"
-                  class="btn-ui btn-ui-primary px-4 py-2"
-                  >✨ Interpretar Tirada</button
-                >
-                <button
-                  type="button"
-                  id="guardarTiradaSinInterpBtn"
-                  class="btn-ui btn-ui-secondary px-4 py-2"
-                  >💾 Guardar Tirada (Sin IA)</button
-                >
-              </div>
-            </div>
-          </section>
 
           <section
             id="interpretarFeedback"
@@ -438,68 +517,126 @@ const userArcaneHint = userArcaneNumber
               >
             </div>
           </section>
-
-          <section
-            id="interpretacionSection"
-            class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out"
-            aria-live="polite"
-            aria-busy="false"
-          >
-            <div class="flex items-center justify-between gap-3 mb-2">
-              <h3 class="text-base font-semibold" style="color: var(--text);">
-                ✨ Interpretación
-              </h3>
-              <button
-                type="button"
-                id="closeInterpretacionBtn"
-                title="Mostrar/ocultar interpretación"
-                class="text-xs font-semibold px-2 py-1 rounded transition-colors"
-                style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;"
-                >▼ Ocultar</button
-              >
-            </div>
-
-            <p class="text-sm mb-4" style="color: var(--text-muted);">
-              Consulta la lectura generada por IA sin perder la tirada.
-            </p>
-
-            <div id="interpretacionContent" class="hidden">
-              <div id="interpretacionLoading" class="hidden text-center py-6">
-                <div
-                  class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 mb-3"
-                  style="border-color: var(--primary);"
-                >
-                </div>
-                <p style="color: var(--text-muted);">
-                  Consultando el oráculo...
-                </p>
-              </div>
-
-              <div
-                id="interpretacionTexto"
-                class="leading-relaxed text-sm mb-4"
-                style="color: var(--text);"
-              >
-              </div>
-
-              <div class="flex gap-2">
-                <button
-                  type="button"
-                  id="guardarInterpretacionBtn"
-                  class="btn-ui btn-ui-primary px-4 py-2 flex-1 text-sm"
-                  >💾 Guardar</button
-                >
-                <button
-                  type="button"
-                  id="copiarInterpretacionBtn"
-                  class="btn-ui btn-ui-secondary px-4 py-2 flex-1 text-sm"
-                  >📋 Copiar</button
-                >
-              </div>
-            </div>
-          </section>
         </div>
       </aside>
+
+      <section class="lg:col-span-8 space-y-6">
+        <section
+          id="interpretarFeedback"
+          class="hidden focus-minimizable transition-all duration-300 ease-out"
+        >
+          <div
+            id="interpretarFeedbackLoading"
+            class="status-box status-loading hidden items-center justify-center gap-3"
+          >
+            <div
+              class="flex-shrink-0 animate-spin rounded-full h-5 w-5 border-t-2 border-b-2"
+              style="border-color: var(--primary);"
+            >
+            </div>
+            <span style="color: var(--text);"
+              >Generando interpretación...</span
+            >
+          </div>
+
+          <div
+            id="interpretarFeedbackOk"
+            class="status-box status-success hidden items-center justify-center gap-3"
+          >
+            <span style="color: var(--success);">✓ Interpretación lista</span>
+            <button
+              type="button"
+              id="interpretarScrollBtn"
+              class="text-sm underline"
+              style="color: var(--text);">Ver resultado</button
+            >
+          </div>
+
+          <div
+            id="interpretarFeedbackError"
+            class="status-box status-error hidden items-center justify-center gap-3"
+          >
+            <span
+              id="interpretarFeedbackErrorMsg"
+              style="color: var(--danger);"
+              >Error al generar la interpretación.</span
+            >
+          </div>
+
+          <div
+            id="interpretarFeedbackWarn"
+            class="status-box hidden items-center justify-center gap-3"
+            style="background: color-mix(in srgb, var(--warning) 12%, var(--surface));"
+          >
+            <span
+              id="interpretarFeedbackWarnMsg"
+              style="color: var(--warning);">Aviso del plan de cuenta.</span
+            >
+          </div>
+        </section>
+
+        <section
+          id="interpretacionSection"
+          class="app-surface rounded-2xl p-5 focus-minimizable transition-all duration-300 ease-out"
+          aria-live="polite"
+          aria-busy="false"
+        >
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <h3 class="text-base font-semibold" style="color: var(--text);">
+              ✨ Interpretación
+            </h3>
+            <button
+              type="button"
+              id="closeInterpretacionBtn"
+              title="Mostrar/ocultar interpretación"
+              class="text-xs font-semibold px-2 py-1 rounded transition-colors"
+              style="color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer;"
+              >▼ Ocultar</button
+            >
+          </div>
+
+          <p class="text-sm mb-4" style="color: var(--text-muted);">
+            Consulta la lectura generada por IA sin perder la tirada.
+          </p>
+
+          <div id="interpretacionContent" class="hidden">
+            <div id="interpretacionLoading" class="hidden text-center py-6">
+              <div
+                class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 mb-3"
+                style="border-color: var(--primary);"
+              >
+              </div>
+              <p style="color: var(--text-muted);">
+                Consultando el oráculo...
+              </p>
+            </div>
+
+            <div
+              id="interpretacionTexto"
+              class="leading-relaxed text-sm mb-4"
+              style="color: var(--text);"
+            >
+            </div>
+
+            <div class="flex gap-2">
+              <button
+                type="button"
+                id="guardarInterpretacionBtn"
+                class="btn-ui btn-ui-primary px-4 py-2 flex-1 text-sm"
+                >💾 Guardar</button
+              >
+              <button
+                type="button"
+                id="copiarInterpretacionBtn"
+                class="btn-ui btn-ui-secondary px-4 py-2 flex-1 text-sm"
+                >📋 Copiar</button
+              >
+            </div>
+          </div>
+        </section>
+
+      </section>
+    </div>
 
       <section
         id="cardMeaningModal"
@@ -735,18 +872,25 @@ const userArcaneHint = userArcaneNumber
         var aclaracionIds = [];
 
         document
-          .querySelectorAll("#cardsContainer [data-card]")
+          .querySelectorAll("#boardCardsSurface .tarot-board-card:not([data-is-aclaracion='1']), #cardsContainer [data-card]")
           .forEach(function (el) {
             try {
               var card = JSON.parse(el.dataset.card || "{}");
-              if (card.id) selectedIds.push(card.id);
-              if (el.dataset.revealed === "1" && card.id)
-                revealedIds.push(card.id);
+              if (card.id && selectedIds.indexOf(card.id) === -1) selectedIds.push(card.id);
             } catch (e) {}
           });
 
         document
-          .querySelectorAll("#aclaracionContainer [data-card-id]")
+          .querySelectorAll("#boardCardsSurface .tarot-board-card[data-revealed='1'], #cardsContainer [data-revealed='1']")
+          .forEach(function (el) {
+            try {
+              var card = JSON.parse(el.dataset.card || "{}");
+              if (card.id && revealedIds.indexOf(card.id) === -1) revealedIds.push(card.id);
+            } catch (e) {}
+          });
+
+        document
+          .querySelectorAll("#boardCardsSurface .tarot-board-card[data-is-aclaracion='1']")
           .forEach(function (el) {
             var id = el.dataset.cardId;
             if (id && aclaracionIds.indexOf(id) === -1) aclaracionIds.push(id);
@@ -835,11 +979,247 @@ const userArcaneHint = userArcaneNumber
         }, 300);
       }
 
+      var maxBoardZIndex = 10;
+      var aclaracionCountOnBoard = 0;
+
+      function calculateBoardPosition(index, total, canvasW, canvasH) {
+        var cW = window.innerWidth < 768 ? 140 : 165;
+        var cH = window.innerWidth < 768 ? 245 : 288;
+        var bW = canvasW || 1200;
+        var bH = canvasH || 700;
+
+        var gap = window.innerWidth < 768 ? 12 : 20;
+        var totalW = total * cW + (total - 1) * gap;
+        var left, top;
+
+        if (totalW <= bW - 40) {
+          var startX = (bW - totalW) / 2;
+          left = startX + index * (cW + gap);
+          top = (bH - cH) / 2;
+        } else {
+          var perRow = Math.min(6, Math.ceil(total / (total > 6 ? 2 : 1)));
+          var row = Math.floor(index / perRow);
+          var col = index % perRow;
+          var inThisRow = Math.min(perRow, total - row * perRow);
+          var rTotalW = inThisRow * cW + (inThisRow - 1) * gap;
+          var rStartX = (bW - rTotalW) / 2;
+          left = rStartX + col * (cW + gap);
+          var rowHeight = cH * 0.85;
+          var totalRows = Math.ceil(total / perRow);
+          var startY = (bH - (totalRows * rowHeight)) / 2;
+          top = startY + row * rowHeight;
+        }
+
+        left = Math.max(12, Math.min(bW - cW - 12, left));
+        top = Math.max(12, Math.min(bH - cH - 12, top));
+        var tilt = (index - (total - 1) / 2) * 2;
+        return { left: left, top: top, tilt: tilt };
+      }
+
+      function calculateAclaracionPosition(aclIndex, canvasW, canvasH) {
+        var cW = window.innerWidth < 768 ? 140 : 165;
+        var cH = window.innerWidth < 768 ? 245 : 288;
+        var bW = canvasW || 1200;
+        var bH = canvasH || 700;
+
+        // Repartir cartas de aclaración en posiciones cómodas sobre el tapete
+        var startX = (bW / 2) - (cW / 2);
+        var startY = (bH / 2) + 25;
+        var offsetX = (aclIndex % 4) * 48 - 65;
+        var offsetY = Math.floor(aclIndex / 4) * 35;
+        var left = Math.max(20, Math.min(bW - cW - 20, startX + offsetX));
+        var top = Math.max(20, Math.min(bH - cH - 20, startY + offsetY));
+        var tilt = ((aclIndex % 2 === 0 ? 1 : -1) * 3);
+        return { left: left, top: top, tilt: tilt };
+      }
+
+      function flipBoardCard(cardEl, forceReveal) {
+        if (!cardEl) return;
+        var isRev = cardEl.dataset.revealed === "1";
+        
+        if (forceReveal === true) {
+          cardEl.classList.add("is-flipped");
+          cardEl.dataset.revealed = "1";
+        } else if (isRev) {
+          // Volver a voltear boca abajo
+          cardEl.classList.remove("is-flipped");
+          cardEl.dataset.revealed = "0";
+        } else {
+          // Voltear para revelar arcano en 3D
+          cardEl.classList.add("is-flipped");
+          cardEl.dataset.revealed = "1";
+        }
+
+        // Sincronizar con la carta de la cuadrícula si existe
+        var cardId = cardEl.dataset.cardId;
+        if (cardId) {
+          var gridCard = document.querySelector('#cardsContainer [data-card-id="' + cardId + '"], #cardsContainer [data-card*="' + cardId + '"]');
+          if (gridCard && cardEl.dataset.revealed === "1" && gridCard.dataset.revealed !== "1") {
+            revealCard(gridCard, true);
+          }
+        }
+
+        // Si la carta está revelada, actualizar el panel lateral de significado si está visible
+        if (cardEl.dataset.revealed === "1") {
+          try {
+            var cData = cardEl.dataset.card ? JSON.parse(cardEl.dataset.card) : null;
+            if (cData) {
+              var sidePanel = document.getElementById("cardMeaningPanel");
+              if (sidePanel && window.matchMedia("(min-width: 1280px)").matches) {
+                renderMeaningPanel(cData);
+              }
+            }
+          } catch (err) {}
+        }
+
+        persistCurrentState();
+      }
+
+      function makeBoardCard(card, index, totalCards) {
+        var board = document.getElementById("boardCanvas");
+        var bW = board ? board.clientWidth : 800;
+        var bH = board ? board.clientHeight : 600;
+
+        var pos = calculateBoardPosition(index, totalCards, bW, bH);
+
+        var div = document.createElement("div");
+        div.className = "tarot-board-card";
+        div.dataset.card = JSON.stringify(card);
+        div.dataset.cardId = card.id;
+        div.dataset.revealed = "0";
+        div.style.left = pos.left + "px";
+        div.style.top = pos.top + "px";
+        div.style.transform = "rotate(" + pos.tilt + "deg)";
+        div.dataset.defaultTilt = pos.tilt.toString();
+
+        var imgSrc = buildSrc(card.imagem);
+
+        div.innerHTML =
+          '<div class="tarot-card-inner">' +
+            '<!-- Dorso (Boca abajo) -->' +
+            '<div class="tarot-card-face tarot-card-back">' +
+              '<img src="/cardback.jpg" alt="Dorso de carta" draggable="false" loading="lazy" />' +
+            '</div>' +
+            '<!-- Cara Frontal (Boca arriba) - Carta completa sin cortes -->' +
+            '<div class="tarot-card-face tarot-card-front">' +
+              '<img src="' + imgSrc + '" alt="' + escapeHtml(card.nombre) + '" draggable="false" loading="lazy" ' +
+                'onerror="this.onerror=null;this.src=\'' + DEFAULT_IMAGE + '\'" />' +
+            '</div>' +
+          '</div>';
+
+        // Prevenir arrastre fantasma de imágenes por defecto del navegador
+        div.addEventListener("dragstart", function (e) {
+          e.preventDefault();
+        });
+
+        // Doble clic para abrir modal o ficha de significado
+        div.addEventListener("dblclick", function (e) {
+          e.stopPropagation();
+          openMeaning(card.id);
+        });
+
+        // Pointer events para arrastre libre desde cualquier punto y volteo con clic
+        var isDragging = false;
+        var hasMoved = false;
+        var startX = 0;
+        var startY = 0;
+        var startLeft = 0;
+        var startTop = 0;
+
+        div.addEventListener("pointerdown", function (e) {
+          if (e.button !== 0 && e.pointerType === "mouse") return;
+          e.preventDefault();
+          isDragging = true;
+          hasMoved = false;
+          startX = e.clientX;
+          startY = e.clientY;
+          startLeft = div.offsetLeft;
+          startTop = div.offsetTop;
+
+          maxBoardZIndex++;
+          div.style.zIndex = maxBoardZIndex.toString();
+          div.classList.add("is-dragging");
+          try {
+            div.setPointerCapture(e.pointerId);
+          } catch (err) {}
+        });
+
+        div.addEventListener("pointermove", function (e) {
+          if (!isDragging) return;
+          var dx = e.clientX - startX;
+          var dy = e.clientY - startY;
+
+          if (!hasMoved && Math.hypot(dx, dy) > 4) {
+            hasMoved = true;
+          }
+
+          if (hasMoved) {
+            var bCanvas = document.getElementById("boardCanvas");
+            var canvasW = bCanvas ? bCanvas.clientWidth : 800;
+            var canvasH = bCanvas ? bCanvas.clientHeight : 600;
+
+            var newX = Math.max(0, Math.min(canvasW - div.offsetWidth, startLeft + dx));
+            var newY = Math.max(0, Math.min(canvasH - div.offsetHeight, startTop + dy));
+
+            div.style.left = newX + "px";
+            div.style.top = newY + "px";
+          }
+        });
+
+        div.addEventListener("pointerup", function (e) {
+          if (!isDragging) return;
+          isDragging = false;
+          div.classList.remove("is-dragging");
+          try {
+            div.releasePointerCapture(e.pointerId);
+          } catch (err) {}
+
+          if (!hasMoved) {
+            // Clic sin arrastrar: voltear la carta en 3D
+            flipBoardCard(div);
+          } else {
+            persistCurrentState();
+          }
+        });
+
+        div.addEventListener("pointercancel", function () {
+          isDragging = false;
+          div.classList.remove("is-dragging");
+        });
+
+        return div;
+      }
+
+      function reorganizeBoardCards() {
+        var cards = document.querySelectorAll("#boardCardsSurface .tarot-board-card");
+        if (!cards || cards.length === 0) return;
+
+        var board = document.getElementById("boardCanvas");
+        var bW = board ? board.clientWidth : 800;
+        var bH = board ? board.clientHeight : 600;
+
+        cards.forEach(function (cardEl, idx) {
+          var pos = calculateBoardPosition(idx, cards.length, bW, bH);
+          cardEl.style.transition = "left 0.4s ease, top 0.4s ease, transform 0.4s ease";
+          cardEl.style.left = pos.left + "px";
+          cardEl.style.top = pos.top + "px";
+          cardEl.style.transform = "rotate(" + pos.tilt + "deg)";
+          cardEl.dataset.defaultTilt = pos.tilt.toString();
+
+          setTimeout(function () {
+            cardEl.style.transition = "";
+          }, 450);
+        });
+
+        persistCurrentState();
+      }
+
       function makeCard(card) {
         var div = document.createElement("div");
         div.className = "carta-random-item flippable-card";
         div.style.cursor = "pointer";
         div.dataset.card = JSON.stringify(card);
+        div.dataset.cardId = card.id;
         div.dataset.revealed = "0";
         div.innerHTML =
           '<div class="carta-random-container">' +
@@ -878,7 +1258,9 @@ const userArcaneHint = userArcaneNumber
 
         hasInterpretacion = false;
       }
+
       function barajar() {
+        aclaracionCountOnBoard = 0;
         var d = getData();
         var modeEl = document.querySelector('input[name="tiradaMode"]:checked');
         var mode = modeEl ? modeEl.value : "mixta";
@@ -892,12 +1274,19 @@ const userArcaneHint = userArcaneNumber
         var selected = shuffle(pool).slice(0, Math.min(count, pool.length));
 
         var container = document.getElementById("cardsContainer");
-        if (!container) return;
-        container.innerHTML = "";
+        if (container) container.innerHTML = "";
+
+        var boardSurface = document.getElementById("boardCardsSurface");
+        if (boardSurface) boardSurface.innerHTML = "";
+
+        var boardMsg = document.getElementById("boardInitialMessage");
+        if (boardMsg) boardMsg.classList.add("hidden");
+
         resetSecondarySections();
 
-        selected.forEach(function (card) {
-          container.appendChild(makeCard(card));
+        selected.forEach(function (card, i) {
+          if (container) container.appendChild(makeCard(card));
+          if (boardSurface) boardSurface.appendChild(makeBoardCard(card, i, selected.length));
         });
 
         var aclaracion = document.getElementById("aclaracionControls");
@@ -910,6 +1299,7 @@ const userArcaneHint = userArcaneNumber
       }
 
       function limpiar() {
+        aclaracionCountOnBoard = 0;
         var container = document.getElementById("cardsContainer");
         if (container) {
           container.innerHTML =
@@ -917,6 +1307,13 @@ const userArcaneHint = userArcaneNumber
             '<p class="text-xl text-gray-500">Selecciona tu modalidad de tirada y presiona &quot;Barajar Cartas&quot;</p>' +
             "</div>";
         }
+
+        var boardSurface = document.getElementById("boardCardsSurface");
+        if (boardSurface) boardSurface.innerHTML = "";
+
+        var boardMsg = document.getElementById("boardInitialMessage");
+        if (boardMsg) boardMsg.classList.remove("hidden");
+
         resetSecondarySections();
 
         var acCtrl = document.getElementById("aclaracionControls");
@@ -949,17 +1346,32 @@ const userArcaneHint = userArcaneNumber
       }
 
       function revelarTodas() {
-        var pendientes = [];
+        var pendientesBoard = [];
         document
-          .querySelectorAll('.flippable-card[data-revealed="0"]')
+          .querySelectorAll('#boardCardsSurface .tarot-board-card[data-revealed="0"]')
           .forEach(function (el) {
-            pendientes.push(el);
+            pendientesBoard.push(el);
           });
-        if (pendientes.length === 0) return;
-        pendientes.forEach(function (el, i) {
+
+        var pendientesGrid = [];
+        document
+          .querySelectorAll('#cardsContainer .flippable-card[data-revealed="0"]')
+          .forEach(function (el) {
+            pendientesGrid.push(el);
+          });
+
+        if (pendientesBoard.length === 0 && pendientesGrid.length === 0) return;
+
+        pendientesBoard.forEach(function (el, i) {
+          setTimeout(function () {
+            flipBoardCard(el, true);
+          }, i * 150);
+        });
+
+        pendientesGrid.forEach(function (el, i) {
           setTimeout(function () {
             revealCard(el);
-          }, i * 180);
+          }, i * 150);
         });
       }
 
@@ -1162,17 +1574,41 @@ const userArcaneHint = userArcaneNumber
           return;
         }
 
-        var sec = document.getElementById("aclaracionSection");
-        if (sec) sec.classList.remove("hidden");
-        var cont = document.getElementById("aclaracionContainer");
-        if (cont) {
-          var cardEl = makeAclaracionCard(card);
-          var trigger = cardEl.querySelector(".carta-detail-trigger");
-          if (trigger) trigger.dataset.cardId = card.id;
-          cont.appendChild(cardEl);
+        // 1. Mostrar directamente sobre el tapete de tela interactivo
+        var boardSurface = document.getElementById("boardCardsSurface");
+        var board = document.getElementById("boardCanvas");
+        if (boardSurface && board) {
+          var bW = board.clientWidth || 1200;
+          var bH = board.clientHeight || 700;
+
+          var pos = calculateAclaracionPosition(aclaracionCountOnBoard, bW, bH);
+          aclaracionCountOnBoard++;
+
+          var existingCount = boardSurface.querySelectorAll(".tarot-board-card").length;
+          var boardCardEl = makeBoardCard(card, existingCount, existingCount + 1);
+          boardCardEl.dataset.isAclaracion = "1";
+          boardCardEl.classList.add("is-aclaracion-card");
+          boardCardEl.style.left = pos.left + "px";
+          boardCardEl.style.top = pos.top + "px";
+          boardCardEl.style.transform = "rotate(" + pos.tilt + "deg)";
+          boardCardEl.dataset.defaultTilt = pos.tilt.toString();
+
+          // Entrada animada sobre el tapete
+          boardCardEl.style.opacity = "0";
+          boardCardEl.style.transform = "scale(0.8) rotate(" + pos.tilt + "deg)";
+          boardCardEl.style.transition = "opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.35, 0.64, 1)";
+          boardSurface.appendChild(boardCardEl);
+
+          setTimeout(function () {
+            boardCardEl.style.opacity = "1";
+            boardCardEl.style.transform = "scale(1) rotate(" + pos.tilt + "deg)";
+            setTimeout(function () {
+              boardCardEl.style.transition = "";
+            }, 380);
+          }, 25);
         }
 
-        // quitar la carta usada del pool en memoria para no repetir
+        // Quitar la carta usada del pool en memoria para no repetir
         d.arcanosMenores = d.arcanosMenores.filter(function (c) {
           return c.id !== card.id;
         });
@@ -1356,17 +1792,27 @@ const userArcaneHint = userArcaneNumber
         }
 
         var container = document.getElementById("cardsContainer");
-        if (!container) return;
-        container.innerHTML = "";
+        if (container) container.innerHTML = "";
 
-        selectedCards.forEach(function (card) {
+        var boardSurface = document.getElementById("boardCardsSurface");
+        if (boardSurface) boardSurface.innerHTML = "";
+
+        var boardMsg = document.getElementById("boardInitialMessage");
+        if (boardMsg) boardMsg.classList.add("hidden");
+
+        selectedCards.forEach(function (card, i) {
           var cardEl = makeCard(card);
-          container.appendChild(cardEl);
+          if (container) container.appendChild(cardEl);
+
+          var boardCardEl = makeBoardCard(card, i, selectedCards.length);
+          if (boardSurface) boardSurface.appendChild(boardCardEl);
+
           if (
             Array.isArray(state.revealedIds) &&
             state.revealedIds.indexOf(card.id) >= 0
           ) {
             revealCard(cardEl, true);
+            flipBoardCard(boardCardEl, true);
           }
         });
 
@@ -1376,18 +1822,34 @@ const userArcaneHint = userArcaneNumber
         var panel = document.getElementById("actionPanel");
         if (panel) panel.classList.remove("hidden");
 
-        var sec = document.getElementById("aclaracionSection");
-        var cont = document.getElementById("aclaracionContainer");
         if (
-          cont &&
           Array.isArray(state.aclaracionIds) &&
           state.aclaracionIds.length > 0
         ) {
-          if (sec) sec.classList.remove("hidden");
-          state.aclaracionIds.forEach(function (id) {
+          state.aclaracionIds.forEach(function (id, aclIdx) {
             var card = getCardById(id);
             if (!card) return;
-            cont.appendChild(makeAclaracionCard(card));
+
+            if (boardSurface) {
+              var bCanvas = document.getElementById("boardCanvas");
+              var bW = bCanvas ? bCanvas.clientWidth : 1200;
+              var bH = bCanvas ? bCanvas.clientHeight : 700;
+              var pos = calculateAclaracionPosition(aclIdx, bW, bH);
+              aclaracionCountOnBoard = aclIdx + 1;
+
+              var existingCount = boardSurface.querySelectorAll(".tarot-board-card").length;
+              var aclBoardCard = makeBoardCard(card, existingCount, existingCount + 1);
+              aclBoardCard.dataset.isAclaracion = "1";
+              aclBoardCard.classList.add("is-aclaracion-card");
+              aclBoardCard.style.left = pos.left + "px";
+              aclBoardCard.style.top = pos.top + "px";
+              aclBoardCard.style.transform = "rotate(" + pos.tilt + "deg)";
+              boardSurface.appendChild(aclBoardCard);
+
+              if (Array.isArray(state.revealedIds) && state.revealedIds.indexOf(card.id) !== -1) {
+                flipBoardCard(aclBoardCard, true);
+              }
+            }
           });
 
           var d = getData();
@@ -1418,6 +1880,75 @@ const userArcaneHint = userArcaneNumber
 
         var btnLimpiar = document.getElementById("resetBtn");
         if (btnLimpiar) btnLimpiar.addEventListener("click", limpiar);
+
+        // Controles del Tablero Interactivo con Paño de Tela
+        var clothSelect = document.getElementById("clothThemeSelect");
+        var boardCanvas = document.getElementById("boardCanvas");
+        if (clothSelect && boardCanvas) {
+          var hasBuscador = clothSelect.dataset.hasBuscador === "true";
+
+          try {
+            var savedCloth = localStorage.getItem("tarot_board_cloth");
+            if (savedCloth) {
+              if (savedCloth === "cloth-violeta" || hasBuscador) {
+                clothSelect.value = savedCloth;
+                boardCanvas.className = "tarot-board-canvas " + savedCloth;
+              } else {
+                clothSelect.value = "cloth-violeta";
+                boardCanvas.className = "tarot-board-canvas cloth-violeta";
+              }
+            }
+          } catch (e) {}
+
+          clothSelect.addEventListener("change", function () {
+            var val = clothSelect.value;
+            if (val !== "cloth-violeta" && !hasBuscador) {
+              clothSelect.value = "cloth-violeta";
+              boardCanvas.className = "tarot-board-canvas cloth-violeta";
+              alert("Los paños personalizados son exclusivos de la Membresía Buscador. Actualiza tu plan para desbloquear todos los tapetes.");
+              return;
+            }
+            boardCanvas.className = "tarot-board-canvas " + val;
+            try {
+              localStorage.setItem("tarot_board_cloth", val);
+            } catch (e) {}
+          });
+        }
+
+        var btnViewBoard = document.getElementById("viewModeBoardBtn");
+        var btnViewGrid = document.getElementById("viewModeGridBtn");
+        var cardsContainer = document.getElementById("cardsContainer");
+
+        if (btnViewBoard && btnViewGrid && boardCanvas && cardsContainer) {
+          btnViewBoard.addEventListener("click", function () {
+            boardCanvas.classList.remove("hidden");
+            cardsContainer.classList.add("hidden");
+            btnViewBoard.className = "px-2.5 py-1 rounded-md font-medium text-amber-300 bg-slate-800 transition-all cursor-pointer";
+            btnViewGrid.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+          });
+
+          btnViewGrid.addEventListener("click", function () {
+            boardCanvas.classList.add("hidden");
+            cardsContainer.classList.remove("hidden");
+            btnViewGrid.className = "px-2.5 py-1 rounded-md font-medium text-amber-300 bg-slate-800 transition-all cursor-pointer";
+            btnViewBoard.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+          });
+        }
+
+        var btnBoardFlipAll = document.getElementById("boardFlipAllBtn");
+        if (btnBoardFlipAll) {
+          btnBoardFlipAll.addEventListener("click", revelarTodas);
+        }
+
+        var btnBoardReorganize = document.getElementById("boardReorganizeBtn");
+        if (btnBoardReorganize) {
+          btnBoardReorganize.addEventListener("click", reorganizeBoardCards);
+        }
+
+        var btnBoardClear = document.getElementById("boardClearBtn");
+        if (btnBoardClear) {
+          btnBoardClear.addEventListener("click", limpiar);
+        }
 
         var inputPregunta = document.getElementById("tiradaPregunta");
         if (inputPregunta) {
@@ -1507,11 +2038,11 @@ const userArcaneHint = userArcaneNumber
 
             var cartasReveladas = [];
             document
-              .querySelectorAll("#cardsContainer [data-card]")
+              .querySelectorAll("#boardCardsSurface [data-card], #cardsContainer [data-card]")
               .forEach(function (el) {
                 try {
                   var card = JSON.parse(el.dataset.card || "{}");
-                  if (el.dataset.revealed === "1")
+                  if (el.dataset.revealed === "1" && !cartasReveladas.some(function(c) { return c.id === card.id; }))
                     cartasReveladas.push(card);
                 } catch (e) {}
               });
@@ -1602,11 +2133,11 @@ const userArcaneHint = userArcaneNumber
 
             var cartasReveladas = [];
             document
-              .querySelectorAll("#cardsContainer [data-card]")
+              .querySelectorAll("#boardCardsSurface [data-card], #cardsContainer [data-card]")
               .forEach(function (el) {
                 try {
                   var card = JSON.parse(el.dataset.card || "{}");
-                  if (el.dataset.revealed === "1")
+                  if (el.dataset.revealed === "1" && !cartasReveladas.some(function(c) { return c.id === card.id; }))
                     cartasReveladas.push(card);
                 } catch (e) {}
               });
