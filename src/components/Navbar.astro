@@ -54,6 +54,22 @@ const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
         </div>
       </div>
 
+      <!-- Desktop Theme Toggle -->
+      <button 
+        type="button" 
+        data-theme-toggle 
+        class="hidden md:flex items-center justify-center p-2 rounded-full app-nav-icon hover:text-white transition-colors cursor-pointer focus:outline-none hover:bg-white/10"
+        aria-label="Cambiar tema visual"
+        title="Cambiar tema (claro / oscuro)"
+      >
+        <svg class="theme-icon-sun h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg class="theme-icon-moon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
+
       <!-- User Menu Dropdown -->
       <div class="relative" id="userDropdownContainer">
         <!-- Guest: Icon Link to Login -->
@@ -95,7 +111,7 @@ const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
           >
             <a 
               href="/profile" 
-              class="block px-4 py-2 text-sm transition-colors hover:bg-white/5" 
+              class="block px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/10" 
               style="color: var(--text);"
               role="menuitem"
             >
@@ -103,8 +119,25 @@ const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
             </a>
             <button 
               type="button" 
+              data-theme-toggle 
+              class="w-full text-left flex items-center justify-between px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+              style="color: var(--text);"
+              role="menuitem"
+            >
+              <span class="theme-dropdown-label">Modo Claro / Oscuro</span>
+              <span class="flex items-center text-xs">
+                <svg class="theme-icon-sun h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg class="theme-icon-moon h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              </span>
+            </button>
+            <button 
+              type="button" 
               data-logout-btn 
-              class="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-white/5 cursor-pointer" 
+              class="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer" 
               style="color: var(--text);"
               role="menuitem"
             >
@@ -113,6 +146,22 @@ const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
           </div>
         </div>
       </div>
+
+      <!-- Mobile Theme Toggle Button -->
+      <button 
+        type="button" 
+        data-theme-toggle 
+        class="md:hidden flex items-center justify-center p-1.5 rounded-full app-nav-icon hover:text-white transition-colors cursor-pointer focus:outline-none hover:bg-white/10"
+        aria-label="Cambiar tema visual"
+        title="Cambiar tema (claro / oscuro)"
+      >
+        <svg class="theme-icon-sun h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg class="theme-icon-moon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
 
       <!-- Mobile Menu Button -->
       <button 
@@ -144,6 +193,25 @@ const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
         aria-label="Cerrar sesión"
       >
         Cerrar sesión
+      </button>
+
+      <!-- Theme Toggle in Mobile Drawer -->
+      <button
+        type="button"
+        data-theme-toggle
+        class="flex items-center justify-between py-2 text-left app-nav-link transition-colors w-full cursor-pointer border-t border-white/10 pt-3"
+        aria-label="Alternar tema claro y oscuro"
+      >
+        <span class="flex items-center gap-2">
+          <svg class="theme-icon-sun h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg class="theme-icon-moon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <span class="theme-drawer-text">Cambiar tema</span>
+        </span>
+        <span class="theme-badge text-xs px-2 py-0.5 rounded bg-white/10 text-white/90">Tema</span>
       </button>
       <!-- RRSS -->
       <div class="flex items-center space-x-4 app-nav-separator pt-3 pb-1">
@@ -267,6 +335,84 @@ const loginHref = `/auth/login?next=${encodeURIComponent(dynamicNext)}`;
   onAuthStateChanged(auth, (firebaseUser) => {
     syncAuthUI(Boolean(firebaseUser));
   });
+
+  // Lógica de alternancia y persistencia del tema (Modo Claro / Modo Oscuro)
+  function getEffectiveTheme(): 'light' | 'dark' {
+    const attr = document.documentElement.getAttribute('data-theme');
+    if (attr === 'dark' || attr === 'light') return attr;
+    if (document.documentElement.classList.contains('dark')) return 'dark';
+    if (document.documentElement.classList.contains('light')) return 'light';
+    try {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark' || stored === 'light') return stored;
+    } catch (e) {}
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme: 'light' | 'dark', save = true) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+
+    if (save) {
+      try {
+        localStorage.setItem('theme', theme);
+      } catch (e) {}
+    }
+
+    const labelText = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    const drawerText = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    const dropdownText = theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro';
+    const badgeText = theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro';
+
+    document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+      btn.setAttribute('aria-label', labelText);
+      if (btn.hasAttribute('title')) {
+        btn.setAttribute('title', labelText);
+      }
+      const badge = btn.querySelector('.theme-badge');
+      if (badge) badge.textContent = badgeText;
+
+      const dText = btn.querySelector('.theme-drawer-text');
+      if (dText) dText.textContent = drawerText;
+
+      const dropText = btn.querySelector('.theme-dropdown-label');
+      if (dropText) dropText.textContent = dropdownText;
+    });
+
+    window.dispatchEvent(new CustomEvent('apptarot:theme-change', { detail: { theme } }));
+  }
+
+  function toggleTheme() {
+    const current = getEffectiveTheme();
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next, true);
+  }
+
+  // Inicializar etiquetas y estados de los botones al cargar la página
+  applyTheme(getEffectiveTheme(), false);
+
+  document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTheme();
+    });
+  });
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      try {
+        if (!localStorage.getItem('theme')) {
+          applyTheme(e.matches ? 'dark' : 'light', false);
+        }
+      } catch (err) {}
+    });
+  }
 </script>
 
 <style>

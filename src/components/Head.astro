@@ -20,6 +20,25 @@ const { title, description, ogImage, ogImageAlt, noindex } = Astro.props as Head
  )}
 <meta name="theme-color" content="#4c1d95" />
 
+<!-- Detección temprana de tema para prevenir parpadeo (Anti-FOUC) -->
+<script is:inline>
+  (function () {
+    try {
+      const stored = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <title>{title}</title>
 
 <!-- Favicon -->
