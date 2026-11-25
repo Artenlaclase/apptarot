@@ -128,7 +128,7 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
                 alt={`Arcano Mayor ${card.nombre}`}
                 width={300}
                 height={520}
-                loading={index < 5 ? "eager" : "lazy"}
+                loading={index < 10 ? "eager" : "lazy"}
                 decoding="async"
                 class="carta-image"
                 onerror="this.onerror=null;this.src='/placeholder-card.jpg';this.classList.add('error-image')"
