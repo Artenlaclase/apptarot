@@ -11,6 +11,7 @@
 }
 
 @media (max-width: 768px) {
+
   .cartas-grid-custom,
   .cartas-grid-random {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -20,6 +21,7 @@
 }
 
 @media (max-width: 480px) {
+
   .cartas-grid-custom,
   .cartas-grid-random {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -28,6 +30,7 @@
 }
 
 @media (max-width: 320px) {
+
   .cartas-grid-custom,
   .cartas-grid-random {
     grid-template-columns: 1fr;
@@ -162,7 +165,7 @@
 }
 
 .carta-item-minor:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .carta-image-container-minor {
@@ -196,6 +199,7 @@
 
 /* Responsive para cartas individuales */
 @media (max-width: 768px) {
+
   .carta-image-container,
   .carta-random-image-wrapper {
     min-height: 250px;
@@ -208,6 +212,7 @@
 }
 
 @media (max-width: 480px) {
+
   .carta-image-container,
   .carta-random-image-wrapper {
     min-height: 220px;
@@ -403,7 +408,7 @@
 }
 
 .tarot-board-canvas.cloth-azul {
-  background-image: 
+  background-image:
     radial-gradient(circle at center, rgba(15, 32, 67, 0.45) 0%, rgba(5, 12, 28, 0.92) 100%),
     url('/pano-violeta.webp'), url('/pano-violeta.jpg');
   background-color: #0c1829;
@@ -411,9 +416,9 @@
 }
 
 .tarot-board-canvas.cloth-madera {
-  background: 
+  background:
     radial-gradient(circle at center, rgba(90, 48, 22, 0.6) 0%, rgba(30, 14, 5, 0.95) 100%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 60px);
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 2px, transparent 2px, transparent 60px);
   background-color: #2e160a;
 }
 
