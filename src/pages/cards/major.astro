@@ -116,7 +116,7 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
 
     <!-- Grid responsivo usando las mismas clases que index.astro -->
     <section class="cartas-grid-custom">
-      {cards.map((card: ProcessedCard) => (
+      {cards.map((card: ProcessedCard, index: number) => (
         <a
           href={`/cards/${card.id}?returnTo=/cards/major`}
           class="carta-link"
@@ -128,7 +128,7 @@ const pageDescription: string = "Explora los 22 Arcanos Mayores del Tarot de Mar
                 alt={`Arcano Mayor ${card.nombre}`}
                 width={300}
                 height={520}
-                loading="lazy"
+                loading={index < 5 ? "eager" : "lazy"}
                 decoding="async"
                 class="carta-image"
                 onerror="this.onerror=null;this.src='/placeholder-card.jpg';this.classList.add('error-image')"

@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# technical reports
+INFORME_TECNICO_CAMBIOS_APP.md
+
