@@ -1,20 +1,54 @@
 ---
-import Layout from '../layouts/Layout.astro';
-const title = 'Acerca del Tarot de Marsella';
-const description = 'Historia, simbolismo y enfoque de este proyecto sobre el Tarot de Marsella.';
+import Layout from "../layouts/Layout.astro";
+const title = "Tarot de Marsella";
+const description =
+  "Historia, simbolismo y enfoque de este proyecto sobre el Tarot de Marsella.";
 ---
 
 <Layout {title} {description}>
-  <main class="container mx-auto px-4 py-12 prose prose-purple">
-    <h1>{title}</h1>
-    <p>
-      Este proyecto busca ofrecer una guía clara y visual sobre el Tarot de Marsella, uno de los mazos más
-      influyentes en la tradición del tarot. Aquí encontrarás arcanos mayores y menores con descripciones,
-      palabras clave y referencias simbólicas.
-    </p>
-    <p>
-      Si deseas sugerir mejoras o colaborar, ¡serás bienvenido! Puedes escribir a
-      <a href="mailto:contacto@tarotmarsella.com">contacto@tarotmarsella.com</a>.
-    </p>
+  <main class="container mx-auto px-4 py-8 md:py-12 max-w-4xl">
+    <header class="text-center mb-6 md:mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold page-title mb-3">{title}</h1>
+      <p class="page-lead">
+        Historia, simbolismo y enfoque editorial del proyecto.
+      </p>
+    </header>
+
+    <section class="surface-card p-5 md:p-8 space-y-5">
+      <p class="leading-relaxed" style="color: var(--text);">
+        Este proyecto nace con un doble propósito: ser una guía clara y visual
+        del Tarot de Marsella, y convertirse en un espacio de encuentro para
+        quienes deseen explorar esta herramienta desde una mirada terapéutica.
+        No se trata solo de aprender a leer las cartas, sino de utilizarlas como
+        un espejo para el autoconocimiento y el crecimiento personal, creando
+        así una comunidad de práctica donde el intercambio de lecturas
+        enriquezca nuestro camino. El Tarot de Marsella, cuyo diseño se
+        consolidó en el siglo XVII en el sur de Francia, es uno de los mazos más
+        influyentes de la tradición occidental. A diferencia de otros sistemas
+        posteriores, no nació de la pluma de un ocultista moderno, sino del
+        anonimato de los talleres artesanales; sus primeras versiones conocidas,
+        como el Tarot de Nicolas Conver (1760), son el reflejo de una herencia
+        popular y simbólica que ha viajado a través de los siglos. Precisamente,
+        he elegido este mazo por la libertad que otorga su anonimato. Como bien
+        señala Alejandro Jodorowsky, al carecer de la carga de un autor conocido
+        y de una interpretación dogmática, el Marsella nos invita a conectar
+        directamente con el inconsciente colectivo. Leerlo es un acto de
+        creación e interpretación personal, donde el "ego del autor" no
+        interfiere, permitiendo que cada símbolo hable directamente a nuestra
+        propia experiencia. Aquí encontrarás los 22 arcanos mayores y los 56
+        menores, con sus descripciones, palabras clave y referencias simbólicas,
+        pero sobre todo, encontrarás una invitación a hacer tuyo este lenguaje
+        universal.
+      </p>
+      <p class="leading-relaxed" style="color: var(--text-muted);">
+        Si deseas sugerir mejoras o colaborar, puedes escribir a
+        <a
+          class="token-link font-medium"
+          href="mailto:contacto@taroterapeutico.net"
+        >
+          contacto@taroterapeutico.net</a
+        >.
+      </p>
+    </section>
   </main>
 </Layout>

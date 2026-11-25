@@ -1,0 +1,35 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getOrCreateUserProfile } from '../../lib/auth-server';
+import { isPremiumPlan } from '../../lib/plans';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/auth/login?next=/premium/chat');
+}
+
+const profile = await getOrCreateUserProfile(user.uid, user);
+if (!isPremiumPlan(profile.plan) || profile.planStatus !== 'active') {
+  return Astro.redirect('/profile?upgrade=1');
+}
+
+const title = 'Chat personal de tarot';
+const description = 'Lectura online personalizada por chat dentro de la app.';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-4xl px-4 py-10 space-y-6">
+    <header class="surface-card p-6">
+      <h1 class="text-3xl font-bold page-title">Chat personal premium</h1>
+      <p class="page-lead mt-2">Espacio privado para lectura personalizada con tarotista.</p>
+    </header>
+
+    <section class="surface-card p-6">
+      <h2 class="text-xl font-semibold page-title mb-3">Sala de chat</h2>
+      <p class="page-lead mb-4">Este módulo está preparado para integrar proveedor de chat en tiempo real (Firebase, Stream o similar).</p>
+      <div class="app-surface-soft rounded-lg p-4">
+        <p class="page-lead">Próximo paso sugerido: conectar Cloud Firestore con colección chats/{user.uid}/messages para mensajería en vivo.</p>
+      </div>
+    </section>
+  </main>
+</Layout>

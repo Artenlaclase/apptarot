@@ -1,6 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import type { FirebaseApp } from "firebase/app";
+import { getAuth } from 'firebase/auth';
 import { 
   getFirestore, 
   initializeFirestore,
@@ -67,6 +68,8 @@ try {
 
 // Export the Firestore instance
 export { db };
+export { app };
+export const auth = getAuth(app);
 
 // Error handling for FirebaseError
 export function handleFirebaseError(error: FirestoreError): string {

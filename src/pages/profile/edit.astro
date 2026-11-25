@@ -1,0 +1,235 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getOrCreateUserProfile } from '../../lib/auth-server';
+
+function splitFullName(fullName: string | undefined): { firstName: string; lastName: string } {
+  const clean = (fullName || '').trim().replace(/\s+/g, ' ');
+  if (!clean) return { firstName: '', lastName: '' };
+  const parts = clean.split(' ');
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' '),
+  };
+}
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/auth/login?next=/profile/edit');
+}
+
+const profile = await getOrCreateUserProfile(user.uid, user);
+const title = 'Editar perfil';
+const description = 'Administra tu contraseña, datos personales y exportación de lecturas.';
+const profileNameParts = splitFullName(profile.fullName || profile.displayName);
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-4xl px-4 py-10 space-y-6">
+    <section class="surface-card p-6">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h1 class="text-3xl font-bold page-title">Editar perfil</h1>
+          <p class="page-lead mt-2">Desde aquí puedes cambiar tu contraseña, descargar tus lecturas y actualizar tus datos públicos.</p>
+        </div>
+        <a href="/profile" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Volver a mi perfil</a>
+      </div>
+    </section>
+
+    <section class="surface-card p-6 space-y-4">
+      <h2 class="text-xl font-semibold page-title">Datos personales y redes</h2>
+      <form id="profileDetailsForm" class="space-y-4" novalidate>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="editFirstName" class="block text-sm font-semibold mb-1">Nombre</label>
+            <input id="editFirstName" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profileNameParts.firstName} required />
+          </div>
+          <div>
+            <label for="editLastName" class="block text-sm font-semibold mb-1">Apellido</label>
+            <input id="editLastName" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profileNameParts.lastName} required />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="editBirthDate" class="block text-sm font-semibold mb-1">Fecha de nacimiento</label>
+            <input id="editBirthDate" type="date" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.birthDate || ''} />
+          </div>
+          <div>
+            <label for="editBirthHour" class="block text-sm font-semibold mb-1">Hora de nacimiento</label>
+            <input id="editBirthHour" type="time" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.birthHour || ''} />
+          </div>
+        </div>
+
+        <div>
+          <label for="editHobbies" class="block text-sm font-semibold mb-1">Pasatiempos</label>
+          <input id="editHobbies" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.hobbies || ''} placeholder="Ej: lectura, música, senderismo" />
+        </div>
+
+        <div>
+          <label for="editBio" class="block text-sm font-semibold mb-1">Descripción</label>
+          <textarea id="editBio" rows="4" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" placeholder="Cuéntanos algo sobre ti">{profile.bio || ''}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="editInstagram" class="block text-sm font-semibold mb-1">Instagram</label>
+            <input id="editInstagram" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialInstagram || ''} placeholder="@usuario" />
+          </div>
+          <div>
+            <label for="editFacebook" class="block text-sm font-semibold mb-1">Facebook</label>
+            <input id="editFacebook" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialFacebook || ''} placeholder="usuario o enlace" />
+          </div>
+          <div>
+            <label for="editTiktok" class="block text-sm font-semibold mb-1">TikTok</label>
+            <input id="editTiktok" type="text" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialTiktok || ''} placeholder="@usuario" />
+          </div>
+          <div>
+            <label for="editWebsite" class="block text-sm font-semibold mb-1">Sitio web</label>
+            <input id="editWebsite" type="url" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" value={profile.socialWebsite || ''} placeholder="https://..." />
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button id="saveDetailsBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Guardar cambios</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="surface-card p-6 space-y-4">
+      <h2 class="text-xl font-semibold page-title">Seguridad</h2>
+      <form id="passwordForm" class="space-y-3" novalidate>
+        <label class="block text-sm font-semibold" for="newPassword">Nueva contraseña</label>
+        <input id="newPassword" type="password" minlength="8" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
+        <div class="flex justify-end">
+          <button id="savePasswordBtn" type="submit" class="btn-ui btn-ui-primary px-4 py-2">Cambiar contraseña</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="surface-card p-6 space-y-4">
+      <h2 class="text-xl font-semibold page-title">Historial y datos</h2>
+      <p class="text-sm" style="color: var(--text-muted);">Descarga un archivo JSON con tu perfil y todas tus lecturas guardadas.</p>
+      <div class="flex flex-wrap gap-3">
+        <a href="/api/user/export" class="btn-ui btn-ui-secondary px-4 py-2 inline-block">Descargar historial de lecturas</a>
+        <a href="/account/readings" class="btn-ui btn-ui-neutral px-4 py-2 inline-block">Ver historial completo</a>
+      </div>
+    </section>
+
+    <p id="editProfileMsg" class="text-sm hidden" aria-live="polite"></p>
+  </main>
+
+  <script>
+    import { updateCurrentUserPassword } from '../../lib/auth-client';
+    import {
+      validateFullName,
+      validateBirthDate,
+      validateBirthHour,
+      normalizeBirthDateInput,
+    } from '../../lib/arcaneCalculator';
+
+    const messageEl = document.getElementById('editProfileMsg');
+
+    function setMessage(text: string, isError = false) {
+      if (!messageEl) return;
+      messageEl.textContent = text;
+      messageEl.style.color = isError ? 'var(--danger)' : 'var(--success)';
+      messageEl.classList.remove('hidden');
+    }
+
+    function setBusy(buttonId: string, busyText: string, idleText: string, isBusy: boolean) {
+      const btn = document.getElementById(buttonId) as HTMLButtonElement | null;
+      if (!btn) return;
+      btn.disabled = isBusy;
+      btn.textContent = isBusy ? busyText : idleText;
+    }
+
+    document.getElementById('profileDetailsForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const firstName = (document.getElementById('editFirstName') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const lastName = (document.getElementById('editLastName') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+      const fullNameValidation = validateFullName(fullName);
+      if (!fullNameValidation.valid) {
+        setMessage(fullNameValidation.message || 'Nombre inválido.', true);
+        return;
+      }
+
+      const rawBirthDate = (document.getElementById('editBirthDate') as HTMLInputElement | null)?.value ?? '';
+      const birthHour = (document.getElementById('editBirthHour') as HTMLInputElement | null)?.value?.trim() ?? '';
+      const birthDate = normalizeBirthDateInput(rawBirthDate);
+
+      if (birthDate) {
+        const birthDateValidation = validateBirthDate(birthDate);
+        if (!birthDateValidation.valid) {
+          setMessage(birthDateValidation.message || 'Fecha de nacimiento inválida.', true);
+          return;
+        }
+
+        const birthHourValidation = validateBirthHour(birthHour);
+        if (!birthHourValidation.valid) {
+          setMessage(birthHourValidation.message || 'Hora de nacimiento inválida.', true);
+          return;
+        }
+      }
+
+      const payload = {
+        firstName,
+        lastName,
+        birthDate,
+        birthHour,
+        bio: (document.getElementById('editBio') as HTMLTextAreaElement | null)?.value?.trim() ?? '',
+        hobbies: (document.getElementById('editHobbies') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialInstagram: (document.getElementById('editInstagram') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialFacebook: (document.getElementById('editFacebook') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialTiktok: (document.getElementById('editTiktok') as HTMLInputElement | null)?.value?.trim() ?? '',
+        socialWebsite: (document.getElementById('editWebsite') as HTMLInputElement | null)?.value?.trim() ?? '',
+      };
+
+      setBusy('saveDetailsBtn', 'Guardando...', 'Guardar cambios', true);
+
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'No se pudo guardar el perfil.');
+        }
+
+        setMessage('Perfil actualizado correctamente.');
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'No se pudo guardar el perfil.', true);
+      } finally {
+        setBusy('saveDetailsBtn', 'Guardando...', 'Guardar cambios', false);
+      }
+    });
+
+    document.getElementById('passwordForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const passwordInput = document.getElementById('newPassword') as HTMLInputElement | null;
+      const newPassword = passwordInput?.value ?? '';
+
+      if (newPassword.length < 8) {
+        setMessage('La contraseña debe tener al menos 8 caracteres.', true);
+        return;
+      }
+
+      setBusy('savePasswordBtn', 'Actualizando...', 'Cambiar contraseña', true);
+
+      try {
+        await updateCurrentUserPassword(newPassword);
+        setMessage('Contraseña actualizada correctamente.');
+        if (passwordInput) passwordInput.value = '';
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'No se pudo cambiar la contraseña.', true);
+      } finally {
+        setBusy('savePasswordBtn', 'Actualizando...', 'Cambiar contraseña', false);
+      }
+    });
+  </script>
+</Layout>

@@ -1,8 +1,8 @@
 ---
 // src/pages/cards/minor.astro
-import { db } from '../../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { adminDb } from '../../lib/firebase-admin';
 import Layout from '../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
 import '../../styles/cards.css';
 
 interface FirestoreCard {
@@ -24,10 +24,8 @@ const getValorOrderIndex = (valor: string): number => {
   return index === -1 ? 999 : index; // Si no encuentra el valor, lo pone al final
 };
 
-// Query básica sin filtros complejos mientras se construye el índice
-const q = collection(db, 'cards');
-
-const querySnapshot = await getDocs(q);
+// Query usando Admin SDK
+const querySnapshot = await adminDb.collection('cards').get();
 
 const processImageUrl = (url: string | undefined | null): string => {
   if (!url || typeof url !== 'string') return '/placeholder-card.jpg';
@@ -89,16 +87,16 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
-  <main class="container mx-auto px-4 py-8 max-w-7xl">
+  <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
     <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-purple-900 mb-2">{pageTitle}</h1>
-      <p class="text-xl text-purple-700">Los cuatro palos: Bastos, Copas, Espadas y Oros</p>
+      <h1 class="text-3xl md:text-4xl font-bold page-title mb-2">{pageTitle}</h1>
+      <p class="text-base md:text-xl page-lead">Los cuatro palos: Bastos, Copas, Espadas y Oros</p>
     </header>
 
     <!-- Sección por cada palo -->
     {orderedSuits.map(suit => (
-      <section class="mb-16">
-        <h2 class="text-3xl font-semibold text-purple-800 mb-6 capitalize border-b-2 border-purple-200 pb-2">
+      <section class="mb-10 md:mb-16 surface-card p-4 md:p-8">
+        <h2 class="text-2xl md:text-3xl font-semibold page-title mb-5 md:mb-6 capitalize border-b pb-2" style="border-color: var(--border);">
           {suit === 'bastos' && 'Bastos - El elemento Fuego'}
           {suit === 'copas' && 'Copas - El elemento Agua'}
           {suit === 'espadas' && 'Espadas - El elemento Aire'}
@@ -109,31 +107,21 @@ const pageDescription = "Explora los cuatro palos de los arcanos menores: Bastos
         <div class="cartas-grid-minor">
           {cardsBySuit[suit].map(card => (
             <a
-              href={`/cards/${card.id}`}
+              href={`/cards/${card.id}?returnTo=/cards/minor`}
               class="carta-link-minor"
             >
               <article class="carta-item-minor">
                 <div class="carta-image-container-minor">
-                  {
-                    (() => {
-                      const isCloudinary = typeof card.imagem === 'string' && card.imagem.includes('res.cloudinary.com');
-                      const clSrc = (w:number) => isCloudinary ? card.imagem.replace('/upload/', `/upload/w_${w},f_auto,q_auto/`) : card.imagem;
-                      const srcset = [200, 260, 320, 380, 440].map(w => `${clSrc(w)} ${w}w`).join(', ');
-                      const sizes = '(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 200px';
-                      return (
-                        <img
-                          src={clSrc(320)}
-                          srcset={srcset}
-                          sizes={sizes}
-                          alt={`Carta ${card.nombre}`}
-                          loading="lazy"
-                          decoding="async"
-                          class="carta-image-minor"
-                          onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
-                        />
-                      );
-                    })()
-                  }
+                  <Image
+                    src={card.imagem}
+                    alt={`Carta ${card.nombre}`}
+                    width={250}
+                    height={420}
+                    loading="lazy"
+                    decoding="async"
+                    class="carta-image-minor"
+                    onerror="this.onerror=null;this.src='/placeholder-card.jpg';this.classList.add('error-image')"
+                  />
                 </div>
                 <div class="carta-info-minor">
                   <h3 class="carta-nombre-minor">{card.nombre}</h3>

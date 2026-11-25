@@ -1,7 +1,6 @@
 ---
 // src/pages/admin/cards/new-minor.astro
-import { db } from '../../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { adminDb } from '../../lib/firebase-admin';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 // Configuración
@@ -65,8 +64,8 @@ if (Astro.request.method === 'POST') {
       .replace(/\s+/g, '_')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Elimina acentos
 
-    // Guardar en Firestore
-    await setDoc(doc(db, 'cards', id), {
+    // Guardar en Firestore usando Admin SDK
+    await adminDb.collection('cards').doc(id).set({
       nombre: formValues.nombre,
       palo: formValues.palo,
       valor: formValues.valor,

@@ -1,3 +1,277 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root,
+html[data-theme="light"],
+html.light {
+	color-scheme: light;
+
+	--bg: #f5f2eb;
+	--surface: #fdfcfb;
+	--surface-2: #f0ebd8;
+	--text: #1b1816;
+	--text-muted: #5e5650;
+	--border: #dfd6bf;
+
+	--primary: #1c3d75;
+	--primary-hover: #142d57;
+	--secondary: #1e6b3b;
+	--warning: #c89a3f;
+	--danger: #a82020;
+	--success: #16a34a;
+
+	--shadow-soft: 0 10px 24px rgba(27, 24, 22, 0.06);
+
+	/* Navbar & Footer variables */
+	--nav-bg: #142340;
+	--nav-text: #ffffff;
+	--nav-text-muted: rgba(255, 255, 255, 0.75);
+	--nav-border: rgba(255, 255, 255, 0.12);
+	--nav-hover: #ffffff;
+	--nav-mobile-bg: #0f1a30;
+
+	--footer-bg: #0e182b;
+	--footer-text: #ffffff;
+	--footer-text-muted: rgba(255, 255, 255, 0.65);
+	--footer-border: rgba(255, 255, 255, 0.1);
+	--footer-link: rgba(255, 255, 255, 0.85);
+	--footer-link-hover: #ffffff;
+}
+
+/* Modo oscuro por preferencia del sistema (solo si el usuario no forzó modo claro) */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]):not(.light) {
+		color-scheme: dark;
+
+		--bg: #0c0e17;
+		--surface: #131826;
+		--surface-2: #1c2235;
+		--text: #f1f5f9;
+		--text-muted: #94a3b8;
+		--border: #222b40;
+
+		--primary: #60a5fa;
+		--primary-hover: #3b82f6;
+		--secondary: #4ade80;
+		--warning: #f5bc51;
+		--danger: #f87171;
+		--success: #22c55e;
+
+		--shadow-soft: 0 14px 26px rgba(4, 5, 8, 0.4);
+
+		/* Navbar & Footer dark variables */
+		--nav-bg: #0c0e17;
+		--nav-text: #f1f5f9;
+		--nav-text-muted: #94a3b8;
+		--nav-border: #1e293b;
+		--nav-hover: #60a5fa;
+		--nav-mobile-bg: #131826;
+
+		--footer-bg: #080a10;
+		--footer-text: #f1f5f9;
+		--footer-text-muted: #94a3b8;
+		--footer-border: #131826;
+		--footer-link: #94a3b8;
+		--footer-link-hover: #60a5fa;
+	}
+}
+
+/* Modo oscuro explícito */
+html[data-theme="dark"],
+html.dark {
+	color-scheme: dark;
+
+	--bg: #0c0e17;
+	--surface: #131826;
+	--surface-2: #1c2235;
+	--text: #f1f5f9;
+	--text-muted: #94a3b8;
+	--border: #222b40;
+
+	--primary: #60a5fa;
+	--primary-hover: #3b82f6;
+	--secondary: #4ade80;
+	--warning: #f5bc51;
+	--danger: #f87171;
+	--success: #22c55e;
+
+	--shadow-soft: 0 14px 26px rgba(4, 5, 8, 0.4);
+
+	/* Navbar & Footer dark variables */
+	--nav-bg: #0c0e17;
+	--nav-text: #f1f5f9;
+	--nav-text-muted: #94a3b8;
+	--nav-border: #1e293b;
+	--nav-hover: #60a5fa;
+	--nav-mobile-bg: #131826;
+
+	--footer-bg: #080a10;
+	--footer-text: #f1f5f9;
+	--footer-text-muted: #94a3b8;
+	--footer-border: #131826;
+	--footer-link: #94a3b8;
+	--footer-link-hover: #60a5fa;
+}
+
+/* Visibilidad de iconos Sol/Luna sin javascript previo (Anti-desfase) */
+.theme-icon-sun {
+	display: none;
+}
+.theme-icon-moon {
+	display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]):not(.light) .theme-icon-sun {
+		display: block;
+	}
+	:root:not([data-theme="light"]):not(.light) .theme-icon-moon {
+		display: none;
+	}
+}
+
+html[data-theme="dark"] .theme-icon-sun,
+html.dark .theme-icon-sun {
+	display: block !important;
+}
+html[data-theme="dark"] .theme-icon-moon,
+html.dark .theme-icon-moon {
+	display: none !important;
+}
+
+html[data-theme="light"] .theme-icon-sun,
+html.light .theme-icon-sun {
+	display: none !important;
+}
+html[data-theme="light"] .theme-icon-moon,
+html.light .theme-icon-moon {
+	display: block !important;
+}
+
+html,
+body {
+	background: 
+		radial-gradient(circle at 12% 12%, rgba(28, 61, 117, 0.12), transparent 36%),
+		radial-gradient(circle at 88% 88%, rgba(30, 107, 59, 0.06), transparent 40%),
+		var(--bg);
+	color: var(--text);
+	transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.app-surface {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	box-shadow: var(--shadow-soft);
+	transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.app-surface-soft {
+	background: var(--surface-2);
+	border: 1px solid var(--border);
+	transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.btn-ui {
+	border: 0;
+	border-radius: 0.75rem;
+	font-weight: 600;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-ui:hover:not(:disabled) {
+	transform: translateY(-1px);
+}
+
+.btn-ui:focus-visible {
+	outline: 2px solid var(--text-muted);
+	outline-offset: 2px;
+}
+
+.btn-ui:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.btn-ui-primary {
+	background: var(--primary);
+	color: #ffffff;
+}
+
+.btn-ui-primary:hover:not(:disabled) {
+	background: var(--primary-hover);
+}
+
+.btn-ui-secondary {
+	background: var(--secondary);
+	color: #ffffff;
+}
+
+.btn-ui-warning {
+	background: var(--warning);
+	color: #ffffff;
+}
+
+.btn-ui-neutral {
+	background: #6b7280;
+	color: #ffffff;
+}
+
+.status-box {
+	border-radius: 0.75rem;
+	border: 1px solid var(--border);
+	padding: 0.75rem 1rem;
+}
+
+.status-loading {
+	background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+}
+
+.status-success {
+	background: color-mix(in srgb, var(--success) 12%, var(--surface));
+}
+
+.status-error {
+	background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+}
+
+.page-title {
+	color: var(--text);
+}
+
+.page-lead {
+	color: var(--text-muted);
+}
+
+.token-link {
+	color: var(--primary);
+}
+
+.token-link:hover {
+	color: var(--primary-hover);
+}
+
+.surface-card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 0.875rem;
+	box-shadow: var(--shadow-soft);
+	transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.surface-soft {
+	background: var(--surface-2);
+	border: 1px solid var(--border);
+	border-radius: 0.875rem;
+	transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.cta-panel {
+	background: color-mix(in srgb, var(--primary) 82%, #111111);
+	color: #ffffff;
+	border-radius: 0.875rem;
+}
+
+.cta-muted {
+	color: color-mix(in srgb, #ffffff 74%, var(--text-muted));
+}

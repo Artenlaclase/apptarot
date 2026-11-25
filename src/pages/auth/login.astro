@@ -1,0 +1,142 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const title = 'Iniciar sesión';
+const description = 'Accede a tu cuenta para guardar tus tiradas y gestionar tu suscripción.';
+const next = Astro.url.searchParams.get('next') || '/';
+const message = Astro.url.searchParams.get('message');
+const showLecturaMessage = message === 'lectura';
+---
+
+<Layout {title} {description}>
+  <main class="container mx-auto max-w-xl px-4 py-10">
+    <section class="surface-card p-6 md:p-8">
+      <h1 class="text-3xl font-bold page-title mb-2">Iniciar sesión</h1>
+      <p class="page-lead mb-6">Usa email y contraseña o entra con Google.</p>
+
+      {showLecturaMessage && (
+        <p class="rounded-lg px-4 py-3 mb-4 text-sm" style="background: color-mix(in srgb, var(--primary) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); color: var(--text);">
+          Para realizar una experiencia personalizada, debes iniciar sesión o registrarte.
+        </p>
+      )}
+
+      <form id="loginForm" class="space-y-4" data-next={next} novalidate>
+        <div>
+          <label class="block text-sm font-semibold mb-1" for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1" for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface);" />
+        </div>
+
+        <button id="submitBtn" class="btn-ui btn-ui-primary w-full py-2" type="submit">Entrar</button>
+      </form>
+
+      <button id="googleBtn" class="btn-ui btn-ui-secondary w-full py-2 mt-3" type="button">Continuar con Google</button>
+
+      <p id="errorMsg" class="text-sm mt-4 hidden" style="color: var(--danger);" aria-live="polite"></p>
+
+      <p class="text-sm mt-6 page-lead">
+        ¿No tienes cuenta?
+        <a href={`/auth/register?next=${encodeURIComponent(next)}`} class="token-link font-semibold">Crear cuenta</a>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    import {
+      loginWithEmail,
+      loginWithGoogle,
+      createServerSession,
+      auth,
+      onAuthStateChanged,
+    } from '../../lib/auth-client';
+
+    const form = document.getElementById('loginForm') as HTMLFormElement | null;
+    const googleBtn = document.getElementById('googleBtn') as HTMLButtonElement | null;
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
+    const errorMsg = document.getElementById('errorMsg');
+    const next = form?.dataset.next || '/profile';
+
+    function showError(message: string) {
+      if (!errorMsg) return;
+      errorMsg.textContent = message;
+      errorMsg.classList.remove('hidden');
+    }
+
+    function setBusy(isBusy: boolean) {
+      if (submitBtn) submitBtn.disabled = isBusy;
+      if (googleBtn) googleBtn.disabled = isBusy;
+    }
+
+    function translateAuthError(error: any) {
+      const code = error?.code ?? '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found')
+        return 'Email o contraseña incorrectos. Verifica tus datos e inténtalo de nuevo.';
+      if (code === 'auth/invalid-email')
+        return 'El formato del email no es válido.';
+      if (code === 'auth/user-disabled')
+        return 'Esta cuenta ha sido deshabilitada. Contacta al soporte.';
+      if (code === 'auth/too-many-requests')
+        return 'Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo.';
+      if (code === 'auth/network-request-failed')
+        return 'Error de conexión. Verifica tu red e inténtalo de nuevo.';
+      if (code === 'auth/popup-closed-by-user')
+        return 'Cerraste la ventana de Google antes de completar el inicio de sesión.';
+      return error instanceof Error ? error.message : 'No se pudo iniciar sesión.';
+    }
+
+    async function finalizeLogin(credential: any) {
+      await createServerSession(credential);
+      window.location.href = next;
+    }
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setBusy(true);
+      if (errorMsg) errorMsg.classList.add('hidden');
+
+      const email = (document.getElementById('email') as HTMLInputElement | null)?.value ?? '';
+      const password = (document.getElementById('password') as HTMLInputElement | null)?.value ?? '';
+
+      try {
+        const credential = await loginWithEmail(email, password);
+        await finalizeLogin(credential);
+      } catch (error) {
+        showError(translateAuthError(error));
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    googleBtn?.addEventListener('click', async () => {
+      setBusy(true);
+      if (errorMsg) errorMsg.classList.add('hidden');
+
+      try {
+        const credential = await loginWithGoogle();
+        await finalizeLogin(credential);
+      } catch (error) {
+        showError(translateAuthError(error));
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setBusy(true);
+        try {
+          await createServerSession(firebaseUser);
+          window.location.href = next;
+        } catch (error) {
+          console.error('Error al sincronizar sesión cliente-servidor:', error);
+          showError('Sesión local detectada pero no se pudo sincronizar con el servidor. Por favor, inicia sesión de nuevo.');
+          setBusy(false);
+        }
+      }
+    });
+  </script>
+</Layout>

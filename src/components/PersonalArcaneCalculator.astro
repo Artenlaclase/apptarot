@@ -1,0 +1,295 @@
+---
+interface Props {
+  idPrefix?: string;
+  includeFullName?: boolean;
+  showArcanePreview?: boolean;
+  initialFirstName?: string;
+  initialLastName?: string;
+  initialBirthDate?: string;
+  initialBirthHour?: string;
+}
+
+const {
+  idPrefix = 'arcane',
+  includeFullName = true,
+  showArcanePreview = true,
+  initialFirstName = '',
+  initialLastName = '',
+  initialBirthDate = '',
+  initialBirthHour = '',
+} = Astro.props;
+
+const firstNameId = `${idPrefix}-firstName`;
+const lastNameId = `${idPrefix}-lastName`;
+const birthDateId = `${idPrefix}-birthDate`;
+const birthHourId = `${idPrefix}-birthHour`;
+const helperId = `${idPrefix}-helper`;
+const previewId = `${idPrefix}-preview`;
+const previewTextId = `${idPrefix}-previewText`;
+const previewHintId = `${idPrefix}-previewHint`;
+const numberHiddenId = `${idPrefix}-arcaneNumber`;
+const nameHiddenId = `${idPrefix}-arcaneName`;
+const fullNameHiddenId = `${idPrefix}-fullName`;
+
+function toDateInputValue(value: string): string {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    const [day, month, year] = value.split('/');
+    return `${year}-${month}-${day}`;
+  }
+  return '';
+}
+
+const initialBirthDateValue = toDateInputValue(initialBirthDate);
+---
+
+<section
+  id={`${idPrefix}-calculator`}
+  class="space-y-4 arcane-calculator-component"
+  data-id-prefix={idPrefix}
+  data-include-full-name={String(includeFullName)}
+  data-show-arcane-preview={String(showArcanePreview)}
+>
+  {includeFullName && (
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1" for={firstNameId}>Nombre</label>
+        <input
+          id={firstNameId}
+          name="firstName"
+          type="text"
+          value={initialFirstName}
+          autocomplete="given-name"
+          required
+          placeholder="Ej. Ana"
+          class="w-full rounded-lg border px-3 py-2"
+          style="border-color: var(--border); background: var(--surface);"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1" for={lastNameId}>Apellido</label>
+        <input
+          id={lastNameId}
+          name="lastName"
+          type="text"
+          value={initialLastName}
+          autocomplete="family-name"
+          required
+          placeholder="Ej. Perez"
+          class="w-full rounded-lg border px-3 py-2"
+          style="border-color: var(--border); background: var(--surface);"
+        />
+      </div>
+      <p class="text-xs md:col-span-2 -mt-1" style="color: var(--text-muted);">Completa nombre y apellido tal como quieres guardarlos en tu perfil.</p>
+    </div>
+  )}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-semibold mb-1" for={birthDateId}>Fecha de nacimiento</label>
+      <input
+        id={birthDateId}
+        name="birthDate"
+        type="date"
+        value={initialBirthDateValue}
+        autocomplete="bday"
+        required
+        aria-describedby={helperId}
+        class="w-full rounded-lg border px-3 py-2"
+        style="border-color: var(--border); background: var(--surface);"
+      />
+      <p id={helperId} class="text-xs mt-1" style="color: var(--text-muted);">
+        Puedes escribir la fecha o elegirla desde el selector del navegador. El Arcano se calcula sumando día + mes + año.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold mb-1" for={birthHourId}>Hora de nacimiento (opcional)</label>
+      <input
+        id={birthHourId}
+        name="birthHour"
+        type="time"
+        value={initialBirthHour}
+        class="w-full rounded-lg border px-3 py-2"
+        style="border-color: var(--border); background: var(--surface);"
+      />
+      <p class="text-xs mt-1" style="color: var(--text-muted);">Se guarda para funcionalidades futuras de tirada personalizada.</p>
+    </div>
+  </div>
+
+  <input id={numberHiddenId} name="personalArcaneNumber" type="hidden" value="" />
+  <input id={nameHiddenId} name="personalArcaneName" type="hidden" value="" />
+  <input id={fullNameHiddenId} name="fullName" type="hidden" value="" />
+
+  {showArcanePreview && (
+    <div id={previewId} class="hidden rounded-xl px-4 py-3 transition-all duration-300" style="background: color-mix(in srgb, var(--primary) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));">
+      <p id={previewTextId} class="font-semibold" style="color: var(--text);"></p>
+      <p id={previewHintId} class="text-xs mt-1" style="color: var(--text-muted);">Este resultado se guardará en tu perfil.</p>
+    </div>
+  )}
+
+  {showArcanePreview && (
+    <div id={`${idPrefix}-breakdown`} class="hidden rounded-xl overflow-hidden transition-all duration-300" style="border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));">
+      <div class="px-4 py-2" style="background: color-mix(in srgb, var(--primary) 72%, #111111); color: #ffffff;">
+        <p class="text-sm font-semibold">El cálculo de tu arcano:</p>
+      </div>
+      <div class="overflow-x-auto" style="background: color-mix(in srgb, var(--surface) 94%, #ffffff);">
+        <table class="w-full text-sm">
+          <thead>
+            <tr style="background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--text);">
+              <th class="px-4 py-2 text-left font-semibold">Día</th>
+              <th class="px-4 py-2 text-left font-semibold">Mes</th>
+              <th class="px-4 py-2 text-left font-semibold">Año</th>
+              <th class="px-4 py-2 text-center font-semibold"> </th>
+              <th class="px-4 py-2 text-left font-semibold">Reducción</th>
+            </tr>
+          </thead>
+          <tbody id={`${idPrefix}-breakdown-body`}></tbody>
+        </table>
+      </div>
+    </div>
+  )}
+</section>
+
+<script>
+  import {
+    calculatePersonalArcane,
+    normalizeBirthDateInput,
+    validateBirthDate,
+    validateBirthHour,
+    validateFullName,
+  } from '../lib/arcaneCalculator';
+
+  document.querySelectorAll('.arcane-calculator-component').forEach((container) => {
+    if (!(container instanceof HTMLElement)) return;
+    const idPrefix = container.dataset.idPrefix;
+    const includeFullName = container.dataset.includeFullName === 'true';
+    const showArcanePreview = container.dataset.showArcanePreview === 'true';
+
+    const firstNameInput = document.getElementById(`${idPrefix}-firstName`) as HTMLInputElement | null;
+    const lastNameInput = document.getElementById(`${idPrefix}-lastName`) as HTMLInputElement | null;
+    const birthDateInput = document.getElementById(`${idPrefix}-birthDate`) as HTMLInputElement | null;
+    const birthHourInput = document.getElementById(`${idPrefix}-birthHour`) as HTMLInputElement | null;
+    const preview = document.getElementById(`${idPrefix}-preview`);
+    const previewText = document.getElementById(`${idPrefix}-previewText`);
+    const numberHidden = document.getElementById(`${idPrefix}-arcaneNumber`) as HTMLInputElement | null;
+    const nameHidden = document.getElementById(`${idPrefix}-arcaneName`) as HTMLInputElement | null;
+    const fullNameHidden = document.getElementById(`${idPrefix}-fullName`) as HTMLInputElement | null;
+
+    function buildFullName() {
+      const firstName = firstNameInput ? firstNameInput.value.trim() : '';
+      const lastName = lastNameInput ? lastNameInput.value.trim() : '';
+      return [firstName, lastName].filter(Boolean).join(' ').trim();
+    }
+
+    function setFieldValidity(element: HTMLInputElement | null, validation: { valid: boolean; message?: string }) {
+      if (!element) return;
+      if (validation.valid) {
+        element.setCustomValidity('');
+      } else {
+        element.setCustomValidity(validation.message || 'Campo inválido.');
+      }
+    }
+
+    function updatePreview() {
+      const birthDate = birthDateInput ? birthDateInput.value : '';
+      const normalizedDate = normalizeBirthDateInput(birthDate);
+      const dateValidation = validateBirthDate(normalizedDate);
+      setFieldValidity(birthDateInput, dateValidation);
+
+      const fullName = buildFullName();
+      if (includeFullName) {
+        const fullNameValidation = validateFullName(fullName);
+        setFieldValidity(firstNameInput, fullNameValidation);
+        setFieldValidity(lastNameInput, fullNameValidation);
+      }
+
+      if (birthHourInput) {
+        setFieldValidity(birthHourInput, validateBirthHour(birthHourInput.value));
+      }
+
+      if (fullNameHidden) fullNameHidden.value = fullName;
+
+      if (!dateValidation.valid) {
+        if (preview) preview.classList.add('hidden');
+        if (numberHidden) numberHidden.value = '';
+        if (nameHidden) nameHidden.value = '';
+        const bd = document.getElementById(`${idPrefix}-breakdown`);
+        if (bd) bd.classList.add('hidden');
+        return;
+      }
+
+      if (!showArcanePreview) return;
+
+      const result = calculatePersonalArcane(normalizedDate);
+      if (numberHidden) numberHidden.value = String(result.number);
+      if (nameHidden) nameHidden.value = result.name;
+
+      if (preview && previewText) {
+        preview.classList.remove('hidden');
+        previewText.textContent = `Tu Arcano Personal sería ${result.number}: ${result.name}`;
+      }
+
+      // --- Tabla de reducción ---
+      const breakdownEl = document.getElementById(`${idPrefix}-breakdown`);
+      const breakdownBody = document.getElementById(`${idPrefix}-breakdown-body`);
+      if (breakdownEl && breakdownBody) {
+        const parts = normalizedDate.split('/').map(Number);
+        const day = parts[0]; const month = parts[1]; let year = parts[2];
+        const dayLabel = String(day).padStart(2, '0');
+        const monthLabel = String(month).padStart(2, '0');
+        const steps = [];
+        let total = day + month + year;
+        steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+        while (total > 21) {
+          year = String(year).split('').reduce((s, c) => s + Number(c), 0);
+          total = day + month + year;
+          steps.push({ d: dayLabel, m: monthLabel, y: String(year), t: total });
+        }
+        breakdownBody.innerHTML = steps.map((s, i) => {
+          const rowStyle = i < steps.length - 1
+            ? 'border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);'
+            : '';
+          const totalStyle = i === steps.length - 1
+            ? 'font-weight:700; color: var(--primary);'
+            : 'color: var(--text-muted);';
+          return `<tr style="${rowStyle}">
+            <td style="padding:0.55rem 1rem; color:var(--text);">${s.d}</td>
+            <td style="padding:0.55rem 1rem; color:var(--text);">${s.m}</td>
+            <td style="padding:0.55rem 1rem; color:var(--text);">${s.y}</td>
+            <td style="padding:0.55rem 0.5rem; text-align:center; color:var(--text-muted);">=</td>
+            <td style="padding:0.55rem 1rem; ${totalStyle}">${s.t}</td>
+          </tr>`;
+        }).join('');
+        breakdownEl.classList.remove('hidden');
+      }
+
+      container.dispatchEvent(
+        new CustomEvent('arcanechange', {
+          detail: {
+            number: result.number,
+            name: result.name,
+            birthDate: normalizedDate,
+            fullName,
+            firstName: firstNameInput ? firstNameInput.value.trim() : '',
+            lastName: lastNameInput ? lastNameInput.value.trim() : '',
+            birthHour: birthHourInput ? birthHourInput.value.trim() : '',
+            valid: true,
+          },
+          bubbles: true,
+        })
+      );
+    }
+
+    [firstNameInput, lastNameInput, birthDateInput, birthHourInput].forEach((el) => {
+      el?.addEventListener('input', updatePreview);
+      el?.addEventListener('blur', updatePreview);
+    });
+
+    if (birthDateInput?.value) {
+      updatePreview();
+    }
+  });
+</script>
