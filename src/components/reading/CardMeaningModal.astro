@@ -1,0 +1,77 @@
+---
+// src/components/reading/CardMeaningModal.astro
+---
+
+<section
+  id="cardMeaningModal"
+  class="fixed inset-0 z-50 hidden"
+  aria-hidden="true"
+  role="dialog"
+  aria-labelledby="modalCardName"
+>
+  <div id="cardMeaningBackdrop" class="absolute inset-0 bg-black/60"></div>
+  <div class="relative h-full w-full overflow-y-auto">
+    <div class="min-h-full flex items-center justify-center p-4">
+      <article
+        class="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden"
+      >
+        <header
+          class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-purple-50"
+        >
+          <h2 id="modalCardName" class="text-2xl font-bold text-purple-900"></h2>
+          <button
+            id="closeMeaningModalBtn"
+            type="button"
+            class="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            aria-label="Cerrar significado"
+          >
+            ×
+          </button>
+        </header>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-1">
+            <img
+              id="modalCardImage"
+              src=""
+              alt=""
+              class="w-full rounded-lg border border-gray-200"
+              loading="lazy"
+            />
+            <p id="modalCardMeta" class="mt-3 text-sm text-gray-600 text-center"></p>
+          </div>
+
+          <div class="md:col-span-2 space-y-4">
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <h3 class="font-semibold text-purple-800">Directo</h3>
+              <p id="modalCardDirect" class="text-gray-700 mt-1"></p>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-semibold text-gray-700">Invertido</h3>
+              <p id="modalCardInverted" class="text-gray-700 mt-1"></p>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-purple-800">Símbolos clave</h3>
+              <ul
+                id="modalCardSymbols"
+                class="mt-2 list-disc list-inside text-gray-700"
+              ></ul>
+            </div>
+
+            <div class="pt-2">
+              <a
+                id="modalDetailLink"
+                href="/cards"
+                class="inline-block bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-lg transition-colors"
+              >
+                Ir a ficha completa
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,133 @@
+.flippable-card {
+  @apply transition-transform duration-300;
+  transform-origin: center center;
+}
+
+.flippable-card:hover {
+  @apply scale-105;
+}
+
+.flipping {
+  @apply scale-110;
+  transform: scale(1.1) rotateY(180deg);
+  transition: transform 0.3s ease-in-out;
+}
+
+.card-revealed {
+  animation: cardReveal 0.5s ease-out;
+}
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8) rotateY(180deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+}
+
+.carta-aclaracion-item {
+  @apply transition-transform hover:scale-105;
+}
+
+.carta-aclaracion-item .carta-random-container {
+  border: 2px solid color-mix(in srgb, var(--warning) 65%, #ffffff);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
+.carta-detail-trigger {
+  @apply w-full text-left bg-transparent p-0 border-0;
+}
+
+.focus-controls-hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cards-focus-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.cards-focus-grid .carta-random-link {
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+.cards-focus-grid .carta-random-image-wrapper {
+  min-height: 340px;
+}
+
+.cards-focus-secondary .focus-minimizable {
+  opacity: 0.28;
+  transform: scale(0.98);
+  pointer-events: none;
+}
+
+.focus-action-panel {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  z-index: 45;
+  width: min(960px, calc(100vw - 1.5rem));
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  background: color-mix(in srgb, var(--surface) 84%, #ffffff);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.focus-action-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .cards-focus-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .cards-focus-grid .carta-random-image-wrapper {
+    min-height: 250px;
+  }
+
+  .focus-action-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.tirada-mode-option {
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.tirada-mode-option:hover {
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.tirada-mode-option:has(input[type="radio"]:checked) {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+}
+
+.tirada-mode-option input[type="radio"] {
+  accent-color: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flippable-card,
+  .carta-aclaracion-item,
+  .btn-ui,
+  .carta-random-container {
+    transition: none !important;
+    animation: none !important;
+  }
+}
