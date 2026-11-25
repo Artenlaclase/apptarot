@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getOrCreateUserProfile } from '../lib/auth-server';
-import { getPlanLabel, getReadingLimit, isPremiumPlan } from '../lib/plans';
+import { getPlanLabel, getReadingLimit, isPremiumPlan, isBuscadorPlan, isGuiaPlan } from '../lib/plans';
 import PersonalArcaneCalculator from '../components/PersonalArcaneCalculator.astro';
 import { getPersonalArcaneBreakdown } from '../lib/arcaneCalculator';
 import { adminDb } from '../lib/firebase-admin';
@@ -364,11 +364,11 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         </article>
 
         <!-- Buscador -->
-        <article class="surface-card p-5 flex flex-col justify-between" style={profile.plan.startsWith('buscador') || profile.plan.startsWith('premium') ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
+        <article class="surface-card p-5 flex flex-col justify-between" style={isBuscadorPlan(profile.plan) ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
           <div>
             <div class="flex justify-between items-center mb-3">
               <h3 class="text-lg font-bold" style="color: var(--text);">Buscador</h3>
-              {(profile.plan.startsWith('buscador') || profile.plan.startsWith('premium')) && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
+              {isBuscadorPlan(profile.plan) && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
             </div>
             <p class="text-xs mb-4" style="color: var(--text-muted);">Para buscadores que desean profundizar su aprendizaje.</p>
             <ul class="text-sm space-y-2 mb-6" style="color: var(--text-muted);">
@@ -385,11 +385,11 @@ const profileNameParts = splitFullName(profile.fullName || profile.displayName);
         </article>
 
         <!-- Guía Personal -->
-        <article class="surface-card p-5 flex flex-col justify-between" style={profile.plan.startsWith('guia') ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
+        <article class="surface-card p-5 flex flex-col justify-between" style={isGuiaPlan(profile.plan) ? 'border-color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, var(--surface));' : ''}>
           <div>
             <div class="flex justify-between items-center mb-3">
               <h3 class="text-lg font-bold" style="color: var(--text);">Guía Personal</h3>
-              {profile.plan.startsWith('guia') && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
+              {isGuiaPlan(profile.plan) && <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background: var(--success); color: white;">Activo</span>}
             </div>
             <p class="text-xs mb-4" style="color: var(--text-muted);">Acompañamiento individual de guía y mentoría.</p>
             <ul class="text-sm space-y-2 mb-6" style="color: var(--text-muted);">

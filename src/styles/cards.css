@@ -371,7 +371,7 @@
   min-height: 640px;
   height: 700px;
   background-color: #2b0f4a;
-  background-image: url('/pano-violeta.jpg');
+  background-image: url('/pano-violeta.webp'), url('/pano-violeta.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -398,14 +398,14 @@
 
 /* Variantes de paño de lectura */
 .tarot-board-canvas.cloth-violeta {
-  background-image: url('/pano-violeta.jpg');
+  background-image: url('/pano-violeta.webp'), url('/pano-violeta.jpg');
   background-color: #2a0845;
 }
 
 .tarot-board-canvas.cloth-azul {
   background-image: 
     radial-gradient(circle at center, rgba(15, 32, 67, 0.45) 0%, rgba(5, 12, 28, 0.92) 100%),
-    url('/pano-violeta.jpg');
+    url('/pano-violeta.webp'), url('/pano-violeta.jpg');
   background-color: #0c1829;
   filter: hue-rotate(35deg) saturate(1.15);
 }

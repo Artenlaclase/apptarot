@@ -2,13 +2,14 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getStripe } from '../../../lib/stripe';
 import { adminDb } from '../../../lib/firebase-admin';
+import type { UserPlan } from '../../../types/auth';
 
 export const prerender = false;
 
-function mapPlan(priceId?: string): 'free' | 'premium_monthly' | 'premium_annual' {
+function mapPlan(priceId?: string): UserPlan {
   if (!priceId) return 'free';
-  if (priceId === import.meta.env.STRIPE_PRICE_ANNUAL) return 'premium_annual';
-  if (priceId === import.meta.env.STRIPE_PRICE_MONTHLY) return 'premium_monthly';
+  if (priceId === import.meta.env.STRIPE_PRICE_ANNUAL) return 'buscador_annual';
+  if (priceId === import.meta.env.STRIPE_PRICE_MONTHLY) return 'buscador_monthly';
   return 'free';
 }
 

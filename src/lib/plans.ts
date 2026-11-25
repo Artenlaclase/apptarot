@@ -7,6 +7,14 @@ export function isPremiumPlan(plan: UserPlan): boolean {
   return plan !== 'free';
 }
 
+export function isBuscadorPlan(plan: UserPlan): boolean {
+  return plan === 'buscador' || plan === 'buscador_monthly' || plan === 'buscador_annual' || plan === 'premium_monthly' || plan === 'premium_annual';
+}
+
+export function isGuiaPlan(plan: UserPlan): boolean {
+  return plan === 'guia' || plan === 'guia_monthly' || plan === 'guia_annual';
+}
+
 export function getPlanLabel(plan: UserPlan): string {
   switch (plan) {
     case 'buscador':
