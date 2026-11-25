@@ -2,6 +2,7 @@
 // src/pages/cards/[id].astro
 import { adminDb } from '../../lib/firebase-admin';
 import Layout from '../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
 import '../../styles/cards.css';
 
 const { id } = Astro.params as { id: string };
@@ -102,17 +103,9 @@ const getCardIdentifier = (card: Card): string => {
 const pageTitle = `${card.nombre} - Tarot de Marsella`;
 const pageDescription = `Significado de ${card.nombre}: ${card.significado.directo.substring(0, 140)}...`;
 
-// SEO image: usa la imagen de la carta si existe; si es Cloudinary, generamos variantes
-const isCloudinary = typeof card.imagem === 'string' && card.imagem.includes('res.cloudinary.com');
+// SEO image: usa la imagen de la carta si existe
 const ogImage = card.imagem || '/marsella-tarot.jpg';
 const ogImageAlt = `Carta ${card.nombre} del Tarot de Marsella`;
-
-// Responsive helpers para Cloudinary (caen en la misma URL si no es Cloudinary)
-const clSrc = (w:number) => isCloudinary 
-  ? card.imagem.replace('/upload/', `/upload/w_${w},f_auto,q_auto/`)
-  : card.imagem;
-const srcset = [320, 480, 640, 768, 960, 1200].map(w => `${clSrc(w)} ${w}w`).join(', ');
-const sizes = '(max-width: 768px) 90vw, (max-width: 1024px) 50vw, 33vw';
 
 ---
 
@@ -147,14 +140,14 @@ const sizes = '(max-width: 768px) 90vw, (max-width: 1024px) 50vw, 33vw';
       <div class="carta-detalle-container">
         <figure class="carta-detalle-figure">
           <div class="carta-detalle-image-wrapper">
-            <img
-              src={clSrc(768)}
-              srcset={srcset}
-              sizes={sizes}
+            <Image
+              src={card.imagem}
               alt={`Carta ${card.nombre}`}
+              width={500}
+              height={850}
               loading="eager"
               class="carta-detalle-image"
-              onerror="this.src='/placeholder-card.jpg';this.classList.add('error-image')"
+              onerror="this.onerror=null;this.src='/placeholder-card.jpg';this.classList.add('error-image')"
             />
           </div>
           <figcaption class="text-center text-sm text-gray-500 mt-3">

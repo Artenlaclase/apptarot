@@ -9,7 +9,7 @@ export default defineConfig({
   site,
   integrations: [sitemap()],
   image: {
-    domains: ['res.cloudinary.com'],
+    domains: ['res.cloudinary.com', 'firebasestorage.googleapis.com'],
   },
   vite: {
     css: {
